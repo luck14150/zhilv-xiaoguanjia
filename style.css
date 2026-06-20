@@ -760,6 +760,41 @@ body {
     margin-top: 2px;
 }
 
+.alarm-card-label-clickable {
+    display: inline-block;
+    padding: 4px 10px;
+    background: rgba(124, 140, 255, 0.12);
+    border: 1px dashed rgba(124, 140, 255, 0.35);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    user-select: none;
+    color: rgba(124, 140, 255, 0.9);
+    font-weight: 500;
+}
+
+.alarm-card-label-clickable:hover {
+    background: rgba(201, 124, 255, 0.2);
+    border-color: rgba(201, 124, 255, 0.5);
+    color: #fff;
+    transform: scale(1.03);
+}
+
+.label-cycle-indicator {
+    font-size: 11px;
+    opacity: 0.6;
+    margin-left: 2px;
+}
+
+.label-flash {
+    animation: label-flash-anim 0.5s ease;
+}
+
+@keyframes label-flash-anim {
+    0%   { background: rgba(201, 124, 255, 0.5); transform: scale(1.1); }
+    100% { background: rgba(124, 140, 255, 0.12); transform: scale(1); }
+}
+
 .alarm-card-right {
     display: flex;
     align-items: center;

@@ -426,7 +426,9 @@ function renderSavedAlarms() {
             '      <span class="alarm-card-period">' + period + '</span>' +
             '      <span class="alarm-card-time-main">' + timeShow + '</span>' +
             '    </div>' +
-            '    <div class="alarm-card-label">' + label + '</div>' +
+            '    <div class="alarm-card-label alarm-card-label-clickable" data-action="cycle-repeat" data-id="' + alarm.id + '" title="点击切换重复方式">' +
+            label + ' <span class="label-cycle-indicator">↻</span>' +
+            '    </div>' +
             '  </div>' +
             '  <div class="alarm-card-right">' +
             '    <div class="alarm-card-switch ' + enabledClass + '" data-action="toggle" data-id="' + alarm.id + '">' +
@@ -466,6 +468,36 @@ function initAlarmListEventDelegation() {
                     alarm.enabled = sw.classList.contains('on');
                     saveData(data);
                     syncAlarmsToServiceWorker();
+                }
+                return;
+            }
+            // 重复标签点击：循环切换重复方式（在卡片点击之前）
+            const labelEl = e.target.closest('.alarm-card-label-clickable');
+            if (labelEl && labelEl.dataset.action === 'cycle-repeat') {
+                e.preventDefault();
+                e.stopPropagation();
+                const alarmId = labelEl.dataset.id;
+                const data = loadData();
+                const alarm = (data.alarms || []).find(a => a.id === alarmId);
+                if (alarm) {
+                    // 循环顺序：daily → workday → weekend → once → custom(周一,三,五) → daily
+                    const order = ['daily', 'workday', 'weekend', 'once', 'custom'];
+                    const currentIdx = order.indexOf(alarm.repeat || 'daily');
+                    const next = order[(currentIdx + 1) % order.length];
+                    alarm.repeat = next;
+                    if (next === 'custom') {
+                        alarm.customDays = [1, 3, 5]; // 默认 周一、三、五
+                    } else {
+                        alarm.customDays = [];
+                    }
+                    saveData(data);
+                    syncAlarmsToServiceWorker();
+                    // 立即更新标签文字（不刷新整个列表，避免闪烁）
+                    const newLabel = repeatLabel(alarm);
+                    labelEl.innerHTML = newLabel + ' <span class="label-cycle-indicator">↻</span>';
+                    // 短暂动画提示
+                    labelEl.classList.add('label-flash');
+                    setTimeout(() => labelEl.classList.remove('label-flash'), 500);
                 }
                 return;
             }
