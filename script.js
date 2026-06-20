@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062101';
+const APP_VERSION = '2026062102';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -467,6 +467,12 @@ let ringingIntervalId = null;
 let customToneBuffer = null;
 let customToneDataKey = '';
 
+// 铃声试听（独立变量，不影响真正响铃）
+let previewSource = null;      // 自定义铃声试听的 AudioBufferSourceNode
+let previewIntervalId = null;  // 内置铃声试听的定时器 ID
+let previewToneDataKey = '';   // 当前试听的自定义铃声数据key
+let previewBuffer = null;      // 试听专用的 AudioBuffer
+
 // 创建并预热共享 AudioContext：监听首次用户交互后 resume()
 function initSharedAudioContext() {
     if (ringingAlarmSharedCtx) return;
@@ -649,6 +655,154 @@ function stopRingingSound() {
         clearInterval(ringingIntervalId);
     }
     ringingIntervalId = null;
+}
+
+/* ============ 铃声试听功能（不影响真正闹钟响铃） ============ */
+
+// 停止铃声试听
+function stopPreviewTone() {
+    // 停止自定义铃声试听
+    if (previewSource) {
+        try {
+            previewSource.stop();
+        } catch (e) {}
+        previewSource = null;
+    }
+    // 停止内置铃声试听的定时器
+    if (previewIntervalId) {
+        clearInterval(previewIntervalId);
+        previewIntervalId = null;
+    }
+}
+
+// 试听内置铃声（播放约3秒，不循环）
+function playPreviewBuiltinTone(tone) {
+    stopPreviewTone();
+    
+    if (!ringingAlarmSharedCtx) initSharedAudioContext();
+    const ctx = ringingAlarmSharedCtx;
+    if (!ctx) return;
+    
+    if (ctx.state === 'suspended') {
+        try { ctx.resume(); } catch (e) {}
+    }
+    
+    const freqs = {
+        classic: [880, 660, 880, 660],
+        birds:   [1200, 1800, 1200, 1800],
+        digital: [440, 880, 440, 880],
+        nature:  [330, 220, 330, 220],
+        chime:   [1320, 1320, 1320, 1320],
+        rooster: [700, 900, 700, 1100]
+    };
+    const seq = freqs[tone] || freqs.classic;
+    
+    // 只播放一个序列（约1秒），不循环
+    try {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine';
+        let t = ctx.currentTime;
+        g.gain.setValueAtTime(0.0001, t);
+        seq.forEach((f, i) => {
+            o.frequency.setValueAtTime(f, t + i * 0.2);
+            g.gain.exponentialRampToValueAtTime(0.25, t + i * 0.2 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.2 + 0.18);
+        });
+        o.start();
+        o.stop(t + seq.length * 0.2 + 0.1);
+        
+        // 3秒后再播放一次，让用户有更好的体验
+        previewIntervalId = setTimeout(() => {
+            try {
+                const o2 = ctx.createOscillator();
+                const g2 = ctx.createGain();
+                o2.connect(g2); g2.connect(ctx.destination);
+                o2.type = 'sine';
+                let t2 = ctx.currentTime;
+                g2.gain.setValueAtTime(0.0001, t2);
+                seq.forEach((f, i) => {
+                    o2.frequency.setValueAtTime(f, t2 + i * 0.2);
+                    g2.gain.exponentialRampToValueAtTime(0.25, t2 + i * 0.2 + 0.02);
+                    g2.gain.exponentialRampToValueAtTime(0.0001, t2 + i * 0.2 + 0.18);
+                });
+                o2.start();
+                o2.stop(t2 + seq.length * 0.2 + 0.1);
+            } catch (e) {}
+            previewIntervalId = null;
+        }, 1500);
+    } catch (e) {
+        console.warn('试听失败:', e);
+    }
+}
+
+// 试听自定义铃声（播放约3秒，不循环）
+async function playPreviewCustomTone(customData) {
+    stopPreviewTone();
+    
+    if (!ringingAlarmSharedCtx) initSharedAudioContext();
+    const ctx = ringingAlarmSharedCtx;
+    if (!ctx) return;
+    
+    if (ctx.state === 'suspended') {
+        try { ctx.resume(); } catch (e) {}
+    }
+    
+    // 如果是相同的数据且已有buffer，直接播放
+    let buffer = null;
+    if (previewToneDataKey === customData && previewBuffer) {
+        buffer = previewBuffer;
+    } else {
+        // 解码音频
+        try {
+            const arrayBuffer = dataUrlToArrayBuffer(customData);
+            buffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+            previewBuffer = buffer;
+            previewToneDataKey = customData;
+        } catch (e) {
+            console.warn('试听解码失败:', e);
+            // 失败回退到经典铃声
+            playPreviewBuiltinTone('classic');
+            return;
+        }
+    }
+    
+    if (!buffer) return;
+    
+    // 播放（只播放一次，不循环）
+    try {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        const gain = ctx.createGain();
+        gain.gain.value = 0.5;
+        source.connect(gain);
+        gain.connect(ctx.destination);
+        source.start(0);
+        previewSource = source;
+        
+        // 3秒后自动停止
+        setTimeout(() => {
+            if (previewSource === source) {
+                try { source.stop(); } catch (e) {}
+                previewSource = null;
+            }
+        }, 3000);
+    } catch (e) {
+        console.warn('试听播放失败:', e);
+    }
+}
+
+// 播放铃声试听（根据tone类型选择）
+function playPreviewTone(toneId) {
+    // 检查是否是自定义铃声
+    const ringtone = getCustomRingtoneById(toneId);
+    if (ringtone && ringtone.data) {
+        playPreviewCustomTone(ringtone.data);
+    } else {
+        // 内置铃声
+        playPreviewBuiltinTone(toneId);
+    }
 }
 
 function snoozeAlarm() {
@@ -1027,6 +1181,10 @@ function closeAlarmModal() {
     const overlay = document.getElementById('alarmModalOverlay');
     const modal = document.getElementById('alarmModal');
     if (!overlay || !modal) return;
+    
+    // 停止铃声试听
+    stopPreviewTone();
+    
     overlay.classList.remove('active');
     modal.classList.remove('active');
     setTimeout(() => { overlay.style.display = 'none'; }, 300);
@@ -1123,8 +1281,7 @@ function initAlarmModalListeners() {
         modalState.name = this.value;
     });
 
-    // 铃声点击（只选择，不预览播放，只有闹钟真正响铃时才播放）
-    // 铃声点击（选中铃声或添加新铃声）
+    // 铃声点击（选中铃声并试听播放）
     document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
         // 防止点击删除按钮时触发
         if (e.target.classList.contains('ringtone-delete-btn')) return;
@@ -1142,7 +1299,6 @@ function initAlarmModalListeners() {
         
         // 选中铃声（内置或自定义）
         modalState.toneId = tone;
-        // 向后兼容：设置 tone 字段
         const ringtone = getCustomRingtoneById(tone);
         if (ringtone) {
             modalState.tone = 'custom';
@@ -1154,6 +1310,9 @@ function initAlarmModalListeners() {
             modalState.customToneData = '';
         }
         renderModalControls();
+        
+        // 播放试听
+        playPreviewTone(tone);
     });
 
     // 删除自定义铃声
