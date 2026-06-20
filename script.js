@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062102';
+const APP_VERSION = '2026062103';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -2458,6 +2458,10 @@ function renderDay(date, isOtherMonth) {
     const isSat = dayOfWeek === 6;
     const isSun = dayOfWeek === 0;
 
+    // 读取用户自定义备注
+    const savedNote = getDayNote(dateStr);
+    const noteContent = savedNote || lunar;
+
     let classes = ['calendar-day'];
     if (isOtherMonth) classes.push('other-month');
     if (isToday) classes.push('today');
@@ -2480,17 +2484,46 @@ function renderDay(date, isOtherMonth) {
     // 日期数字
     html += `<span class="day-date" style="${dateColor}">${date.getDate()}</span>`;
     
-    // 农历 + 节日名称（日期下方）
+    // 农历 + 可编辑备注（日期下方，textarea）
     if (!isOtherMonth) {
-        html += `<span class="day-lunar">${lunar}</span>`;
-        if (holiday) {
-            html += `<span class="day-holiday-tag">${holiday}</span>`;
-        }
+        const placeholder = holiday ? holiday : lunar;
+        html += `<div class="day-note-area" onclick="event.stopPropagation()">`;
+        html += `<textarea class="day-note-input" 
+                      data-date="${dateStr}" 
+                      rows="3" 
+                      placeholder="${placeholder}"
+                      onblur="saveDayNote('${dateStr}', this.value)"
+                      onclick="event.stopPropagation()"
+                      onmousedown="event.stopPropagation()"
+                      onfocus="event.stopPropagation()">${escapeHtml(noteContent)}</textarea>`;
+        html += `</div>`;
     }
     
     html += '</div>';
     
     return html;
+}
+
+// 转义HTML字符
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 读取某天的备注
+function getDayNote(dateStr) {
+    return localStorage.getItem(`day_note_${dateStr}`) || '';
+}
+
+// 保存某天的备注
+function saveDayNote(dateStr, value) {
+    if (value && value.trim()) {
+        localStorage.setItem(`day_note_${dateStr}`, value);
+    } else {
+        localStorage.removeItem(`day_note_${dateStr}`);
+    }
 }
 
 /* ============ 作息计划数据与渲染 ============ */
@@ -2538,11 +2571,59 @@ function showDaySchedule(dateStr) {
     titleEl.textContent = isToday ? '今日作息' : `${date.getMonth() + 1}月${date.getDate()}日作息`;
     
     const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    dateTextEl.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdayNames[date.getDay()]}`;
-    lunarTextEl.textContent = getLunarDate(date);
+    const defaultDateText = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdayNames[date.getDay()]}`;
+    const defaultLunarText = getLunarDate(date);
+    
+    // 读取用户自定义的日期和农历文本
+    const savedDateNote = getDayDetailNote(dateStr, 'date');
+    const savedLunarNote = getDayDetailNote(dateStr, 'lunar');
+    
+    // 日期信息（可编辑）
+    dateTextEl.innerHTML = `<textarea class="day-detail-input" 
+                                      data-date="${dateStr}" 
+                                      data-field="date"
+                                      rows="1"
+                                      placeholder="${defaultDateText}"
+                                      onblur="saveDayDetailNote('${dateStr}', 'date', this.value)"
+                                      oninput="autoResizeTextarea(this)">${escapeHtml(savedDateNote || defaultDateText)}</textarea>`;
+    
+    // 农历信息（可编辑，大区域，支持滚动）
+    lunarTextEl.innerHTML = `<textarea class="day-detail-input day-detail-lunar" 
+                                        data-date="${dateStr}" 
+                                        data-field="lunar"
+                                        rows="4"
+                                        placeholder="${defaultLunarText}&#10;（可手动编辑、添加备注）"
+                                        onblur="saveDayDetailNote('${dateStr}', 'lunar', this.value)"
+                                        oninput="autoResizeTextarea(this)">${escapeHtml(savedLunarNote || defaultLunarText)}</textarea>`;
+    
+    // 初始化 textarea 高度
+    setTimeout(() => {
+        const textareas = document.querySelectorAll('#page-day-schedule .day-detail-input');
+        textareas.forEach(ta => autoResizeTextarea(ta));
+    }, 50);
     
     renderScheduleList();
     window.scrollTo(0, 0);
+}
+
+// 自动调整 textarea 高度
+function autoResizeTextarea(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 300) + 'px';
+}
+
+// 读取某天详情的备注
+function getDayDetailNote(dateStr, field) {
+    return localStorage.getItem(`day_detail_${dateStr}_${field}`) || '';
+}
+
+// 保存某天详情的备注
+function saveDayDetailNote(dateStr, field, value) {
+    if (value && value.trim()) {
+        localStorage.setItem(`day_detail_${dateStr}_${field}`, value);
+    } else {
+        localStorage.removeItem(`day_detail_${dateStr}_${field}`);
+    }
 }
 
 function getScheduleData(dateStr) {
