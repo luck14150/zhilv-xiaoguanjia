@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062012';
+const APP_VERSION = '2026062013';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -95,7 +95,8 @@ function loadData() {
         ],
         schedule: [],
         memory: [],
-        stats: {}
+        stats: {},
+        customRingtones: []  // 自定义铃声库：[{ id, name, data, duration, createdAt }]
     };
     
     try {
@@ -132,7 +133,199 @@ function saveData(data) {
     }
 }
 
-/* ============ 工具：构造 / 解析闹钟对象 ============ */
+/* ============ 自定义铃声库管理 ============ */
+
+// 添加自定义铃声到库（自动截取前10秒）
+async function addCustomRingtone(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const audioData = event.target?.result || '';
+                if (!audioData || !audioData.startsWith('data:audio')) {
+                    reject('不是有效的音频文件');
+                    return;
+                }
+                
+                // 截取音频（最多10秒）
+                const clippedData = await clipAudio(audioData, 0, 10);
+                if (!clippedData) {
+                    reject('音频截取失败');
+                    return;
+                }
+                
+                const ringtone = {
+                    id: 'ringtone_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+                    name: file.name,
+                    data: clippedData,
+                    duration: Math.min(file.duration || 10, 10),
+                    createdAt: Date.now()
+                };
+                
+                // 保存到铃声库
+                const data = loadData();
+                data.customRingtones = data.customRingtones || [];
+                data.customRingtones.push(ringtone);
+                saveData(data);
+                
+                // 预加载以便播放
+                preloadCustomTone(clippedData);
+                
+                resolve(ringtone);
+            } catch (e) {
+                reject(e.message || '保存失败');
+            }
+        };
+        reader.onerror = () => reject('文件读取失败');
+        reader.readAsDataURL(file);
+    });
+}
+
+// 音频截取函数（startTime到endTime，单位秒）
+async function clipAudio(dataUrl, startTime = 0, endTime = 10) {
+    if (!ringingAlarmSharedCtx) initSharedAudioContext();
+    if (!ringingAlarmSharedCtx) return null;
+    
+    return new Promise((resolve) => {
+        try {
+            // Base64 -> ArrayBuffer
+            const base64 = dataUrl.split(',')[1];
+            const binaryStr = atob(base64);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) {
+                bytes[i] = binaryStr.charCodeAt(i);
+            }
+            
+            // 解码音频
+            ringingAlarmSharedCtx.decodeAudioData(bytes.buffer, (buffer) => {
+                try {
+                    const sampleRate = buffer.sampleRate;
+                    const startSample = Math.floor(startTime * sampleRate);
+                    const endSample = Math.floor(endTime * sampleRate);
+                    const length = Math.min(endSample - startSample, buffer.length - startSample);
+                    
+                    if (length <= 0) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    // 创建新的 AudioBuffer
+                    const clippedBuffer = ringingAlarmSharedCtx.createBuffer(
+                        buffer.numberOfChannels,
+                        length,
+                        sampleRate
+                    );
+                    
+                    // 复制音频数据
+                    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+                        const sourceData = buffer.getChannelData(channel);
+                        const destData = clippedBuffer.getChannelData(channel);
+                        for (let i = 0; i < length; i++) {
+                            destData[i] = sourceData[startSample + i];
+                        }
+                    }
+                    
+                    // 编码回 base64
+                    const wavData = audioBufferToWav(clippedBuffer);
+                    const base64Wav = btoa(String.fromCharCode(...new Uint8Array(wavData)));
+                    resolve('data:audio/wav;base64,' + base64Wav);
+                } catch (e) {
+                    console.error('音频截取失败:', e);
+                    resolve(null);
+                }
+            }, () => {
+                resolve(null);
+            });
+        } catch (e) {
+            console.error('音频处理失败:', e);
+            resolve(null);
+        }
+    });
+}
+
+// AudioBuffer 转 WAV 格式
+function audioBufferToWav(buffer) {
+    const length = buffer.length * buffer.numberOfChannels * 2 + 44;
+    const arrayBuffer = new ArrayBuffer(length);
+    const view = new DataView(arrayBuffer);
+    const channels = [];
+    let offset = 0;
+    
+    // WAV 头
+    const writeString = (str) => {
+        for (let i = 0; i < str.length; i++) {
+            view.setUint8(offset + i, str.charCodeAt(i));
+        }
+        offset += str.length;
+    };
+    
+    const format = 1; // PCM
+    const sampleRate = buffer.sampleRate;
+    const bitsPerSample = 16;
+    const byteRate = sampleRate * buffer.numberOfChannels * bitsPerSample / 8;
+    const blockAlign = buffer.numberOfChannels * bitsPerSample / 8;
+    
+    writeString('RIFF');
+    view.setUint32(offset, length - 8, true); offset += 4;
+    writeString('WAVE');
+    writeString('fmt ');
+    view.setUint32(offset, 16, true); offset += 4;
+    view.setUint16(offset, format, true); offset += 2;
+    view.setUint16(offset, buffer.numberOfChannels, true); offset += 2;
+    view.setUint32(offset, sampleRate, true); offset += 4;
+    view.setUint32(offset, byteRate, true); offset += 4;
+    view.setUint16(offset, blockAlign, true); offset += 2;
+    view.setUint16(offset, bitsPerSample, true); offset += 2;
+    writeString('data');
+    view.setUint32(offset, length - offset - 4, true); offset += 4;
+    
+    // 写入音频数据
+    for (let i = 0; i < buffer.numberOfChannels; i++) {
+        channels.push(buffer.getChannelData(i));
+    }
+    
+    for (let i = 0; i < buffer.length; i++) {
+        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+            const sample = Math.max(-1, Math.min(1, channels[channel][i]));
+            const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+            view.setInt16(offset, intSample, true);
+            offset += 2;
+        }
+    }
+    
+    return arrayBuffer;
+}
+
+// 从铃声库获取铃声
+function getCustomRingtoneById(ringtoneId) {
+    const data = loadData();
+    return (data.customRingtones || []).find(r => r.id === ringtoneId);
+}
+
+// 删除自定义铃声
+function deleteCustomRingtone(ringtoneId) {
+    const data = loadData();
+    data.customRingtones = (data.customRingtones || []).filter(r => r.id !== ringtoneId);
+    saveData(data);
+}
+
+// 获取所有铃声选项（内置 + 自定义）
+function getAllRingtoneOptions() {
+    const data = loadData();
+    const customRingtones = data.customRingtones || [];
+    
+    return [
+        ...RINGTONE_OPTIONS.slice(0, -1), // 内置铃声（去掉最后一个 'custom' 占位）
+        ...customRingtones.map(r => ({
+            id: r.id,
+            icon: '🎵',
+            name: r.name.length > 8 ? r.name.substring(0, 8) + '...' : r.name,
+            custom: true,
+            fullName: r.name,
+            data: r.data
+        }))
+    ];
+}
 function buildAlarmData(timeStr, label, enabled) {
     return {
         id: 'alarm_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
@@ -142,9 +335,10 @@ function buildAlarmData(timeStr, label, enabled) {
         repeat: 'daily',                      // daily | workday | weekend | once | custom
         customDays: [],                       // 0=周日 ... 6=周六
         vibrate: false,
-        tone: 'classic',
-        customToneName: '',                   // 用户上传的自定义铃声名
-        customToneData: ''                    // 用户上传的音频 Base64 数据
+        tone: 'classic',                      // 向后兼容：内置铃声名或 'custom'
+        toneId: 'classic',                    // 铃声ID：内置铃声ID 或 自定义铃声库中的ID
+        customToneName: '',                   // 向后兼容：旧版自定义铃声名
+        customToneData: ''                    // 向后兼容：旧版自定义铃声数据
     };
 }
 
@@ -830,33 +1024,33 @@ function renderModalControls() {
     setTimeText('minScroll', modalState.minute);
     setTimeText('secScroll', modalState.second);
 
-    // 铃声
+    // 铃声（内置 + 自定义铃声库）
     const toneEl = document.getElementById('ringtoneList');
     if (toneEl) {
-        // 根据是否已有上传文件，显示不同的 UI
-        const hasCustom = !!modalState.customToneData;
-        const customNameRaw = modalState.customToneName || '';
-        // 文件名过长截断显示
-        const customNameDisplay = hasCustom 
-            ? (customNameRaw.length > 8 ? customNameRaw.substring(0, 8) + '...' : customNameRaw)
-            : '选择铃声';
+        const allRingtones = getAllRingtoneOptions();
         
-        toneEl.innerHTML = RINGTONE_OPTIONS.map(o => {
-            if (o.id === 'custom') {
-                return '<div class="ringtone-item ringtone-item-custom' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
+        toneEl.innerHTML = allRingtones.map(o => {
+            const isSelected = o.id === modalState.toneId;
+            if (o.custom) {
+                // 自定义铃声：显示删除按钮
+                return '<div class="ringtone-item ringtone-item-custom' + (isSelected ? ' selected' : '') + '" data-tone="' + o.id + '" data-custom="true">' +
                        '  <span class="ringtone-icon">' + o.icon + '</span>' +
-                       '  <span class="ringtone-name">' + (hasCustom ? customNameDisplay : '选择铃声') + '</span>' +
-                       (hasCustom 
-                           ? '  <button class="ringtone-replace-btn" title="更换铃声">更换</button>' 
-                           : '  <span class="ringtone-hint">（支持 MP3/WAV/OGG）</span>') +
-                       '  <input type="file" class="ringtone-file-input" accept="audio/*" style="display:none;" />' +
+                       '  <span class="ringtone-name">' + o.name + '</span>' +
+                       '  <button class="ringtone-delete-btn" data-ringtone-id="' + o.id + '" title="删除铃声">×</button>' +
                        '</div>';
             }
-            return '<div class="ringtone-item' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
+            return '<div class="ringtone-item' + (isSelected ? ' selected' : '') + '" data-tone="' + o.id + '">' +
                    '  <span class="ringtone-icon">' + o.icon + '</span>' +
                    '  <span class="ringtone-name">' + o.name + '</span>' +
                    '</div>';
-        }).join('');
+        }).join('') + 
+        // 添加铃声按钮
+        '<div class="ringtone-item ringtone-item-add" data-tone="add">' +
+        '  <span class="ringtone-icon">➕</span>' +
+        '  <span class="ringtone-name">添加铃声</span>' +
+        '  <span class="ringtone-hint">（自动截取10秒）</span>' +
+        '  <input type="file" class="ringtone-file-input" accept="audio/*" style="display:none;" />' +
+        '</div>';
     }
 
     // 重复
@@ -915,55 +1109,76 @@ function initAlarmModalListeners() {
     });
 
     // 铃声点击（只选择，不预览播放，只有闹钟真正响铃时才播放）
+    // 铃声点击（选中铃声或添加新铃声）
     document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
-        // 防止点击内部按钮时重复触发
-        if (e.target.classList.contains('ringtone-replace-btn')) return;
+        // 防止点击删除按钮时触发
+        if (e.target.classList.contains('ringtone-delete-btn')) return;
         
         const item = e.target.closest('.ringtone-item');
         if (!item) return;
         
         const tone = item.dataset.tone;
-        if (tone === 'custom') {
-            // 自定义铃声：
-            // - 已上传文件 → 选中为当前铃声（不播放预览）
-            // - 未上传文件 → 打开文件选择
-            if (modalState.customToneData) {
-                modalState.tone = 'custom';
-                renderModalControls();
-            } else {
-                const fileInput = item.querySelector('.ringtone-file-input');
-                if (fileInput) fileInput.click();
-            }
+        if (tone === 'add') {
+            // 添加新铃声：打开文件选择
+            const fileInput = item.querySelector('.ringtone-file-input');
+            if (fileInput) fileInput.click();
             return;
         }
         
-        modalState.tone = tone;
+        // 选中铃声（内置或自定义）
+        modalState.toneId = tone;
+        // 向后兼容：设置 tone 字段
+        const ringtone = getCustomRingtoneById(tone);
+        if (ringtone) {
+            modalState.tone = 'custom';
+            modalState.customToneName = ringtone.name;
+            modalState.customToneData = ringtone.data;
+        } else {
+            modalState.tone = tone;
+            modalState.customToneName = '';
+            modalState.customToneData = '';
+        }
         renderModalControls();
     });
 
-    // 自定义铃声：更换文件按钮
+    // 删除自定义铃声
     document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
-        if (!e.target.classList.contains('ringtone-replace-btn')) return;
+        if (!e.target.classList.contains('ringtone-delete-btn')) return;
         e.preventDefault();
         e.stopPropagation();
-        const item = e.target.closest('.ringtone-item');
-        const fileInput = item?.querySelector('.ringtone-file-input');
-        if (fileInput) fileInput.click();
+        
+        const ringtoneId = e.target.dataset.ringtoneId;
+        if (!ringtoneId) return;
+        
+        if (!confirm('确定要删除这个铃声吗？')) return;
+        
+        // 删除铃声
+        deleteCustomRingtone(ringtoneId);
+        
+        // 如果当前选中的是这个铃声，切换到默认铃声
+        if (modalState.toneId === ringtoneId) {
+            modalState.toneId = 'classic';
+            modalState.tone = 'classic';
+            modalState.customToneName = '';
+            modalState.customToneData = '';
+        }
+        
+        renderModalControls();
     });
 
-    // 自定义铃声文件上传
-    document.getElementById('ringtoneList')?.addEventListener('change', function (e) {
+    // 上传新铃声（自动截取前10秒）
+    document.getElementById('ringtoneList')?.addEventListener('change', async function (e) {
         const fileInput = e.target.closest('.ringtone-file-input');
         if (!fileInput) return;
         
         const file = fileInput.files?.[0];
         if (!file) return;
         
-        // 限制文件大小（500KB，约等于存储 700KB Base64）
-        const MAX_SIZE = 500 * 1024;
+        // 限制文件大小（5MB，截取后会更小）
+        const MAX_SIZE = 5 * 1024 * 1024;
         if (file.size > MAX_SIZE) {
             const mb = (file.size / 1024 / 1024).toFixed(2);
-            alert('⚠️ 文件太大（' + mb + ' MB）！\n\n请选择小于 500KB 的音频文件。\n\n建议：用较短的铃声片段或压缩后的 MP3。');
+            alert('⚠️ 文件太大（' + mb + ' MB）！\n\n请选择小于 5MB 的音频文件。');
             return;
         }
         
@@ -973,24 +1188,24 @@ function initAlarmModalListeners() {
             return;
         }
         
-        const reader = new FileReader();
-        reader.onload = function (event) {
-            const audioData = event.target?.result || '';
-            if (!audioData || !audioData.startsWith('data:audio')) {
-                alert('⚠️ 不是有效的音频文件，请重新选择。');
-                return;
-            }
+        try {
+            // 添加到铃声库（自动截取前10秒）
+            const ringtone = await addCustomRingtone(file);
+            
+            // 自动选中刚添加的铃声
+            modalState.toneId = ringtone.id;
             modalState.tone = 'custom';
-            modalState.customToneName = file.name;
-            modalState.customToneData = audioData;
+            modalState.customToneName = ringtone.name;
+            modalState.customToneData = ringtone.data;
+            
             renderModalControls();
-            // 立即预解码，确保响铃时可播放（不播放预览）
-            preloadCustomTone(audioData);
-        };
-        reader.onerror = function () {
-            alert('⚠️ 文件读取失败，请重试。');
-        };
-        reader.readAsDataURL(file);
+            alert('✅ 铃声已添加！（自动截取前10秒）');
+        } catch (error) {
+            alert('❌ 添加铃声失败：' + error);
+        }
+        
+        // 清空文件输入
+        fileInput.value = '';
     });
 
     // 重复
@@ -1082,6 +1297,7 @@ function saveAlarm() {
             existing.time = timeStr;
             existing.name = name;
             existing.tone = modalState.tone;
+            existing.toneId = modalState.toneId;  // 保存铃声ID
             existing.repeat = modalState.repeat;
             existing.vibrate = modalState.vibrate;
             existing.customDays = modalState.customDays.slice();
@@ -1091,6 +1307,7 @@ function saveAlarm() {
     } else {
         const newAlarm = buildAlarmData(timeStr, name, true);
         newAlarm.tone = modalState.tone;
+        newAlarm.toneId = modalState.toneId;  // 保存铃声ID
         newAlarm.repeat = modalState.repeat;
         newAlarm.vibrate = modalState.vibrate;
         newAlarm.customDays = modalState.customDays.slice();
