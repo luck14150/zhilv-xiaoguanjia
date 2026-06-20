@@ -1106,11 +1106,13 @@ let modalState = {
     hour: 8, minute: 0, second: 0,
     name: '',
     tone: 'classic',
+    toneId: 'classic',
     repeat: 'daily',
     vibrate: false,
     customDays: [],
     customToneName: '',
-    customToneData: ''
+    customToneData: '',
+    pendingAddedRingtoneIds: []   // 本次打开模态框期间新上传的铃声ID（取消/改选时自动清理）
 };
 
 const RINGTONE_OPTIONS = [
@@ -1150,11 +1152,13 @@ function openAlarmModal(id) {
             modalState.second = t.s;
             modalState.name = alarm.name || '';
             modalState.tone = alarm.tone || 'classic';
+            modalState.toneId = alarm.toneId || 'classic';
             modalState.repeat = alarm.repeat || 'daily';
             modalState.vibrate = !!alarm.vibrate;
             modalState.customDays = (alarm.customDays || []).slice();
             modalState.customToneName = alarm.customToneName || '';
             modalState.customToneData = alarm.customToneData || '';
+            modalState.pendingAddedRingtoneIds = [];
             if (titleEl) titleEl.textContent = '编辑闹钟';
             if (delBtn) delBtn.style.display = 'flex';
         }
@@ -1165,11 +1169,13 @@ function openAlarmModal(id) {
         modalState.second = 0;
         modalState.name = '';
         modalState.tone = 'classic';
+        modalState.toneId = 'classic';
         modalState.repeat = 'daily';
         modalState.vibrate = false;
         modalState.customDays = [];
         modalState.customToneName = '';
         modalState.customToneData = '';
+        modalState.pendingAddedRingtoneIds = [];
         if (titleEl) titleEl.textContent = '添加闹钟';
         if (delBtn) delBtn.style.display = 'none';
     }
@@ -1187,10 +1193,25 @@ function closeAlarmModal() {
     const overlay = document.getElementById('alarmModalOverlay');
     const modal = document.getElementById('alarmModal');
     if (!overlay || !modal) return;
-    
+
     // 停止铃声试听
     stopPreviewTone();
-    
+
+    // 清理「本次新上传但最终未被选中的铃声」（避免铃声残留在铃声库里越积越多）
+    const pending = modalState.pendingAddedRingtoneIds || [];
+    if (pending.length) {
+        const data = loadData();
+        const finalToneId = modalState.toneId;
+        let changed = false;
+        for (const rid of pending) {
+            if (rid === finalToneId) continue; // 本次选中的铃声保留
+            data.customRingtones = (data.customRingtones || []).filter(r => r.id !== rid);
+            changed = true;
+        }
+        if (changed) saveData(data);
+        modalState.pendingAddedRingtoneIds = [];
+    }
+
     overlay.classList.remove('active');
     modal.classList.remove('active');
     setTimeout(() => { overlay.style.display = 'none'; }, 300);
@@ -1371,13 +1392,18 @@ function initAlarmModalListeners() {
         try {
             // 添加到铃声库（自动截取前10秒）
             const ringtone = await addCustomRingtone(file);
-            
+
+            // 记录本次上传到待确认列表，若最终未选中/用户取消则自动清理
+            if (!modalState.pendingAddedRingtoneIds.includes(ringtone.id)) {
+                modalState.pendingAddedRingtoneIds.push(ringtone.id);
+            }
+
             // 自动选中刚添加的铃声
             modalState.toneId = ringtone.id;
             modalState.tone = 'custom';
             modalState.customToneName = ringtone.name;
             modalState.customToneData = ringtone.data;
-            
+
             renderModalControls();
             alert('✅ 铃声已添加！（自动截取前10秒）');
         } catch (error) {
