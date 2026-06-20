@@ -2001,9 +2001,219 @@ body {
 .day-schedule-info {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     border-radius: 12px;
-    padding: 12px;
+    padding: 16px;
     margin-bottom: 10px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+}
+
+/* 每日激励语标题 - 固定不滚动 */
+.day-motivation-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #5aa8e0;
+    padding: 6px 0;
+    text-align: center;
+    letter-spacing: 2px;
+}
+
+/* 控制按钮区域 - 位于红色框上方 */
+.day-motivation-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.motivation-btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(90, 168, 224, 0.4);
+    background: rgba(90, 168, 224, 0.1);
+    color: #5aa8e0;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.motivation-btn:hover {
+    background: rgba(90, 168, 224, 0.25);
+    border-color: #5aa8e0;
+    transform: translateY(-1px);
+}
+
+.motivation-btn:active {
+    transform: translateY(0);
+}
+
+/* 激励语显示框 - 红色方框，可滚动，尽量撑大 */
+.day-motivation-box {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 16px 20px;
+    min-height: 180px;
+    max-height: 320px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+}
+
+.day-motivation-content {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    line-height: 1.8;
+    text-align: center;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.day-motivation-content::before {
+    content: "「";
+    color: #5aa8e0;
+    margin-right: 4px;
+}
+
+.day-motivation-content::after {
+    content: "」";
+    color: #5aa8e0;
+    margin-left: 4px;
+}
+
+/* 滚动条美化 */
+.day-motivation-box::-webkit-scrollbar {
+    width: 6px;
+}
+
+.day-motivation-box::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.day-motivation-box::-webkit-scrollbar-thumb {
+    background: rgba(90, 168, 224, 0.3);
+    border-radius: 3px;
+}
+
+.day-motivation-box::-webkit-scrollbar-thumb:hover {
+    background: rgba(90, 168, 224, 0.5);
+}
+
+/* 弹窗样式 */
+.motivation-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.motivation-modal.show {
+    display: flex;
+}
+
+.motivation-modal-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.motivation-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.motivation-hint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    line-height: 1.6;
+}
+
+.motivation-textarea {
+    width: 100%;
+    min-height: 100px;
+    max-height: 200px;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.6;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.motivation-textarea:focus {
+    outline: none;
+    border-color: #5aa8e0;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 2px rgba(90, 168, 224, 0.2);
+}
+
+.motivation-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.motivation-modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding-top: 8px;
+}
+
+.motivation-modal-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.motivation-modal-btn.cancel {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.motivation-modal-btn.cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.motivation-modal-btn.confirm {
+    background: rgba(90, 168, 224, 0.2);
+    border-color: rgba(90, 168, 224, 0.5);
+    color: #5aa8e0;
+}
+
+.motivation-modal-btn.confirm:hover {
+    background: rgba(90, 168, 224, 0.35);
+    color: #fff;
 }
 
 .day-schedule-stats {
@@ -2072,22 +2282,6 @@ body {
 .day-schedule-score-input::-webkit-outer-spin-button {
     -webkit-appearance: none;
     margin: 0;
-}
-
-.day-date-text {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 3px;
-    display: flex;
-    justify-content: center;
-}
-
-.day-lunar-text {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-    display: flex;
-    justify-content: center;
 }
 
 /* 作息详情页的可编辑输入区域 */

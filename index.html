@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>智律小管家</title>
-    <link rel="stylesheet" href="style.css?v=2026062106">
+    <link rel="stylesheet" href="style.css?v=2026062107">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -444,10 +444,47 @@
                         <span class="day-schedule-title" id="dayScheduleTitle">今日作息</span>
                     </div>
 
-                    <!-- 日期信息 -->
+                    <!-- 日期信息 - 固定为"每日激励语" -->
                     <div class="day-schedule-info">
-                        <div class="day-date-text" id="dayDateText"></div>
-                        <div class="day-lunar-text" id="dayLunarText"></div>
+                        <div class="day-motivation-title">每日激励语</div>
+                        
+                        <!-- 输入控制按钮 -->
+                        <div class="day-motivation-controls">
+                            <button class="motivation-btn" onclick="showManualMotivationInput()">✏️ 手动输入</button>
+                            <button class="motivation-btn" onclick="showAIMotivationInput()">✨ AI填写</button>
+                        </div>
+                        
+                        <!-- 激励语显示框 - 可滚动，撑大容器 -->
+                        <div class="day-motivation-box">
+                            <div class="day-motivation-content" id="dayMotivationContent">
+                                点击上方"手动输入"或"AI填写"添加激励语
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 手动输入弹窗 -->
+                    <div class="motivation-modal" id="manualMotivationModal" onclick="closeMotivationModal('manualMotivationModal', event)">
+                        <div class="motivation-modal-content" onclick="event.stopPropagation()">
+                            <div class="motivation-modal-title">手动输入激励语</div>
+                            <textarea class="motivation-textarea" id="manualMotivationInput" placeholder="请输入激励语（可多行）..."></textarea>
+                            <div class="motivation-modal-buttons">
+                                <button class="motivation-modal-btn cancel" onclick="closeMotivationModal('manualMotivationModal')">取消</button>
+                                <button class="motivation-modal-btn confirm" onclick="saveManualMotivation()">保存</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI填写弹窗 -->
+                    <div class="motivation-modal" id="AIMotivationModal" onclick="closeMotivationModal('AIMotivationModal', event)">
+                        <div class="motivation-modal-content" onclick="event.stopPropagation()">
+                            <div class="motivation-modal-title">AI填写激励语</div>
+                            <div class="motivation-hint">输入关键词，AI将生成简洁明了的激励语</div>
+                            <textarea class="motivation-textarea" id="AIMotivationKeyword" placeholder="例如：工作、学习、健康、坚持..."></textarea>
+                            <div class="motivation-modal-buttons">
+                                <button class="motivation-modal-btn cancel" onclick="closeMotivationModal('AIMotivationModal')">取消</button>
+                                <button class="motivation-modal-btn confirm" onclick="generateAIMotivation()">✨ 生成</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- 统计选项栏 -->
@@ -687,6 +724,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-    <script src="script.js?v=2026062106"></script>
+    <script src="script.js?v=2026062107"></script>
 </body>
 </html>

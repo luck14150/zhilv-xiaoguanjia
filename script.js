@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062106';
+const APP_VERSION = '2026062107';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -2545,47 +2545,268 @@ function showDaySchedule(dateStr) {
     
     // 渲染日期信息
     const titleEl = document.getElementById('dayScheduleTitle');
-    const dateTextEl = document.getElementById('dayDateText');
-    const lunarTextEl = document.getElementById('dayLunarText');
     
     const isToday = dateStr === todayStr;
     titleEl.textContent = isToday ? '今日作息' : `${date.getMonth() + 1}月${date.getDate()}日作息`;
     
-    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-    const defaultDateText = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdayNames[date.getDay()]}`;
-    const defaultLunarText = getLunarDate(date);
-    
-    // 读取用户自定义的日期和农历文本
-    const savedDateNote = getDayDetailNote(dateStr, 'date');
-    const savedLunarNote = getDayDetailNote(dateStr, 'lunar');
-    
-    // 日期信息（可编辑）
-    dateTextEl.innerHTML = `<textarea class="day-detail-input" 
-                                      data-date="${dateStr}" 
-                                      data-field="date"
-                                      rows="1"
-                                      placeholder="${defaultDateText}"
-                                      onblur="saveDayDetailNote('${dateStr}', 'date', this.value)"
-                                      oninput="autoResizeTextarea(this)">${escapeHtml(savedDateNote || defaultDateText)}</textarea>`;
-    
-    // 农历信息（可编辑，大区域，支持滚动）
-    lunarTextEl.innerHTML = `<textarea class="day-detail-input day-detail-lunar" 
-                                        data-date="${dateStr}" 
-                                        data-field="lunar"
-                                        rows="4"
-                                        placeholder="${defaultLunarText}&#10;（可手动编辑、添加备注）"
-                                        onblur="saveDayDetailNote('${dateStr}', 'lunar', this.value)"
-                                        oninput="autoResizeTextarea(this)">${escapeHtml(savedLunarNote || defaultLunarText)}</textarea>`;
-    
-    // 初始化 textarea 高度
-    setTimeout(() => {
-        const textareas = document.querySelectorAll('#page-day-schedule .day-detail-input');
-        textareas.forEach(ta => autoResizeTextarea(ta));
-    }, 50);
+    // 读取并显示当日的激励语
+    const motivationEl = document.getElementById('dayMotivationContent');
+    const savedMotivation = getDayMotivation(dateStr);
+    if (savedMotivation) {
+        motivationEl.textContent = savedMotivation;
+    } else {
+        motivationEl.textContent = '点击上方"手动输入"或"AI填写"添加激励语';
+    }
     
     renderScheduleList();
     window.scrollTo(0, 0);
 }
+
+// ========== 每日激励语功能 ==========
+
+// 读取某天的激励语
+function getDayMotivation(dateStr) {
+    return localStorage.getItem(`day_motivation_${dateStr}`) || '';
+}
+
+// 保存某天的激励语
+function saveDayMotivation(dateStr, value) {
+    if (value && value.trim()) {
+        localStorage.setItem(`day_motivation_${dateStr}`, value.trim());
+    } else {
+        localStorage.removeItem(`day_motivation_${dateStr}`);
+    }
+}
+
+// 显示手动输入弹窗
+function showManualMotivationInput() {
+    const modal = document.getElementById('manualMotivationModal');
+    const textarea = document.getElementById('manualMotivationInput');
+    
+    // 预填充已保存的内容
+    const saved = getDayMotivation(currentScheduleDate);
+    textarea.value = saved || '';
+    
+    modal.classList.add('show');
+    textarea.focus();
+}
+
+// 保存手动输入的激励语
+function saveManualMotivation() {
+    const textarea = document.getElementById('manualMotivationInput');
+    const value = textarea.value.trim();
+    
+    saveDayMotivation(currentScheduleDate, value);
+    
+    // 更新显示
+    const motivationEl = document.getElementById('dayMotivationContent');
+    motivationEl.textContent = value || '点击上方"手动输入"或"AI填写"添加激励语';
+    
+    closeMotivationModal('manualMotivationModal');
+}
+
+// 显示AI填写弹窗
+function showAIMotivationInput() {
+    const modal = document.getElementById('AIMotivationModal');
+    const textarea = document.getElementById('AIMotivationKeyword');
+    
+    // 清空关键词输入
+    textarea.value = '';
+    
+    modal.classList.add('show');
+    textarea.focus();
+}
+
+// AI生成激励语 - 本地模板生成
+function generateAIMotivation() {
+    const textarea = document.getElementById('AIMotivationKeyword');
+    let keywords = textarea.value.trim();
+    
+    // 默认关键词
+    if (!keywords) {
+        keywords = '坚持 努力 成长';
+    }
+    
+    // 解析关键词（支持空格、逗号、顿号分隔）
+    const keywordArray = keywords.split(/[\s,，、]+/).filter(k => k.length > 0);
+    
+    // 根据关键词生成激励语
+    const motivation = generateMotivationFromKeywords(keywordArray);
+    
+    // 保存并显示
+    saveDayMotivation(currentScheduleDate, motivation);
+    const motivationEl = document.getElementById('dayMotivationContent');
+    motivationEl.textContent = motivation;
+    
+    closeMotivationModal('AIMotivationModal');
+}
+
+// 从关键词生成激励语
+function generateMotivationFromKeywords(keywords) {
+    // 激励语模板库
+    const templates = {
+        '工作': [
+            '今日的每一份认真，都是明日成功的基石。',
+            '专注当下，用心做事，时间会给出最好的答案。',
+            '工作不仅是责任，更是成长的养分。',
+            '把每一件小事做好，就是对自己最好的交代。',
+            '用心对待每一份任务，收获每一次进步。'
+        ],
+        '学习': [
+            '知识没有边界，成长没有终点。',
+            '今日所学，明日所用，终身学习。',
+            '学如逆水行舟，不进则退，保持好奇心。',
+            '每一次思考都是进步的开始。',
+            '学习是对自己最好的投资，永不过期。'
+        ],
+        '健康': [
+            '健康是一切的基础，照顾好自己是最重要的事。',
+            '早睡早起，精神百倍，健康生活每一天。',
+            '身体是革命的本钱，爱护自己，从今天开始。',
+            '运动让身体强壮，休息让心灵恢复。',
+            '健康生活，规律作息，是对自己最好的爱。'
+        ],
+        '坚持': [
+            '坚持的意义不在于结果，而在于过程中的每一步。',
+            '今天再坚持一下，明天就会感谢自己。',
+            '坚持是一种习惯，习惯决定命运。',
+            '不轻易放弃，就会看到希望的曙光。',
+            '每一次坚持，都是对梦想的靠近。'
+        ],
+        '努力': [
+            '努力不一定成功，但不努力一定不会进步。',
+            '今日的汗水，是明日的荣耀。',
+            '努力的人，运气不会太差。',
+            '脚踏实地，一步一步，终将抵达。',
+            '努力是一种态度，也是一种能力。'
+        ],
+        '成长': [
+            '每一次突破，都是成长的证明。',
+            '成长就是不断超越过去的自己。',
+            '保持学习的心态，每天都有新收获。',
+            '成长是一场马拉松，不是百米冲刺。',
+            '敢于挑战自己，才能遇见更好的自己。'
+        ],
+        '生活': [
+            '热爱生活的人，生活也会热爱他。',
+            '生活不需要完美，只需要真实。',
+            '在平凡的日子里，寻找不平凡的意义。',
+            '用心感受每一刻，生活处处是美好。',
+            '简单生活，简单快乐，简单幸福。'
+        ],
+        '感恩': [
+            '感恩每一天，感恩身边的每一个人。',
+            '心怀感恩，遇见更多美好。',
+            '感恩让心灵更柔软，让生活更温暖。',
+            '每一份拥有都是恩赐，每一次相遇都是缘分。',
+            '以感恩之心，迎接每一天的阳光。'
+        ],
+        '梦想': [
+            '有梦想谁都了不起，勇敢去追。',
+            '梦想的路上不拥挤，坚持的人不多。',
+            '今日的梦想，是明日的现实。',
+            '不为失败找借口，只为成功找方法。',
+            '保持梦想，保持热爱，奔赴山海。'
+        ],
+        '时间': [
+            '时间不会辜负每一个认真的人。',
+            '珍惜当下，把握每一分每一秒。',
+            '时间是最公平的，每个人都有24小时。',
+            '把时间用在有意义的事情上。',
+            '今日的时间，塑造明日的自己。'
+        ],
+        '心态': [
+            '心态决定状态，状态决定未来。',
+            '积极的心态，是最好的护身符。',
+            '放宽心，慢慢来，一切都会好起来。',
+            '心若向阳，无畏悲伤。',
+            '保持乐观，生活处处是阳光。'
+        ]
+    };
+    
+    // 通用模板（当没有匹配的关键词时使用）
+    const generalTemplates = [
+        '今日事今日毕，明日事今日谋。',
+        '用积极的心态，迎接美好的一天。',
+        '每一步都是进步，每一天都是开始。',
+        '用心做事，真诚待人，定会收获。',
+        '相信自己，你比想象中更强大。',
+        '今日的努力，是明日的底气。',
+        '保持热爱，奔赴山海，未来可期。',
+        '一天一点进步，一月一点成长。',
+        '认真的人改变自己，坚持的人改变命运。',
+        '把平凡的事情做好，就是不平凡。'
+    ];
+    
+    // 收集匹配的模板
+    let selectedSentences = [];
+    
+    for (const keyword of keywords) {
+        // 精确匹配
+        if (templates[keyword]) {
+            const pool = templates[keyword];
+            const randomIndex = Math.floor(Math.random() * pool.length);
+            selectedSentences.push(pool[randomIndex]);
+        } else {
+            // 模糊匹配 - 检查其他关键词是否包含
+            let found = false;
+            for (const key in templates) {
+                if (key.includes(keyword) || keyword.includes(key)) {
+                    const pool = templates[key];
+                    const randomIndex = Math.floor(Math.random() * pool.length);
+                    selectedSentences.push(pool[randomIndex]);
+                    found = true;
+                    break;
+                }
+            }
+            // 未匹配则用通用模板
+            if (!found) {
+                const randomIndex = Math.floor(Math.random() * generalTemplates.length);
+                selectedSentences.push(generalTemplates[randomIndex]);
+            }
+        }
+    }
+    
+    // 如果没有关键词或选择了太多，截取2-3句
+    let result;
+    if (selectedSentences.length === 0) {
+        const randomIndex = Math.floor(Math.random() * generalTemplates.length);
+        result = generalTemplates[randomIndex];
+    } else if (selectedSentences.length === 1) {
+        result = selectedSentences[0];
+    } else {
+        // 截取2-3句组成一段话
+        const count = Math.min(selectedSentences.length, 3);
+        result = selectedSentences.slice(0, count).join('\n');
+    }
+    
+    return result;
+}
+
+// 关闭激励语弹窗
+function closeMotivationModal(modalId, event) {
+    // 如果提供了事件且点击的不是弹内容（即点击了背景），才关闭
+    if (event && event.target && !event.target.classList.contains('motivation-modal')) {
+        return;
+    }
+    
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+// 点击弹窗背景关闭
+document.addEventListener('DOMContentLoaded', function() {
+    const motivationModals = document.querySelectorAll('.motivation-modal');
+    motivationModals.forEach(modal => {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('show');
+            }
+        });
+    });
+});
 
 // 自动调整 textarea 高度
 function autoResizeTextarea(textarea) {
