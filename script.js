@@ -726,12 +726,22 @@ function renderModalControls() {
     // 铃声
     const toneEl = document.getElementById('ringtoneList');
     if (toneEl) {
-        const customToneName = modalState.customToneName || '点击上传';
+        // 根据是否已有上传文件，显示不同的 UI
+        const hasCustom = !!modalState.customToneData;
+        const customNameRaw = modalState.customToneName || '';
+        // 文件名过长截断显示
+        const customNameDisplay = hasCustom 
+            ? (customNameRaw.length > 8 ? customNameRaw.substring(0, 8) + '...' : customNameRaw)
+            : '选择铃声';
+        
         toneEl.innerHTML = RINGTONE_OPTIONS.map(o => {
             if (o.id === 'custom') {
                 return '<div class="ringtone-item ringtone-item-custom' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
                        '  <span class="ringtone-icon">' + o.icon + '</span>' +
-                       '  <span class="ringtone-name">' + customToneName + '</span>' +
+                       '  <span class="ringtone-name">' + (hasCustom ? customNameDisplay : '选择铃声') + '</span>' +
+                       (hasCustom 
+                           ? '  <button class="ringtone-replace-btn" title="更换铃声">更换</button>' 
+                           : '  <span class="ringtone-hint">（支持 MP3/WAV/OGG）</span>') +
                        '  <input type="file" class="ringtone-file-input" accept="audio/*" style="display:none;" />' +
                        '</div>';
             }
@@ -797,24 +807,43 @@ function initAlarmModalListeners() {
         modalState.name = this.value;
     });
 
-    // 铃声
+    // 铃声点击
     document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
+        // 防止点击内部按钮时重复触发
+        if (e.target.classList.contains('ringtone-replace-btn')) return;
+        
         const item = e.target.closest('.ringtone-item');
         if (!item) return;
         
         const tone = item.dataset.tone;
         if (tone === 'custom') {
-            // 点击自定义铃声，触发文件选择
-            const fileInput = item.querySelector('.ringtone-file-input');
-            if (fileInput) {
-                fileInput.click();
+            // 自定义铃声：
+            // - 已上传文件 → 点击播放预览（作为铃声预览）
+            // - 未上传文件 → 打开文件选择
+            if (modalState.customToneData) {
+                modalState.tone = 'custom';
+                renderModalControls();
+                playAlarmSound('custom', modalState.customToneData);
+            } else {
+                const fileInput = item.querySelector('.ringtone-file-input');
+                if (fileInput) fileInput.click();
             }
             return;
         }
         
         modalState.tone = tone;
         renderModalControls();
-        playAlarmSound(modalState.tone);
+        playAlarmSound(modalState.tone, modalState.customToneData);
+    });
+
+    // 自定义铃声：更换文件按钮
+    document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
+        if (!e.target.classList.contains('ringtone-replace-btn')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const item = e.target.closest('.ringtone-item');
+        const fileInput = item?.querySelector('.ringtone-file-input');
+        if (fileInput) fileInput.click();
     });
 
     // 自定义铃声文件上传
@@ -837,10 +866,8 @@ function initAlarmModalListeners() {
             modalState.customToneName = file.name;
             modalState.customToneData = event.target?.result || '';
             renderModalControls();
-            // 预览播放
-            const audio = new Audio(modalState.customToneData);
-            audio.volume = 0.5;
-            audio.play().catch(() => {});
+            // 用统一的 playAlarmSound 预览（真正的铃声预览而不是普通音乐播放）
+            playAlarmSound('custom', modalState.customToneData);
         };
         reader.readAsDataURL(file);
     });
