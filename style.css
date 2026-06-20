@@ -1469,7 +1469,7 @@ body {
 .calendar-container {
     background: #fff;
     border-radius: 16px;
-    padding: 12px;
+    padding: 10px 12px 6px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -1548,7 +1548,7 @@ body {
 }
 
 .calendar-grid {
-    margin-bottom: 8px;
+    margin-bottom: 0;
 }
 
 .calendar-header {
@@ -1575,7 +1575,8 @@ body {
 }
 
 .calendar-day {
-    min-height: 72px;
+    min-height: 56px;
+    height: auto;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
