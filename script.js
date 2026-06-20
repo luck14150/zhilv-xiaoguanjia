@@ -3223,6 +3223,8 @@ function startAICallWith(topic) {
     if (!isCallActive) {
         startAICall();
     }
+    const history = document.getElementById('aiCallHistory');
+    if (history) history.style.display = 'block';
     const listEl = document.getElementById('aiCallHistoryList');
     if (listEl) {
         const newMsg = document.createElement('div');
@@ -3234,6 +3236,9 @@ function startAICallWith(topic) {
         aiResp.className = 'ai-call-history-item ai-ai';
         aiResp.innerHTML = `<span class="history-role">AI助手</span><p>好的，我来帮您处理关于${topic}的内容。请问您具体需要什么帮助？</p>`;
         listEl.appendChild(aiResp);
+
+        // 自动滚动到底部，让新消息可见
+        history.scrollTop = history.scrollHeight;
     }
 }
 
