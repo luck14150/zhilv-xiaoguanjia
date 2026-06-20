@@ -1908,6 +1908,9 @@ function renderScheduleList() {
     const scheduleListEl = document.getElementById('dayScheduleList');
     const items = getScheduleData(dateStr);
     
+    // 计算统计数据
+    updateScheduleStats(items);
+    
     let html = '';
     items.forEach((item, idx) => {
         const hour = parseInt(item.time.split(':')[0]);
@@ -1940,6 +1943,28 @@ function renderScheduleList() {
     `;
     
     scheduleListEl.innerHTML = html;
+}
+
+function updateScheduleStats(items) {
+    const total = items.length;
+    const completed = items.filter(item => item.checked).length;
+    
+    // 完成情况（百分比）
+    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    document.getElementById('statCompletion').textContent = completionRate + '%';
+    
+    // 完成件数
+    document.getElementById('statCount').textContent = completed + '/' + total;
+    
+    // 打分情况（简单计算：完成率对应分数）
+    let score = '-';
+    if (total > 0) {
+        if (completionRate >= 90) score = '优秀';
+        else if (completionRate >= 70) score = '良好';
+        else if (completionRate >= 50) score = '一般';
+        else if (completionRate > 0) score = '需努力';
+    }
+    document.getElementById('statScore').textContent = score;
 }
 
 function updateScheduleTime(idx, newTime) {
