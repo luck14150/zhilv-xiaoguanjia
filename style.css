@@ -1796,27 +1796,28 @@ body {
 
 /* ============ 每日作息详情页面 ============ */
 .day-schedule-container {
-    padding: 12px;
+    padding: 8px;
     min-height: 100vh;
     background: linear-gradient(180deg, #ffffff 0%, #f5f5fa 100%);
+    box-sizing: border-box;
 }
 
 .day-schedule-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 4px 16px;
+    gap: 8px;
+    padding: 6px 4px 10px;
     border-bottom: 1px solid #e8e8f0;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
 }
 
 .day-back-btn {
     background: transparent;
     border: none;
     color: #5aa8e0;
-    font-size: 15px;
+    font-size: 14px;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 3px 6px;
     border-radius: 6px;
 }
 
@@ -1825,45 +1826,66 @@ body {
 }
 
 .day-schedule-title {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
     color: #1a1a2e;
 }
 
 .day-schedule-info {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 16px;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
 .day-date-text {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
 }
 
 .day-lunar-text {
-    font-size: 13px;
+    font-size: 12px;
     color: rgba(255, 255, 255, 0.7);
 }
 
 .day-schedule-list {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius: 12px;
+    padding: 10px;
+    max-height: calc(100vh - 180px);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.day-schedule-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.day-schedule-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+}
+
+.day-schedule-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+}
+
+.day-schedule-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .day-schedule-item {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 12px 14px;
+    gap: 10px;
+    padding: 10px 12px;
     background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    margin-bottom: 8px;
+    border-radius: 8px;
+    margin-bottom: 6px;
     transition: background 0.2s;
 }
 
