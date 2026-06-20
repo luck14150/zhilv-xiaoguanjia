@@ -1477,22 +1477,22 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
     border-bottom: 1px solid #e8e8e8;
 }
 
 .toolbar-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .cal-select {
-    padding: 8px 14px;
+    padding: 6px 10px;
     border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    font-size: 14px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: 500;
     color: #333;
     background: #fff;
@@ -1511,12 +1511,12 @@ body {
 }
 
 .cal-nav-btn {
-    width: 36px;
-    height: 36px;
+    width: 30px;
+    height: 30px;
     border: 1px solid #d9d9d9;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fff;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 300;
     color: #666;
     cursor: pointer;
@@ -1532,11 +1532,11 @@ body {
 }
 
 .cal-today-btn {
-    padding: 8px 20px;
+    padding: 6px 14px;
     border: 1px solid #5aa8e0;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #fff;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #5aa8e0;
     cursor: pointer;
@@ -1548,51 +1548,57 @@ body {
 }
 
 .calendar-grid {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .calendar-header {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    margin-bottom: 8px;
+    gap: 2px;
+    margin-bottom: 4px;
 }
 
 .calendar-day-name {
     text-align: center;
-    padding: 12px 8px;
-    font-size: 14px;
+    padding: 10px 4px;
+    font-size: 15px;
     font-weight: 600;
-    color: #666;
-    background: #f8f9fa;
+    color: #333;
+    background: #fafafa;
     border-radius: 8px;
 }
 
 .calendar-days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
+    gap: 2px;
 }
 
 .calendar-day {
-    aspect-ratio: 1;
+    min-height: 96px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     justify-content: flex-start;
-    padding: 8px 4px;
+    padding: 8px 10px;
     border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
+    border: 1px solid #f0f0f0;
 }
 
 .calendar-day:hover {
-    background: #f0f7ff;
+    border-color: #5aa8e0;
 }
 
 .calendar-day.other-month {
     opacity: 0.3;
+    background: #fafafa;
+}
+
+.calendar-day.other-month .day-date {
+    color: #999;
 }
 
 .calendar-day.today {
@@ -1617,64 +1623,83 @@ body {
     background: #e3f2fd;
 }
 
+.day-top-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
 .day-date {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 700;
     color: #333;
-    line-height: 1.2;
+    line-height: 1;
 }
 
 .day-lunar {
-    font-size: 10px;
+    font-size: 11px;
     color: #999;
     margin-top: 2px;
+    text-align: left;
 }
 
 .day-holiday-tag {
-    font-size: 9px;
+    font-size: 11px;
     color: #e74c3c;
     margin-top: 2px;
-    white-space: nowrap;
+    font-weight: 500;
+    text-align: left;
 }
 
 .day-rest-tag {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: 6px;
+    left: 6px;
     background: #e74c3c;
     color: #fff;
-    font-size: 9px;
-    padding: 1px 4px;
-    border-radius: 3px;
-    font-weight: 600;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    z-index: 2;
+}
+
+.calendar-day.has-rest {
+    padding-top: 28px;
+}
+
+.calendar-day.has-rest .day-top-row {
+    margin-bottom: 2px;
 }
 
 .calendar-tasks {
     background: #f8f9fa;
     border-radius: 12px;
-    padding: 16px;
+    padding: 14px;
 }
 
 .tasks-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .tasks-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: #333;
 }
 
 .add-task-btn {
-    padding: 6px 14px;
+    padding: 5px 12px;
     background: #5aa8e0;
     color: #fff;
     border: none;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
@@ -1687,22 +1712,22 @@ body {
 .tasks-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .task-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 8px 10px;
     background: #fff;
     border-radius: 8px;
     border: 1px solid #e0e0e0;
 }
 
 .task-checkbox {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
     border: 2px solid #ddd;
     cursor: pointer;

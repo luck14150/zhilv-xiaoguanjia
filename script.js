@@ -1733,18 +1733,22 @@ function renderDay(date, isOtherMonth) {
     if (isToday) classes.push('today');
     if (isSelected) classes.push('selected');
     if (isHol) classes.push('holiday');
+    if (isHol && !isOtherMonth) classes.push('has-rest');
 
-    let dateColor = 'color: #333;';
+    let dateColor = '';
     if (isSun || isSat) dateColor = 'color: #e74c3c;';
 
     let html = `<div class="${classes.join(' ')}" data-date="${dateStr}" onclick="selectDate('${dateStr}')">`;
     
+    // 休标签（左上角）
     if (isHol && !isOtherMonth) {
         html += '<span class="day-rest-tag">休</span>';
     }
     
+    // 日期数字
     html += `<span class="day-date" style="${dateColor}">${date.getDate()}</span>`;
     
+    // 农历 + 节日名称（日期下方）
     if (!isOtherMonth) {
         html += `<span class="day-lunar">${lunar}</span>`;
         if (holiday) {
