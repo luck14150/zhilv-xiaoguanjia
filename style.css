@@ -713,9 +713,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 24px;
+    padding: 24px 28px;
     background: #2a2a35;
-    border-radius: 18px;
+    border-radius: 20px;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -727,25 +727,31 @@ body {
 .alarm-left {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
+}
+
+.alarm-time-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
 }
 
 .alarm-period {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 0.5px;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
 }
 
 .alarm-time {
-    font-size: 40px;
+    font-size: 44px;
     font-weight: 300;
     color: #fff;
-    letter-spacing: -1px;
+    letter-spacing: 0;
     font-variant-numeric: tabular-nums;
 }
 
 .alarm-desc {
-    font-size: 13px;
+    font-size: 15px;
     color: rgba(255, 255, 255, 0.5);
 }
 
@@ -756,10 +762,10 @@ body {
 
 /* iOS 风格开关 */
 .alarm-toggle {
-    width: 52px;
-    height: 30px;
+    width: 58px;
+    height: 32px;
     background: rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
+    border-radius: 16px;
     position: relative;
     cursor: pointer;
     transition: background 0.3s;
@@ -773,8 +779,8 @@ body {
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     background: #fff;
     border-radius: 50%;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -782,12 +788,12 @@ body {
 }
 
 .alarm-toggle.on .alarm-toggle-thumb {
-    left: 24px;
+    left: 28px;
 }
 
 .add-alarm-btn {
-    margin: 20px 16px 30px;
-    padding: 16px;
+    margin: 24px 16px 30px;
+    padding: 18px;
     background: transparent;
     border: 2px dashed rgba(124, 140, 255, 0.4);
     border-radius: 18px;

@@ -50,8 +50,9 @@ function checkAlarms() {
     const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 
     document.querySelectorAll('.alarm-item').forEach(item => {
-        const time = item.querySelector('.alarm-time')?.textContent;
-        const period = item.querySelector('.alarm-period')?.textContent;
+        const timeLine = item.querySelector('.alarm-time-line');
+        const time = timeLine?.querySelector('.alarm-time')?.textContent;
+        const period = timeLine?.querySelector('.alarm-period')?.textContent;
         const toggle = item.querySelector('.alarm-toggle');
         
         if (!time || !toggle || !toggle.classList.contains('on')) return;
@@ -232,8 +233,9 @@ function syncAlarmsToServiceWorker() {
     const items = document.querySelectorAll('.alarm-item');
     const alarmList = [];
     items.forEach(item => {
-        const time = item.querySelector('.alarm-time')?.textContent;
-        const period = item.querySelector('.alarm-period')?.textContent;
+        const timeLine = item.querySelector('.alarm-time-line');
+        const time = timeLine?.querySelector('.alarm-time')?.textContent;
+        const period = timeLine?.querySelector('.alarm-period')?.textContent;
         const toggle = item.querySelector('.alarm-toggle');
         if (!time || !toggle) return;
         
