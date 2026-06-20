@@ -1537,17 +1537,14 @@ const SOLAR_TERMS = {
 
 let currentYear = 2026;
 let currentMonth = 5;
-let selectedDate = '';
 
 function initCalendar() {
     const now = new Date();
     currentYear = now.getFullYear();
     currentMonth = now.getMonth();
-    selectedDate = formatDate(now);
 
     bindCalendarEvents();
     renderCalendar();
-    renderTasks();
 }
 
 function bindCalendarEvents() {
@@ -1556,11 +1553,6 @@ function bindCalendarEvents() {
     const prevBtn = document.getElementById('calPrevBtn');
     const nextBtn = document.getElementById('calNextBtn');
     const todayBtn = document.getElementById('calTodayBtn');
-    const addTaskBtn = document.getElementById('calAddTaskBtn');
-    const modalClose = document.getElementById('modalClose');
-    const modalCancel = document.getElementById('modalCancel');
-    const modalConfirm = document.getElementById('modalConfirm');
-    const taskInput = document.getElementById('taskInput');
 
     if (yearSelect) yearSelect.addEventListener('change', () => {
         currentYear = parseInt(yearSelect.value, 10);
@@ -1598,22 +1590,8 @@ function bindCalendarEvents() {
         const now = new Date();
         currentYear = now.getFullYear();
         currentMonth = now.getMonth();
-        selectedDate = formatDate(now);
         updateSelects();
         renderCalendar();
-        renderTasks();
-    });
-
-    if (addTaskBtn) addTaskBtn.addEventListener('click', () => {
-        openTaskModal();
-    });
-
-    if (modalClose) modalClose.addEventListener('click', closeTaskModal);
-    if (modalCancel) modalCancel.addEventListener('click', closeTaskModal);
-    if (modalConfirm) modalConfirm.addEventListener('click', addTask);
-
-    if (taskInput) taskInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') addTask();
     });
 }
 
@@ -1720,7 +1698,6 @@ function renderCalendar() {
 function renderDay(date, isOtherMonth) {
     const dateStr = formatDate(date);
     const isToday = dateStr === formatDate(new Date());
-    const isSelected = dateStr === selectedDate;
     const holiday = getHoliday(date);
     const isHol = isHoliday(date);
     const lunar = getLunarDate(date);
@@ -1731,14 +1708,13 @@ function renderDay(date, isOtherMonth) {
     let classes = ['calendar-day'];
     if (isOtherMonth) classes.push('other-month');
     if (isToday) classes.push('today');
-    if (isSelected) classes.push('selected');
     if (isHol) classes.push('holiday');
     if (isHol && !isOtherMonth) classes.push('has-rest');
 
     let dateColor = '';
     if (isSun || isSat) dateColor = 'color: #e74c3c;';
 
-    let html = `<div class="${classes.join(' ')}" data-date="${dateStr}" onclick="selectDate('${dateStr}')">`;
+    let html = `<div class="${classes.join(' ')}" data-date="${dateStr}">`;
     
     // 休标签（左上角）
     if (isHol && !isOtherMonth) {
@@ -1759,100 +1735,4 @@ function renderDay(date, isOtherMonth) {
     html += '</div>';
     
     return html;
-}
-
-function selectDate(dateStr) {
-    selectedDate = dateStr;
-    renderCalendar();
-    renderTasks();
-}
-
-function renderTasks() {
-    const list = document.getElementById('calTasksList');
-    if (!list) return;
-
-    const data = loadData();
-    const tasks = data.calendar?.[selectedDate] || [];
-
-    if (tasks.length === 0) {
-        list.innerHTML = '<div class="tasks-empty">暂无事项，点击上方"+添加事项"添加</div>';
-        return;
-    }
-
-    list.innerHTML = tasks.map(task => {
-        const doneCls = task.done ? 'done' : '';
-        const checkedCls = task.done ? 'checked' : '';
-        return `
-            <div class="task-item ${doneCls}" data-id="${task.id}">
-                <span class="task-checkbox ${checkedCls}" onclick="toggleTaskDone('${task.id}')"></span>
-                <span class="task-text">${escapeHtml(task.text)}</span>
-                <span class="task-delete" onclick="deleteTask('${task.id}')">×</span>
-            </div>
-        `;
-    }).join('');
-}
-
-function openTaskModal() {
-    const modal = document.getElementById('calendarModal');
-    const title = document.getElementById('modalTitle');
-    const input = document.getElementById('taskInput');
-    
-    if (!modal) return;
-    
-    title.textContent = `${selectedDate} - 添加事项`;
-    input.value = '';
-    input.focus();
-    modal.classList.add('active');
-}
-
-function closeTaskModal() {
-    const modal = document.getElementById('calendarModal');
-    if (modal) modal.classList.remove('active');
-}
-
-function addTask() {
-    const input = document.getElementById('taskInput');
-    const text = input.value.trim();
-    
-    if (!text) return;
-    
-    const data = loadData();
-    if (!data.calendar) data.calendar = {};
-    if (!data.calendar[selectedDate]) data.calendar[selectedDate] = [];
-    
-    data.calendar[selectedDate].push({
-        id: 'task_' + Date.now(),
-        text: text,
-        done: false,
-        created: Date.now()
-    });
-    
-    saveData(data);
-    closeTaskModal();
-    renderTasks();
-}
-
-function toggleTaskDone(taskId) {
-    const data = loadData();
-    if (!data.calendar?.[selectedDate]) return;
-    
-    const task = data.calendar[selectedDate].find(t => t.id === taskId);
-    if (task) {
-        task.done = !task.done;
-        saveData(data);
-        renderTasks();
-    }
-}
-
-function deleteTask(taskId) {
-    const data = loadData();
-    if (!data.calendar?.[selectedDate]) return;
-    
-    data.calendar[selectedDate] = data.calendar[selectedDate].filter(t => t.id !== taskId);
-    if (data.calendar[selectedDate].length === 0) {
-        delete data.calendar[selectedDate];
-    }
-    
-    saveData(data);
-    renderTasks();
 }
