@@ -3299,8 +3299,10 @@ function switchMode(mode) {
 
 /* ============ 记忆管理功能 ============ */
 const MEMORY_KEY = 'zhilv_memory_data';
+// 归为"文件夹"的分类（其他分类视为"未分类"）
+const FOLDER_CATEGORIES = ['学习笔记', '生活感悟', '工作总结', '灵感创意'];
 let memoryData = [];
-let currentMemoryCategory = 'all';
+let currentMemoryCategory = 'all';   // 'all' | 'folder' | 'uncategorized'
 let editingMemoryId = null;
 let selectedCategory = '学习笔记';
 
@@ -3332,9 +3334,12 @@ function renderMemoryList() {
     const emptyEl = document.getElementById('memoryEmpty');
     if (!listEl) return;
 
+    // 根据当前筛选类型过滤数据
     let filtered = memoryData;
-    if (currentMemoryCategory !== 'all') {
-        filtered = memoryData.filter(item => item.category === currentMemoryCategory);
+    if (currentMemoryCategory === 'folder') {
+        filtered = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category));
+    } else if (currentMemoryCategory === 'uncategorized') {
+        filtered = memoryData.filter(item => !item.category || !FOLDER_CATEGORIES.includes(item.category));
     }
 
     // 按创建时间排序（最新的在前）
@@ -3364,14 +3369,19 @@ function renderMemoryList() {
         });
     }
 
-    // 更新统计
-    const totalEl = document.getElementById('memoryTotal');
-    const todayEl = document.getElementById('memoryReviewToday');
-    if (totalEl) totalEl.textContent = memoryData.length;
-    if (todayEl) {
-        const todayCount = memoryData.filter(m => isToday(m.createdAt)).length;
-        todayEl.textContent = todayCount;
-    }
+    // 更新三个筛选按钮的统计数字
+    const total = memoryData.length;
+    const folderCount = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category)).length;
+    const uncategorizedCount = total - folderCount;
+
+    const allNumEl = document.getElementById('filterAllNum');
+    const folderNumEl = document.getElementById('filterFolderNum');
+    const uncNumEl = document.getElementById('filterUncategorizedNum');
+    const totalNumEl = document.getElementById('filterTotalNum');
+    if (allNumEl) allNumEl.textContent = total;
+    if (folderNumEl) folderNumEl.textContent = folderCount;
+    if (uncNumEl) uncNumEl.textContent = uncategorizedCount;
+    if (totalNumEl) totalNumEl.textContent = total;
 }
 
 function isToday(timestamp) {
@@ -3396,8 +3406,8 @@ function formatDateMemory(timestamp) {
 function filterMemory(category, element) {
     currentMemoryCategory = category;
 
-    // 更新选中状态
-    document.querySelectorAll('.category-tag').forEach(el => el.classList.remove('active'));
+    // 更新三个筛选按钮的选中状态
+    document.querySelectorAll('.memory-filter-btn').forEach(el => el.classList.remove('active'));
     if (element) element.classList.add('active');
 
     renderMemoryList();

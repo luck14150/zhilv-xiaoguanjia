@@ -421,28 +421,31 @@
             <!-- 记忆库页面 -->
             <section class="page" id="page-memory">
                 <div class="memory-container">
-                    <div class="memory-header">
-                        <h2 class="memory-title">记忆库</h2>
-                        <div class="memory-stats">
-                            <span class="memory-stat">
-                                <span class="memory-stat-num" id="memoryTotal">0</span>
-                                <span class="memory-stat-label">条记忆</span>
-                            </span>
-                            <span class="memory-stat">
-                                <span class="memory-stat-num" id="memoryReviewToday">0</span>
-                                <span class="memory-stat-label">今日复习</span>
+                    <!-- 筛选栏：全部 / 文件夹 / 未分类 -->
+                    <div class="memory-filter" id="memoryFilter">
+                        <div class="memory-filter-btn active" data-filter="all" onclick="filterMemory('all', this)">
+                            <div class="memory-filter-row">
+                            <span class="memory-filter-icon">📄</span>
+                            <span class="memory-filter-num" id="filterAllNum">0</span>
+                        </div>
+                            <div class="memory-filter-label">全部</div>
+                        </div>
+                        <div class="memory-filter-btn" data-filter="folder" onclick="filterMemory('folder', this)">
+                            <div class="memory-filter-row">
+                            <span class="memory-filter-icon">📁</span>
+                            <span class="memory-filter-num" id="filterFolderNum">0</span>
+                        </div>
+                            <div class="memory-filter-label">文件夹</div>
+                        </div>
+                        <div class="memory-filter-btn" data-filter="uncategorized" onclick="filterMemory('uncategorized', this)">
+                            <div class="memory-filter-row">
+                            <span class="memory-filter-icon">📋</span>
+                            <span class="memory-filter-num">
+                                <span id="filterUncategorizedNum">0</span>/<span id="filterTotalNum">0</span>
                             </span>
                         </div>
-                    </div>
-
-                    <!-- 分类标签 -->
-                    <div class="memory-categories" id="memoryCategories">
-                        <span class="category-tag active" onclick="filterMemory('all', this)">全部</span>
-                        <span class="category-tag" onclick="filterMemory('学习笔记', this)">📖 学习笔记</span>
-                        <span class="category-tag" onclick="filterMemory('生活感悟', this)">🌿 生活感悟</span>
-                        <span class="category-tag" onclick="filterMemory('工作总结', this)">💼 工作总结</span>
-                        <span class="category-tag" onclick="filterMemory('灵感创意', this)">💡 灵感创意</span>
-                        <span class="category-tag" onclick="filterMemory('其他', this)">📝 其他</span>
+                            <div class="memory-filter-label">未分类</div>
+                        </div>
                     </div>
 
                     <!-- 添加按钮 -->
