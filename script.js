@@ -66,13 +66,9 @@ function parseTime(timeStr) {
     return { h: parts[0] || 0, m: parts[1] || 0, s: parts[2] || 0 };
 }
 
-// 把 0~23 小时转成"上午/中午/下午/晚上"描述（纯 UI 用）
+// 把 0~23 小时转成 AM / PM 描述（纯 UI 用）
 function periodOfHour(hour) {
-    if (hour < 6) return '凌晨';
-    if (hour < 12) return 'am';
-    if (hour < 14) return '中午';
-    if (hour < 18) return 'pm';
-    return '晚上';
+    return hour < 12 ? 'AM' : 'PM';
 }
 
 // repeat → 展示文本
@@ -370,16 +366,34 @@ function initAlarmListEventDelegation() {
     const listEl = document.getElementById('alarmList');
     if (listEl) {
         listEl.addEventListener('click', function (e) {
-            // 开关
+            // 优先检测：开关点击（ON/OFF 切换）
             const sw = e.target.closest('.alarm-card-switch');
             if (sw && sw.dataset.action === 'toggle') {
+                e.preventDefault();
                 e.stopPropagation();
-                toggleAlarmEnabled(sw.dataset.id);
+
+                // 1. 立即切换视觉状态（立即响应，不等待 localStorage 重新渲染）
+                sw.classList.toggle('on');
+                // 2. 同步 disabled 卡片状态
+                const card = sw.closest('.alarm-card');
+                if (card) {
+                    card.style.opacity = sw.classList.contains('on') ? '' : '0.55';
+                }
+                // 3. 更新 localStorage（避免闪烁）
+                const alarmId = sw.dataset.id;
+                const data = loadData();
+                const alarm = (data.alarms || []).find(a => a.id === alarmId);
+                if (alarm) {
+                    alarm.enabled = sw.classList.contains('on');
+                    saveData(data);
+                    syncAlarmsToServiceWorker();
+                }
                 return;
             }
-            // 整张卡片 → 编辑
+            // 整张卡片 → 打开编辑弹窗
             const card = e.target.closest('.alarm-card');
             if (card && card.dataset.id) {
+                e.preventDefault();
                 openAlarmModal(card.dataset.id);
             }
         });
@@ -387,7 +401,10 @@ function initAlarmListEventDelegation() {
 
     const addBtn = document.getElementById('alarmAddBtn');
     if (addBtn) {
-        addBtn.addEventListener('click', () => openAlarmModal(null));
+        addBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            openAlarmModal(null);
+        });
     }
 }
 
