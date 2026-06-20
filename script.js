@@ -66,9 +66,9 @@ function parseTime(timeStr) {
     return { h: parts[0] || 0, m: parts[1] || 0, s: parts[2] || 0 };
 }
 
-// 把 0~23 小时转成 AM / PM 描述（纯 UI 用）
+// 把 0~23 小时转成 am / pm 描述（纯 UI 用）
 function periodOfHour(hour) {
-    return hour < 12 ? 'AM' : 'PM';
+    return hour < 12 ? 'am' : 'pm';
 }
 
 // repeat → 展示文本

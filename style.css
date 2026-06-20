@@ -741,7 +741,7 @@ body {
     font-weight: 600;
     color: rgba(255, 255, 255, 0.95);
     letter-spacing: 1px;
-    text-transform: uppercase;
+    text-transform: lowercase;
 }
 
 .alarm-card-time-main {
