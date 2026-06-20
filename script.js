@@ -1850,7 +1850,10 @@ function formatDate(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+let currentScheduleDate = '';
+
 function showDaySchedule(dateStr) {
+    currentScheduleDate = dateStr;
     const date = new Date(dateStr);
     const todayStr = formatDate(new Date());
     
@@ -1858,15 +1861,14 @@ function showDaySchedule(dateStr) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-day-schedule').classList.add('active');
     
-    // 更新导航栏（保持作息导航激活）
+    // 更新导航栏
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelector('.nav-btn[data-page="schedule"]').classList.add('active');
     
-    // 渲染该日期的作息
+    // 渲染日期信息
     const titleEl = document.getElementById('dayScheduleTitle');
     const dateTextEl = document.getElementById('dayDateText');
     const lunarTextEl = document.getElementById('dayLunarText');
-    const scheduleListEl = document.getElementById('dayScheduleList');
     
     const isToday = dateStr === todayStr;
     titleEl.textContent = isToday ? '今日作息' : `${date.getMonth() + 1}月${date.getDate()}日作息`;
@@ -1875,53 +1877,113 @@ function showDaySchedule(dateStr) {
     dateTextEl.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdayNames[date.getDay()]}`;
     lunarTextEl.textContent = getLunarDate(date);
     
+    renderScheduleList();
+    window.scrollTo(0, 0);
+}
+
+function getScheduleData(dateStr) {
+    const saved = localStorage.getItem(`schedule_data_${dateStr}`);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {}
+    }
+    // 默认数据
+    return [
+        { time: '07:00', label: '起床·晨间活动', checked: false },
+        { time: '09:00', label: '工作/学习', checked: false },
+        { time: '12:30', label: '午餐·午休', checked: false },
+        { time: '14:00', label: '下午专注工作', checked: false },
+        { time: '18:00', label: '晚餐·运动', checked: false },
+        { time: '22:30', label: '准备入睡', checked: false }
+    ];
+}
+
+function saveScheduleData(dateStr, data) {
+    localStorage.setItem(`schedule_data_${dateStr}`, JSON.stringify(data));
+}
+
+function renderScheduleList() {
+    const dateStr = currentScheduleDate;
+    const scheduleListEl = document.getElementById('dayScheduleList');
+    const items = getScheduleData(dateStr);
+    
     let html = '';
-    DEFAULT_SCHEDULE.forEach((item, idx) => {
+    items.forEach((item, idx) => {
         const hour = parseInt(item.time.split(':')[0]);
-        const period = item.period || getPeriod(hour);
+        const period = getPeriod(hour);
+        const checkedClass = item.checked ? 'checked' : '';
         
         html += `
-            <div class="day-schedule-item">
-                <span class="day-schedule-time">${item.time}</span>
+            <div class="day-schedule-item" data-idx="${idx}">
+                <input type="time" class="day-schedule-time-input" value="${item.time}"
+                    onchange="updateScheduleTime(${idx}, this.value)"
+                    onclick="event.stopPropagation()">
                 <span class="day-schedule-dot ${period}"></span>
-                <span class="day-schedule-label">${item.label}</span>
-                <span class="day-schedule-check" data-idx="${idx}" data-date="${dateStr}" onclick="toggleDayScheduleCheck(this)"></span>
+                <input type="text" class="day-schedule-label-input" value="${item.label}"
+                    placeholder="输入作息内容..."
+                    onchange="updateScheduleLabel(${idx}, this.value)"
+                    onclick="event.stopPropagation()">
+                <button class="day-schedule-delete-btn" onclick="deleteScheduleItem(${idx}); event.stopPropagation();">
+                    ×
+                </button>
+                <span class="day-schedule-check ${checkedClass}" onclick="toggleScheduleItem(${idx}); event.stopPropagation();"></span>
             </div>
         `;
     });
     
+    // 添加按钮
+    html += `
+        <button class="day-schedule-add-btn" onclick="addScheduleItem()">
+            + 添加新作息
+        </button>
+    `;
+    
     scheduleListEl.innerHTML = html;
-    
-    // 恢复保存的勾选状态
-    const savedData = localStorage.getItem(`schedule_${dateStr}`);
-    if (savedData) {
-        try {
-            const checkedIdx = JSON.parse(savedData);
-            checkedIdx.forEach(idx => {
-                const el = scheduleListEl.querySelector(`[data-idx="${idx}"]`);
-                if (el) el.classList.add('checked');
-            });
-        } catch (e) {}
+}
+
+function updateScheduleTime(idx, newTime) {
+    const items = getScheduleData(currentScheduleDate);
+    if (items[idx]) {
+        items[idx].time = newTime;
+        saveScheduleData(currentScheduleDate, items);
+        renderScheduleList();
     }
-    
-    // 滚动到顶部
-    window.scrollTo(0, 0);
+}
+
+function updateScheduleLabel(idx, newLabel) {
+    const items = getScheduleData(currentScheduleDate);
+    if (items[idx]) {
+        items[idx].label = newLabel.trim() || '未命名';
+        saveScheduleData(currentScheduleDate, items);
+    }
+}
+
+function toggleScheduleItem(idx) {
+    const items = getScheduleData(currentScheduleDate);
+    if (items[idx]) {
+        items[idx].checked = !items[idx].checked;
+        saveScheduleData(currentScheduleDate, items);
+        renderScheduleList();
+    }
+}
+
+function deleteScheduleItem(idx) {
+    if (!confirm('确认删除这条作息计划？')) return;
+    const items = getScheduleData(currentScheduleDate);
+    items.splice(idx, 1);
+    saveScheduleData(currentScheduleDate, items);
+    renderScheduleList();
+}
+
+function addScheduleItem() {
+    const items = getScheduleData(currentScheduleDate);
+    items.push({ time: '12:00', label: '新作息', checked: false });
+    saveScheduleData(currentScheduleDate, items);
+    renderScheduleList();
 }
 
 function showCalendarPage() {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-schedule').classList.add('active');
-}
-
-function toggleDayScheduleCheck(el) {
-    el.classList.toggle('checked');
-    
-    const dateStr = el.dataset.date;
-    const checkedList = [];
-    const container = document.getElementById('dayScheduleList');
-    container.querySelectorAll('.day-schedule-check.checked').forEach(item => {
-        checkedList.push(parseInt(item.dataset.idx));
-    });
-    
-    localStorage.setItem(`schedule_${dateStr}`, JSON.stringify(checkedList));
 }

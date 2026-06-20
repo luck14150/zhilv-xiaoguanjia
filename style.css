@@ -1881,27 +1881,41 @@ body {
 .day-schedule-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 8px 10px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 8px;
     margin-bottom: 6px;
     transition: background 0.2s;
 }
 
-.day-schedule-item:last-child {
-    margin-bottom: 0;
-}
-
 .day-schedule-item:hover {
     background: rgba(255, 255, 255, 0.12);
 }
 
-.day-schedule-time {
+.day-schedule-time-input {
     font-size: 15px;
     font-weight: 600;
     color: #5aa8e0;
-    min-width: 75px;
+    background: transparent;
+    border: 1px solid rgba(90, 168, 224, 0.3);
+    border-radius: 6px;
+    padding: 4px 6px;
+    min-width: 85px;
+    cursor: pointer;
+    outline: none;
+    color-scheme: dark;
+}
+
+.day-schedule-time-input:focus {
+    border-color: #5aa8e0;
+    background: rgba(90, 168, 224, 0.1);
+}
+
+.day-schedule-time-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
 }
 
 .day-schedule-dot {
@@ -1916,10 +1930,46 @@ body {
 .day-schedule-dot.evening { background: #9c88ff; }
 .day-schedule-dot.night { background: #6c757d; }
 
-.day-schedule-label {
+.day-schedule-label-input {
     flex: 1;
     font-size: 15px;
     color: #e0e0e0;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.day-schedule-label-input:focus {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.day-schedule-label-input::placeholder {
+    color: rgba(224, 224, 224, 0.4);
+}
+
+.day-schedule-delete-btn {
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: rgba(255, 100, 100, 0.15);
+    color: #ff6b6b;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.day-schedule-delete-btn:hover {
+    background: rgba(255, 100, 100, 0.3);
 }
 
 .day-schedule-check {
@@ -1932,6 +1982,25 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.day-schedule-add-btn {
+    width: 100%;
+    padding: 12px;
+    background: rgba(90, 168, 224, 0.15);
+    border: 2px dashed rgba(90, 168, 224, 0.4);
+    border-radius: 8px;
+    color: #5aa8e0;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 4px;
+}
+
+.day-schedule-add-btn:hover {
+    background: rgba(90, 168, 224, 0.25);
+    border-color: #5aa8e0;
 }
 
 .day-schedule-check.checked {
