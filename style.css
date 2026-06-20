@@ -1681,6 +1681,109 @@ body {
     margin-bottom: 2px;
 }
 
+/* ============ 作息计划面板 ============ */
+.schedule-panel {
+    margin-top: 12px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 14px;
+    color: #fff;
+}
+
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.schedule-title {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.schedule-date {
+    font-size: 13px;
+    opacity: 0.7;
+}
+
+.schedule-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.schedule-item:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.schedule-time {
+    font-size: 14px;
+    font-weight: 600;
+    color: #5aa8e0;
+    min-width: 70px;
+}
+
+.schedule-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.schedule-dot.morning { background: #a8ff60; }
+.schedule-dot.afternoon { background: #ffd166; }
+.schedule-dot.evening { background: #9c88ff; }
+.schedule-dot.night { background: #6c757d; }
+
+.schedule-text {
+    flex: 1;
+    font-size: 14px;
+    color: #e0e0e0;
+}
+
+.schedule-check {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.schedule-check.checked {
+    background: #5aa8e0;
+    border-color: #5aa8e0;
+}
+
+.schedule-check.checked::after {
+    content: '✓';
+    font-size: 12px;
+    color: #fff;
+}
+
+.schedule-empty {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
+
 .calendar-tasks {
     background: #f8f9fa;
     border-radius: 12px;

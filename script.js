@@ -1624,6 +1624,7 @@ function initCalendar() {
 
     bindCalendarEvents();
     renderCalendar();
+    initSchedulePanel();
 }
 
 function bindCalendarEvents() {
@@ -1824,4 +1825,66 @@ function renderDay(date, isOtherMonth) {
     html += '</div>';
     
     return html;
+}
+
+/* ============ 作息计划数据与渲染 ============ */
+const DEFAULT_SCHEDULE = [
+    { time: '07:00', label: '起床·晨间活动', period: 'morning', checked: false },
+    { time: '09:00', label: '工作/学习', period: 'morning', checked: false },
+    { time: '12:30', label: '午餐·午休', period: 'afternoon', checked: false },
+    { time: '14:00', label: '下午专注工作', period: 'afternoon', checked: false },
+    { time: '18:00', label: '晚餐·运动', period: 'evening', checked: false },
+    { time: '22:30', label: '准备入睡', period: 'night', checked: false }
+];
+
+function getPeriod(hour) {
+    if (hour >= 5 && hour < 12) return 'morning';
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    if (hour >= 18 && hour < 22) return 'evening';
+    return 'night';
+}
+
+function renderSchedule(dateStr) {
+    const scheduleDateEl = document.getElementById('scheduleDate');
+    const scheduleListEl = document.getElementById('scheduleList');
+    
+    if (!scheduleDateEl || !scheduleListEl) return;
+    
+    const date = new Date(dateStr);
+    const dateText = `${date.getMonth() + 1}月${date.getDate()}日`;
+    scheduleDateEl.textContent = dateText;
+    
+    let html = '';
+    const schedule = DEFAULT_SCHEDULE;
+    
+    schedule.forEach(item => {
+        const hour = parseInt(item.time.split(':')[0]);
+        const period = item.period || getPeriod(hour);
+        const isChecked = item.checked ? 'checked' : '';
+        
+        html += `
+            <div class="schedule-item">
+                <span class="schedule-time">${item.time}</span>
+                <span class="schedule-dot ${period}"></span>
+                <span class="schedule-text">${item.label}</span>
+                <span class="schedule-check ${isChecked}" onclick="toggleScheduleCheck(this)"></span>
+            </div>
+        `;
+    });
+    
+    scheduleListEl.innerHTML = html;
+}
+
+function toggleScheduleCheck(el) {
+    el.classList.toggle('checked');
+}
+
+function initSchedulePanel() {
+    const today = new Date();
+    const todayStr = formatDate(today);
+    renderSchedule(todayStr);
+}
+
+function formatDate(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
