@@ -87,16 +87,52 @@
             <section class="page active" id="page-alarm">
                 <!-- 当前时间大字显示 -->
                 <div class="alarm-clock-display" id="alarmClockDisplay">
-                    <div class="clock-time" id="clockTime">00<span class="clock-sep">:</span>00<span class="clock-sep">:</span>00</div>
+                    <div class="clock-time" id="clockTime">00:00:00</div>
                     <div class="clock-date" id="clockDate">2026年6月20日 星期六</div>
                 </div>
 
                 <!-- 闹钟列表 -->
                 <div class="alarm-panel" id="alarmPanel">
-                    <!-- 闹钟动态生成 -->
+                    <!-- 默认闹钟（会被 localStorage 数据覆盖） -->
+                    <div class="alarm-item" data-alarm-id="1">
+                        <div class="alarm-left">
+                            <span class="alarm-period">上午</span>
+                            <span class="alarm-time">07:00</span>
+                            <div class="alarm-desc">工作日</div>
+                        </div>
+                        <div class="alarm-right">
+                            <div class="alarm-toggle on">
+                                <div class="alarm-toggle-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alarm-item" data-alarm-id="2">
+                        <div class="alarm-left">
+                            <span class="alarm-period">中午</span>
+                            <span class="alarm-time">12:30</span>
+                            <div class="alarm-desc">每日</div>
+                        </div>
+                        <div class="alarm-right">
+                            <div class="alarm-toggle on">
+                                <div class="alarm-toggle-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alarm-item" data-alarm-id="3">
+                        <div class="alarm-left">
+                            <span class="alarm-period">晚上</span>
+                            <span class="alarm-time">22:30</span>
+                            <div class="alarm-desc">每日</div>
+                        </div>
+                        <div class="alarm-right">
+                            <div class="alarm-toggle">
+                                <div class="alarm-toggle-thumb"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <button class="add-alarm" id="addAlarmBtn">+ 新闹钟</button>
+                <button class="add-alarm-btn" id="addAlarmBtn">+ 新闹钟</button>
             </section>
 
             <!-- 闹钟详情弹窗 -->
