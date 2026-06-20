@@ -298,22 +298,47 @@ window.addEventListener('storage', (e) => {
 function renderSavedAlarms() {
     const data = loadData();
     const alarmPanel = document.getElementById('alarmPanel');
-    if (!alarmPanel || !data.alarms || data.alarms.length === 0) return;
+    const addBtn = document.getElementById('addAlarmBtn');
+
+    // 如果 localStorage 中没有闹钟数据，初始化默认闹钟
+    if (!data.alarms || data.alarms.length === 0) {
+        const defaultAlarms = [
+            { _id: 'default_0', id: 'default_0', time: '07:00:00', name: '起床闹钟', repeat: 'workday', vibrate: false, tone: 'classic', enabled: true, customDays: [] },
+            { _id: 'default_1', id: 'default_1', time: '12:30:00', name: '午餐提醒', repeat: 'daily', vibrate: false, tone: 'classic', enabled: true, customDays: [] },
+            { _id: 'default_2', id: 'default_2', time: '22:30:00', name: '睡眠提醒', repeat: 'daily', vibrate: false, tone: 'classic', enabled: false, customDays: [] }
+        ];
+        data.alarms = defaultAlarms;
+        saveData(data);
+
+        // 更新 HTML 中的默认行
+        const rows = alarmPanel.querySelectorAll('.alarm-row.saved');
+        rows.forEach((row, idx) => {
+            if (defaultAlarms[idx]) {
+                const a = defaultAlarms[idx];
+                const [h, m, s] = a.time.split(':');
+                row.dataset.id = a._id;
+                row.querySelector('.alarm-time').innerHTML = `${String(h).padStart(2,'0')}<span class="sep">:</span>${String(m).padStart(2,'0')}<span class="sec-part"><span class="sep">:</span>${String(s).padStart(2,'0')}</span>`;
+                row.querySelector('.alarm-name').textContent = a.name;
+                row.querySelector('.alarm-detail').textContent = getRepeatLabel(a.repeat);
+                const sw = row.querySelector('.alarm-switch');
+                sw.className = 'alarm-switch' + (a.enabled ? '' : ' off');
+                sw.textContent = a.enabled ? 'ON' : 'OFF';
+            }
+        });
+        return;
+    }
 
     // 清空非默认闹钟
     const existing = alarmPanel.querySelectorAll('.alarm-row.saved');
     existing.forEach(el => el.remove());
 
-    const defaultRows = alarmPanel.querySelectorAll('.alarm-row:not(.saved)');
-    const addBtn = document.getElementById('addAlarmBtn');
-    const insertBefore = defaultRows.length > 0 ? defaultRows[defaultRows.length - 1].nextSibling : addBtn;
-
-    data.alarms.forEach((alarm, idx) => {
+    // 渲染 localStorage 中的闹钟
+    data.alarms.forEach((alarm) => {
         const [h, m, s] = (alarm.time || '00:00:00').split(':');
         const sec = s || '00';
         const newAlarm = document.createElement('div');
         newAlarm.className = 'alarm-row saved';
-        newAlarm.dataset.id = alarm._id || alarm.id || ('saved_' + idx);
+        newAlarm.dataset.id = alarm._id || alarm.id;
 
         const repeatLabel = getRepeatLabel(alarm.repeat);
         const switchOn = alarm.enabled !== false;
@@ -329,21 +354,23 @@ function renderSavedAlarms() {
 
         alarmPanel.insertBefore(newAlarm, addBtn);
 
-        // 开关事件
-        const sw = newAlarm.querySelector('.alarm-switch');
-        sw.addEventListener('click', function(e) {
-            e.stopPropagation();
-            this.classList.toggle('off');
-            const isOn = !this.classList.contains('off');
-            this.textContent = isOn ? 'ON' : 'OFF';
-            updateAlarmEnabled(newAlarm.dataset.id, isOn);
-        });
-
-        // 点击行体 → 打开详情弹窗
-        newAlarm.addEventListener('click', function(e) {
-            if (e.target === sw || sw.contains(e.target)) return;
-            openAlarmModal(newAlarm.dataset.id);
-        });
+        // 给新创建的闹钟行绑定事件
+        (function(alarmRow) {
+            const sw = alarmRow.querySelector('.alarm-switch');
+            if (sw) {
+                sw.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    this.classList.toggle('off');
+                    const isOn = !this.classList.contains('off');
+                    this.textContent = isOn ? 'ON' : 'OFF';
+                    updateAlarmEnabled(alarmRow.dataset.id, isOn);
+                });
+            }
+            alarmRow.addEventListener('click', function(e) {
+                if (e.target === sw || (sw && sw.contains(e.target))) return;
+                openAlarmModal(alarmRow.dataset.id);
+            });
+        })(newAlarm);
     });
 }
 
@@ -472,12 +499,25 @@ function initEventListeners() {
         item.addEventListener('click', () => switchPage(item.dataset.page));
     });
 
-    document.querySelectorAll('.alarm-switch').forEach(sw => {
-        sw.addEventListener('click', () => {
-            sw.classList.toggle('off');
-            sw.textContent = sw.classList.contains('off') ? 'OFF' : 'ON';
+    // 闹钟行点击和开关事件（通用）
+    function bindAlarmRowEvents(row) {
+        const sw = row.querySelector('.alarm-switch');
+        if (!sw) return;
+        sw.addEventListener('click', function(e) {
+            e.stopPropagation();
+            this.classList.toggle('off');
+            const isOn = !this.classList.contains('off');
+            this.textContent = isOn ? 'ON' : 'OFF';
+            updateAlarmEnabled(row.dataset.id, isOn);
         });
-    });
+        row.addEventListener('click', function(e) {
+            if (e.target === sw || (sw && sw.contains(e.target))) return;
+            openAlarmModal(row.dataset.id);
+        });
+    }
+
+    // 绑定现有闹钟行
+    document.querySelectorAll('.alarm-row').forEach(row => bindAlarmRowEvents(row));
 
     document.querySelectorAll('.mode-card').forEach(card => {
         card.addEventListener('click', () => {
