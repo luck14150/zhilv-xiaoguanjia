@@ -1593,6 +1593,12 @@ body {
     border-color: #5aa8e0;
 }
 
+.calendar-day.empty {
+    border: none;
+    background: transparent;
+    cursor: default;
+}
+
 .calendar-day.other-month {
     opacity: 0.3;
     background: #fafafa;
