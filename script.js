@@ -807,7 +807,7 @@ function initAlarmModalListeners() {
         modalState.name = this.value;
     });
 
-    // 铃声点击
+    // 铃声点击（只选择，不预览播放，只有闹钟真正响铃时才播放）
     document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
         // 防止点击内部按钮时重复触发
         if (e.target.classList.contains('ringtone-replace-btn')) return;
@@ -818,12 +818,11 @@ function initAlarmModalListeners() {
         const tone = item.dataset.tone;
         if (tone === 'custom') {
             // 自定义铃声：
-            // - 已上传文件 → 点击播放预览（作为铃声预览）
+            // - 已上传文件 → 选中为当前铃声（不播放预览）
             // - 未上传文件 → 打开文件选择
             if (modalState.customToneData) {
                 modalState.tone = 'custom';
                 renderModalControls();
-                playAlarmSound('custom', modalState.customToneData);
             } else {
                 const fileInput = item.querySelector('.ringtone-file-input');
                 if (fileInput) fileInput.click();
@@ -833,7 +832,6 @@ function initAlarmModalListeners() {
         
         modalState.tone = tone;
         renderModalControls();
-        playAlarmSound(modalState.tone, modalState.customToneData);
     });
 
     // 自定义铃声：更换文件按钮
@@ -866,8 +864,7 @@ function initAlarmModalListeners() {
             modalState.customToneName = file.name;
             modalState.customToneData = event.target?.result || '';
             renderModalControls();
-            // 用统一的 playAlarmSound 预览（真正的铃声预览而不是普通音乐播放）
-            playAlarmSound('custom', modalState.customToneData);
+            // 不播放预览，只有闹钟真正响铃时才播放
         };
         reader.readAsDataURL(file);
     });
