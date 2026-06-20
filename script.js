@@ -3,6 +3,10 @@
  * DOM 只做渲染，不反向读取数据。任何改动先写回 localStorage，再重新渲染。
  */
 
+/* ============ 版本控制 - 每次更新必须修改版本号 ============ */
+const APP_VERSION = '2026062009';
+const STORAGE_VERSION_KEY = 'zhilv_version';
+
 /* ============ Agnes AI API 配置 ============ */
 const AGNES_CONFIG = {
     baseUrl: 'https://apihub.agnes-ai.com/v1',
@@ -13,12 +17,72 @@ const AGNES_CONFIG = {
 /* ============ 本地存储（闹钟 / 作息 / 记忆 / 统计） ============ */
 const STORAGE_KEY = 'zhilv_data_v1';
 
+/* ============ 数据迁移函数 ============ */
+function migrateData(data) {
+    let migrated = false;
+    
+    // 确保基础字段存在
+    if (!data.alarms) { data.alarms = []; migrated = true; }
+    if (!data.schedule) { data.schedule = []; migrated = true; }
+    if (!data.memory) { data.memory = []; migrated = true; }
+    if (!data.stats) { data.stats = {}; migrated = true; }
+    
+    // 迁移闹钟数据格式
+    if (data.alarms && data.alarms.length > 0) {
+        data.alarms = data.alarms.map(alarm => {
+            // 确保每个闹钟有所有必要字段
+            return {
+                id: alarm.id || 'alarm_' + Date.now() + Math.random().toString(36).slice(2, 6),
+                time: alarm.time || '08:00:00',
+                name: alarm.name || '闹钟',
+                enabled: alarm.enabled !== undefined ? alarm.enabled : true,
+                repeat: alarm.repeat || 'daily',
+                customDays: alarm.customDays || [],
+                vibrate: alarm.vibrate || false,
+                tone: alarm.tone || 'classic'
+            };
+        });
+    }
+    
+    // 如果没有默认闹钟，添加示例
+    if (data.alarms.length === 0) {
+        data.alarms = [
+            buildAlarmData('07:00:00', '工作日', true),
+            buildAlarmData('12:30:00', '每日', true),
+            buildAlarmData('22:30:00', '每日', false)
+        ];
+        migrated = true;
+    }
+    
+    return { data, migrated };
+}
+
 function loadData() {
+    const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+    
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (raw) return JSON.parse(raw);
-    } catch (e) { /* ignore */ }
-    // 首次访问：预置 3 个示例闹钟，避免页面空白
+        if (raw) {
+            let data = JSON.parse(raw);
+            
+            // 检查版本并迁移
+            if (storedVersion !== APP_VERSION) {
+                const { data: migratedData, migrated } = migrateData(data);
+                if (migrated) {
+                    data = migratedData;
+                    console.log('[智律小管家] 数据已迁移到新版本:', APP_VERSION);
+                }
+                localStorage.setItem(STORAGE_VERSION_KEY, APP_VERSION);
+                saveData(data);
+            }
+            
+            return data;
+        }
+    } catch (e) {
+        console.error('[智律小管家] 数据加载失败:', e);
+    }
+    
+    // 首次访问：预置 3 个示例闹钟
     const defaults = {
         alarms: [
             buildAlarmData('07:00:00', '工作日', true),
@@ -29,17 +93,29 @@ function loadData() {
         memory: [],
         stats: {}
     };
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults)); } catch (e) {}
+    
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+        localStorage.setItem(STORAGE_VERSION_KEY, APP_VERSION);
+    } catch (e) {}
+    
     return defaults;
 }
 
 function saveData(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        localStorage.setItem(STORAGE_VERSION_KEY, APP_VERSION);
+    } catch (e) {
+        console.error('[智律小管家] 数据保存失败:', e);
+    }
+    
     // 如有云同步配置，顺带上传时间戳
     if (cloudSyncKey && firebaseDb) {
         try {
             const toUpload = JSON.parse(JSON.stringify(data));
             toUpload._syncTime = Date.now();
+            toUpload._version = APP_VERSION;
             const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
             firebaseDb.ref(path).set(toUpload).catch(() => {});
         } catch (e) {}
