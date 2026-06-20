@@ -7,7 +7,7 @@
  *   5. 自动版本检测与缓存清理
  */
 
-const CACHE_VERSION = '2026062011';
+const CACHE_VERSION = '2026062012';
 const CACHE_NAME = 'zhilv-cache-' + CACHE_VERSION;
 const urlsToCache = [
     './',

@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062011';
+const APP_VERSION = '2026062012';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 const FORCE_REFRESH_KEY = 'zhilv_force_refresh';
 
