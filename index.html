@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a1a2e">
     <title>智律小管家</title>
-    <link rel="stylesheet" href="style.css?v=2026062005">
+    <link rel="stylesheet" href="style.css?v=2026062006">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -377,112 +377,84 @@
 
             <!-- 作息表（日历） -->
             <section class="page" id="page-schedule">
-                <div class="cal-wrapper">
-                    <!-- 左侧栏 -->
-                    <div class="cal-sidebar">
-                        <!-- 月份导航 -->
-                        <div class="cal-month-nav" id="calMonthNav"></div>
-                        <!-- 营销关键词 -->
-                        <div class="cal-side-panel">
-                            <div class="cal-side-title">营销关键词</div>
-                            <div class="cal-keywords" id="calKeywords">
-                                <span class="cal-kw">#2025计划</span>
-                                <span class="cal-kw">#早起打卡</span>
-                                <span class="cal-kw">#健康生活</span>
-                            </div>
+                <div class="calendar-container">
+                    <!-- 顶部工具栏 -->
+                    <div class="calendar-toolbar">
+                        <div class="toolbar-left">
+                            <select id="calYearSelect" class="cal-select">
+                                <option value="2024">2024年</option>
+                                <option value="2025">2025年</option>
+                                <option value="2026" selected>2026年</option>
+                                <option value="2027">2027年</option>
+                                <option value="2028">2028年</option>
+                            </select>
+                            <button id="calPrevBtn" class="cal-nav-btn">‹</button>
+                            <select id="calMonthSelect" class="cal-select">
+                                <option value="0">1月</option>
+                                <option value="1">2月</option>
+                                <option value="2">3月</option>
+                                <option value="3">4月</option>
+                                <option value="4">5月</option>
+                                <option value="5" selected>6月</option>
+                                <option value="6">7月</option>
+                                <option value="7">8月</option>
+                                <option value="8">9月</option>
+                                <option value="9">10月</option>
+                                <option value="10">11月</option>
+                                <option value="11">12月</option>
+                            </select>
+                            <button id="calNextBtn" class="cal-nav-btn">›</button>
+                            <select id="calHolidaySelect" class="cal-select">
+                                <option value="all">放假安排</option>
+                                <option value="workday">工作日</option>
+                                <option value="holiday">休息日</option>
+                            </select>
+                            <select id="calStartDaySelect" class="cal-select">
+                                <option value="0">起始日</option>
+                                <option value="0">周日开始</option>
+                                <option value="1">周一至日</option>
+                            </select>
                         </div>
-                        <!-- 未完成提醒 -->
-                        <div class="cal-side-panel">
-                            <div class="cal-side-title">未完成工作提醒</div>
-                            <div class="cal-reminder-list" id="calReminderList"></div>
-                        </div>
+                        <button id="calTodayBtn" class="cal-today-btn">返回今天</button>
                     </div>
 
-                    <!-- 右侧主体 -->
-                    <div class="cal-main">
-                        <!-- 顶部标题 -->
-                        <div class="cal-header">
-                            <div class="cal-year-title">
-                                <span id="calYear">2025</span>年日历工作计划表
-                            </div>
+                    <!-- 日历表格 -->
+                    <div class="calendar-grid">
+                        <div class="calendar-header">
+                            <div class="calendar-day-name">日</div>
+                            <div class="calendar-day-name">一</div>
+                            <div class="calendar-day-name">二</div>
+                            <div class="calendar-day-name">三</div>
+                            <div class="calendar-day-name">四</div>
+                            <div class="calendar-day-name">五</div>
+                            <div class="calendar-day-name">六</div>
                         </div>
-                        <!-- 月度信息与统计 -->
-                        <div class="cal-subheader">
-                            <div class="cal-month-title">
-                                <span class="cal-month-num" id="calMonthNum">1</span>
-                                <span class="cal-month-en" id="calMonthEn">January</span>
-                            </div>
-                            <div class="cal-stat-cards">
-                                <div class="cal-stat-card red">
-                                    <span class="cal-stat-label">重要事项</span>
-                                    <span class="cal-stat-num" id="calStatImportant">0</span>
-                                    <span class="cal-stat-unit">项</span>
-                                </div>
-                                <div class="cal-stat-card yellow">
-                                    <span class="cal-stat-label">一般事项</span>
-                                    <span class="cal-stat-num" id="calStatNormal">0</span>
-                                    <span class="cal-stat-unit">项</span>
-                                </div>
-                                <div class="cal-stat-card green">
-                                    <span class="cal-stat-label">日常事项</span>
-                                    <span class="cal-stat-num" id="calStatDaily">0</span>
-                                    <span class="cal-stat-unit">项</span>
-                                </div>
-                                <div class="cal-stat-card pink">
-                                    <span class="cal-stat-icon">☕</span>
-                                    <span class="cal-stat-num" id="calStatRest">0</span>
-                                    <span class="cal-stat-unit">天</span>
-                                </div>
-                                <div class="cal-stat-card gray">
-                                    <span class="cal-stat-icon">💼</span>
-                                    <span class="cal-stat-num" id="calStatWork">0</span>
-                                    <span class="cal-stat-unit">天</span>
-                                </div>
-                            </div>
+                        <div class="calendar-days" id="calDaysContainer"></div>
+                    </div>
+
+                    <!-- 当日事项列表 -->
+                    <div class="calendar-tasks">
+                        <div class="tasks-header">
+                            <span class="tasks-title">📅 当日事项</span>
+                            <button id="calAddTaskBtn" class="add-task-btn">+ 添加事项</button>
                         </div>
-                        <!-- 日历表格 -->
-                        <div class="cal-table-wrapper">
-                            <table class="cal-table">
-                                <thead>
-                                    <tr>
-                                        <th>星期一</th>
-                                        <th>星期二</th>
-                                        <th>星期三</th>
-                                        <th>星期四</th>
-                                        <th>星期五</th>
-                                        <th>星期六</th>
-                                        <th>星期日</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="calTableBody"></tbody>
-                            </table>
-                        </div>
+                        <div class="tasks-list" id="calTasksList"></div>
                     </div>
                 </div>
+
                 <!-- 添加事项弹窗 -->
-                <div class="cal-modal" id="calModal">
-                    <div class="cal-modal-content">
-                        <div class="cal-modal-title">
-                            <span id="calModalDate">添加事项</span>
-                            <button class="cal-modal-close" id="calModalClose">✕</button>
+                <div class="calendar-modal" id="calendarModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <span class="modal-title" id="modalTitle">添加事项</span>
+                            <button class="modal-close" id="modalClose">✕</button>
                         </div>
-                        <div class="cal-modal-body">
-                            <div class="cal-modal-input-row">
-                                <label>事项类型</label>
-                                <div class="cal-type-selector">
-                                    <button class="cal-type-btn active" data-type="important">🔴 重要事项</button>
-                                    <button class="cal-type-btn" data-type="normal">🟡 一般事项</button>
-                                    <button class="cal-type-btn" data-type="daily">🟢 日常事项</button>
-                                </div>
-                            </div>
-                            <div class="cal-modal-input-row">
-                                <label>事项内容</label>
-                                <input type="text" id="calItemInput" placeholder="例如：年终汇报" class="cal-item-input">
-                            </div>
+                        <div class="modal-body">
+                            <input type="text" id="taskInput" class="task-input" placeholder="输入事项内容...">
                         </div>
-                        <div class="cal-modal-footer">
-                            <button class="cal-modal-btn cancel" id="calModalCancel">取消</button>
-                            <button class="cal-modal-btn confirm" id="calModalConfirm">添加</button>
+                        <div class="modal-footer">
+                            <button class="modal-btn cancel" id="modalCancel">取消</button>
+                            <button class="modal-btn confirm" id="modalConfirm">确定</button>
                         </div>
                     </div>
                 </div>
@@ -674,6 +646,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-    <script src="script.js?v=2026062005"></script>
+    <script src="script.js?v=2026062006"></script>
 </body>
 </html>

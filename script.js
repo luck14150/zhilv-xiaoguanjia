@@ -1411,341 +1411,444 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 /* ============ 日历作息表 ============ */
-const CAL_MONTHS_CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
-const CAL_MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June',
-                       'July', 'August', 'September', 'October', 'November', 'December'];
 
-let calCurrentYear = 2025;
-let calCurrentMonth = 1;
-let calModalDate = '';
-let calModalType = 'important';
+// 农历数据
+const LUNAR_MONTHS = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+const LUNAR_DAYS = ['', '初', '十', '廿', '三'];
+const LUNAR_DAY_NUMS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+// 节假日数据（2024-2028年）
+const HOLIDAYS = {
+    '2024-01-01': '元旦',
+    '2024-02-09': '除夕',
+    '2024-02-10': '春节',
+    '2024-02-11': '春节',
+    '2024-02-12': '春节',
+    '2024-04-04': '清明节',
+    '2024-05-01': '劳动节',
+    '2024-05-02': '劳动节',
+    '2024-05-03': '劳动节',
+    '2024-06-10': '端午节',
+    '2024-09-15': '中秋节',
+    '2024-10-01': '国庆节',
+    '2024-10-02': '国庆节',
+    '2024-10-03': '国庆节',
+    '2024-10-04': '国庆节',
+    '2024-10-05': '国庆节',
+    
+    '2025-01-01': '元旦',
+    '2025-01-28': '除夕',
+    '2025-01-29': '春节',
+    '2025-01-30': '春节',
+    '2025-01-31': '春节',
+    '2025-04-05': '清明节',
+    '2025-05-01': '劳动节',
+    '2025-05-02': '劳动节',
+    '2025-05-03': '劳动节',
+    '2025-06-02': '端午节',
+    '2025-09-07': '中秋节',
+    '2025-10-01': '国庆节',
+    '2025-10-02': '国庆节',
+    '2025-10-03': '国庆节',
+    '2025-10-04': '国庆节',
+    '2025-10-05': '国庆节',
+    
+    '2026-01-01': '元旦',
+    '2026-02-16': '除夕',
+    '2026-02-17': '春节',
+    '2026-02-18': '春节',
+    '2026-02-19': '春节',
+    '2026-04-04': '清明节',
+    '2026-05-01': '劳动节',
+    '2026-05-02': '劳动节',
+    '2026-05-03': '劳动节',
+    '2026-06-19': '端午节',
+    '2026-09-26': '中秋节',
+    '2026-10-01': '国庆节',
+    '2026-10-02': '国庆节',
+    '2026-10-03': '国庆节',
+    '2026-10-04': '国庆节',
+    '2026-10-05': '国庆节',
+    
+    '2027-01-01': '元旦',
+    '2027-02-05': '除夕',
+    '2027-02-06': '春节',
+    '2027-02-07': '春节',
+    '2027-02-08': '春节',
+    '2027-04-04': '清明节',
+    '2027-05-01': '劳动节',
+    '2027-05-02': '劳动节',
+    '2027-05-03': '劳动节',
+    '2027-06-08': '端午节',
+    '2027-09-15': '中秋节',
+    '2027-10-01': '国庆节',
+    '2027-10-02': '国庆节',
+    '2027-10-03': '国庆节',
+    '2027-10-04': '国庆节',
+    '2027-10-05': '国庆节',
+    
+    '2028-01-01': '元旦',
+    '2028-01-25': '除夕',
+    '2028-01-26': '春节',
+    '2028-01-27': '春节',
+    '2028-01-28': '春节',
+    '2028-04-04': '清明节',
+    '2028-05-01': '劳动节',
+    '2028-05-02': '劳动节',
+    '2028-05-03': '劳动节',
+    '2028-05-28': '端午节',
+    '2028-09-25': '中秋节',
+    '2028-10-01': '国庆节',
+    '2028-10-02': '国庆节',
+    '2028-10-03': '国庆节',
+    '2028-10-04': '国庆节',
+    '2028-10-05': '国庆节',
+
+    // 固定节日
+    '01-01': '元旦',
+    '03-08': '妇女节',
+    '03-12': '植树节',
+    '05-04': '青年节',
+    '06-01': '儿童节',
+    '07-01': '建党节',
+    '08-01': '建军节',
+    '09-10': '教师节',
+    '12-25': '圣诞节',
+    '06-21': '夏至',
+    '12-21': '冬至',
+    '06-06': '芒种'
+};
+
+// 二十四节气
+const SOLAR_TERMS = {
+    '01-05': '小寒', '01-20': '大寒',
+    '02-04': '立春', '02-19': '雨水',
+    '03-05': '惊蛰', '03-20': '春分',
+    '04-04': '清明', '04-20': '谷雨',
+    '05-05': '立夏', '05-21': '小满',
+    '06-05': '芒种', '06-21': '夏至',
+    '07-07': '小暑', '07-23': '大暑',
+    '08-07': '立秋', '08-23': '处暑',
+    '09-07': '白露', '09-23': '秋分',
+    '10-08': '寒露', '10-23': '霜降',
+    '11-07': '立冬', '11-22': '小雪',
+    '12-07': '大雪', '12-22': '冬至'
+};
+
+let currentYear = 2026;
+let currentMonth = 5;
+let selectedDate = '';
 
 function initCalendar() {
     const now = new Date();
-    calCurrentYear = now.getFullYear();
-    calCurrentMonth = now.getMonth() + 1;
+    currentYear = now.getFullYear();
+    currentMonth = now.getMonth();
+    selectedDate = formatDate(now);
 
-    renderCalMonthNav();
+    bindCalendarEvents();
     renderCalendar();
-    bindCalEvents();
+    renderTasks();
 }
 
-function renderCalMonthNav() {
-    const nav = document.getElementById('calMonthNav');
-    if (!nav) return;
-    nav.innerHTML = CAL_MONTHS_CN.map((m, i) => {
-        const active = (i + 1) === calCurrentMonth ? 'active' : '';
-        return `<button class="cal-month-btn ${active}" data-month="${i + 1}">${m}月</button>`;
-    }).join('');
+function bindCalendarEvents() {
+    const yearSelect = document.getElementById('calYearSelect');
+    const monthSelect = document.getElementById('calMonthSelect');
+    const prevBtn = document.getElementById('calPrevBtn');
+    const nextBtn = document.getElementById('calNextBtn');
+    const todayBtn = document.getElementById('calTodayBtn');
+    const addTaskBtn = document.getElementById('calAddTaskBtn');
+    const modalClose = document.getElementById('modalClose');
+    const modalCancel = document.getElementById('modalCancel');
+    const modalConfirm = document.getElementById('modalConfirm');
+    const taskInput = document.getElementById('taskInput');
+
+    if (yearSelect) yearSelect.addEventListener('change', () => {
+        currentYear = parseInt(yearSelect.value, 10);
+        renderCalendar();
+    });
+
+    if (monthSelect) monthSelect.addEventListener('change', () => {
+        currentMonth = parseInt(monthSelect.value, 10);
+        renderCalendar();
+    });
+
+    if (prevBtn) prevBtn.addEventListener('click', () => {
+        if (currentMonth === 0) {
+            currentMonth = 11;
+            currentYear--;
+        } else {
+            currentMonth--;
+        }
+        updateSelects();
+        renderCalendar();
+    });
+
+    if (nextBtn) nextBtn.addEventListener('click', () => {
+        if (currentMonth === 11) {
+            currentMonth = 0;
+            currentYear++;
+        } else {
+            currentMonth++;
+        }
+        updateSelects();
+        renderCalendar();
+    });
+
+    if (todayBtn) todayBtn.addEventListener('click', () => {
+        const now = new Date();
+        currentYear = now.getFullYear();
+        currentMonth = now.getMonth();
+        selectedDate = formatDate(now);
+        updateSelects();
+        renderCalendar();
+        renderTasks();
+    });
+
+    if (addTaskBtn) addTaskBtn.addEventListener('click', () => {
+        openTaskModal();
+    });
+
+    if (modalClose) modalClose.addEventListener('click', closeTaskModal);
+    if (modalCancel) modalCancel.addEventListener('click', closeTaskModal);
+    if (modalConfirm) modalConfirm.addEventListener('click', addTask);
+
+    if (taskInput) taskInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') addTask();
+    });
+}
+
+function updateSelects() {
+    const yearSelect = document.getElementById('calYearSelect');
+    const monthSelect = document.getElementById('calMonthSelect');
+    if (yearSelect) yearSelect.value = currentYear;
+    if (monthSelect) monthSelect.value = currentMonth;
+}
+
+function formatDate(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function formatDateKey(date) {
+    return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function getLunarDate(date) {
+    const lunarInfo = getLunarInfo(date);
+    return lunarInfo;
+}
+
+function getLunarInfo(date) {
+    const day = date.getDate();
+    let lunarDay = '';
+    if (day <= 10) {
+        lunarDay = LUNAR_DAYS[1] + LUNAR_DAY_NUMS[day];
+    } else if (day < 20) {
+        lunarDay = LUNAR_DAYS[2] + LUNAR_DAY_NUMS[day - 10];
+    } else if (day === 20) {
+        lunarDay = '二十';
+    } else if (day < 30) {
+        lunarDay = LUNAR_DAYS[3] + LUNAR_DAY_NUMS[day - 20];
+    } else {
+        lunarDay = '三十';
+    }
+    return lunarDay;
+}
+
+function getHoliday(date) {
+    const fullDate = formatDate(date);
+    const dateKey = formatDateKey(date);
+    
+    if (HOLIDAYS[fullDate]) return HOLIDAYS[fullDate];
+    if (SOLAR_TERMS[dateKey]) return SOLAR_TERMS[dateKey];
+    if (HOLIDAYS[dateKey]) return HOLIDAYS[dateKey];
+    return '';
+}
+
+function isHoliday(date) {
+    const fullDate = formatDate(date);
+    const dateKey = formatDateKey(date);
+    const dayOfWeek = date.getDay();
+    
+    if (HOLIDAYS[fullDate]) return true;
+    if (dayOfWeek === 0 || dayOfWeek === 6) return true;
+    return false;
+}
+
+function isWeekend(date) {
+    const dayOfWeek = date.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6;
 }
 
 function renderCalendar() {
-    // 更新标题
-    const yEl = document.getElementById('calYear');
-    if (yEl) yEl.textContent = calCurrentYear;
-    const numEl = document.getElementById('calMonthNum');
-    if (numEl) numEl.textContent = calCurrentMonth;
-    const enEl = document.getElementById('calMonthEn');
-    if (enEl) enEl.textContent = CAL_MONTHS_EN[calCurrentMonth - 1];
+    const container = document.getElementById('calDaysContainer');
+    if (!container) return;
 
-    // 生成月历
-    const tbody = document.getElementById('calTableBody');
-    if (!tbody) return;
+    const firstDay = new Date(currentYear, currentMonth, 1);
+    const lastDay = new Date(currentYear, currentMonth + 1, 0);
+    const today = new Date();
+    const todayStr = formatDate(today);
 
-    const firstDay = new Date(calCurrentYear, calCurrentMonth - 1, 1);
-    const lastDay = new Date(calCurrentYear, calCurrentMonth, 0);
+    const startDay = firstDay.getDay();
     const totalDays = lastDay.getDate();
 
-    // JS中周日=0，我们表格第一列是周一，所以周一=0, ..., 周日=6
-    // firstDay.getDay(): 周日=0, 周一=1, ..., 周六=6
-    let startIdx = firstDay.getDay() - 1;
-    if (startIdx < 0) startIdx = 6;
+    let html = '';
 
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    // 上月日期
+    const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+    for (let i = startDay - 1; i >= 0; i--) {
+        const d = prevMonthLastDay - i;
+        const date = new Date(currentYear, currentMonth - 1, d);
+        html += renderDay(date, true);
+    }
+
+    // 当月日期
+    for (let d = 1; d <= totalDays; d++) {
+        const date = new Date(currentYear, currentMonth, d);
+        html += renderDay(date, false);
+    }
+
+    // 下月日期
+    const remaining = 42 - (startDay + totalDays);
+    for (let d = 1; d <= remaining; d++) {
+        const date = new Date(currentYear, currentMonth + 1, d);
+        html += renderDay(date, true);
+    }
+
+    container.innerHTML = html;
+}
+
+function renderDay(date, isOtherMonth) {
+    const dateStr = formatDate(date);
+    const isToday = dateStr === formatDate(new Date());
+    const isSelected = dateStr === selectedDate;
+    const holiday = getHoliday(date);
+    const isHol = isHoliday(date);
+    const lunar = getLunarDate(date);
+    const dayOfWeek = date.getDay();
+    const isSat = dayOfWeek === 6;
+    const isSun = dayOfWeek === 0;
+
+    let classes = ['calendar-day'];
+    if (isOtherMonth) classes.push('other-month');
+    if (isToday) classes.push('today');
+    if (isSelected) classes.push('selected');
+    if (isHol) classes.push('holiday');
+
+    let dateColor = 'color: #333;';
+    if (isSun || isSat) dateColor = 'color: #e74c3c;';
+
+    let html = `<div class="${classes.join(' ')}" data-date="${dateStr}" onclick="selectDate('${dateStr}')">`;
+    
+    if (isHol && !isOtherMonth) {
+        html += '<span class="day-rest-tag">休</span>';
+    }
+    
+    html += `<span class="day-date" style="${dateColor}">${date.getDate()}</span>`;
+    
+    if (!isOtherMonth) {
+        html += `<span class="day-lunar">${lunar}</span>`;
+        if (holiday) {
+            html += `<span class="day-holiday-tag">${holiday}</span>`;
+        }
+    }
+    
+    html += '</div>';
+    
+    return html;
+}
+
+function selectDate(dateStr) {
+    selectedDate = dateStr;
+    renderCalendar();
+    renderTasks();
+}
+
+function renderTasks() {
+    const list = document.getElementById('calTasksList');
+    if (!list) return;
 
     const data = loadData();
-    const calData = data.calendar || {};
+    const tasks = data.calendar?.[selectedDate] || [];
 
-    let cellCount = 0;
-    let html = '<tr>';
-
-    // 前置空白
-    for (let i = 0; i < startIdx; i++) {
-        html += '<td><div class="cal-cell empty"></div></td>';
-        cellCount++;
-    }
-
-    // 日期
-    for (let d = 1; d <= totalDays; d++) {
-        const dateStr = `${calCurrentYear}-${String(calCurrentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-        const dayOfWeek = new Date(calCurrentYear, calCurrentMonth - 1, d).getDay();
-        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-        const isToday = dateStr === todayStr;
-
-        const cellCls = ['cal-cell'];
-        if (isWeekend) cellCls.push('weekend');
-        if (isToday) cellCls.push('today');
-
-        const items = calData[dateStr] || [];
-        const itemsHtml = items.map(it => {
-            const doneCls = it.done ? 'done' : '';
-            return `<div class="cal-item ${it.type} ${doneCls}" data-date="${dateStr}" data-id="${it.id}">
-                <span class="cal-item-check"></span>
-                <span class="cal-item-text">${escapeHtml(it.text)}</span>
-                <span class="cal-item-del" data-action="del" data-date="${dateStr}" data-id="${it.id}">×</span>
-            </div>`;
-        }).join('');
-
-        // 判断休息日/工作日标记（默认周六周日为"休"）
-        let tagHtml = '';
-        if (isWeekend) {
-            tagHtml = '<span class="cal-cell-rest">休</span>';
-        }
-
-        html += `<td>
-            <div class="${cellCls.join(' ')}">
-                <div class="cal-cell-head">
-                    <span class="cal-cell-date">${d}</span>
-                    ${tagHtml}
-                </div>
-                <div class="cal-item-list">
-                    ${itemsHtml}
-                </div>
-                <button class="cal-add-btn" data-date="${dateStr}">+ 添加</button>
-            </div>
-        </td>`;
-        cellCount++;
-
-        if (cellCount % 7 === 0) {
-            html += '</tr><tr>';
-        }
-    }
-
-    // 填充末尾空白
-    const remaining = 7 - (cellCount % 7);
-    if (remaining < 7) {
-        for (let i = 0; i < remaining; i++) {
-            html += '<td><div class="cal-cell empty"></div></td>';
-        }
-    }
-    html += '</tr>';
-
-    tbody.innerHTML = html;
-
-    // 统计
-    updateCalStats(calData);
-    updateCalReminder(calData);
-}
-
-function updateCalStats(calData) {
-    let important = 0, normal = 0, daily = 0, rest = 0, work = 0;
-
-    // 本月休息/工作天数
-    const firstDay = new Date(calCurrentYear, calCurrentMonth - 1, 1);
-    const lastDay = new Date(calCurrentYear, calCurrentMonth, 0);
-    for (let d = 1; d <= lastDay.getDate(); d++) {
-        const dow = new Date(calCurrentYear, calCurrentMonth - 1, d).getDay();
-        if (dow === 0 || dow === 6) rest++;
-        else work++;
-    }
-
-    // 事项统计
-    for (const date in calData) {
-        if (!date.startsWith(`${calCurrentYear}-${String(calCurrentMonth).padStart(2, '0')}`)) continue;
-        const items = calData[date] || [];
-        for (const it of items) {
-            if (it.type === 'important') important++;
-            else if (it.type === 'normal') normal++;
-            else if (it.type === 'daily') daily++;
-        }
-    }
-
-    const eImp = document.getElementById('calStatImportant');
-    const eNo = document.getElementById('calStatNormal');
-    const eDa = document.getElementById('calStatDaily');
-    const eRe = document.getElementById('calStatRest');
-    const eWo = document.getElementById('calStatWork');
-
-    if (eImp) eImp.textContent = important;
-    if (eNo) eNo.textContent = normal;
-    if (eDa) eDa.textContent = daily;
-    if (eRe) eRe.textContent = rest;
-    if (eWo) eWo.textContent = work;
-}
-
-function updateCalReminder(calData) {
-    const reminderEl = document.getElementById('calReminderList');
-    if (!reminderEl) return;
-
-    // 收集未完成的重要/一般事项（按日期排序，取前5个）
-    const pending = [];
-    for (const date in calData) {
-        const items = calData[date] || [];
-        for (const it of items) {
-            if (!it.done && (it.type === 'important' || it.type === 'normal')) {
-                pending.push({ date, ...it });
-            }
-        }
-    }
-    pending.sort((a, b) => a.date.localeCompare(b.date));
-    const top = pending.slice(0, 6);
-
-    if (top.length === 0) {
-        reminderEl.innerHTML = '<div style="color:#999;font-size:11px;text-align:center;padding:8px 0;">暂无未完成事项</div>';
+    if (tasks.length === 0) {
+        list.innerHTML = '<div class="tasks-empty">暂无事项，点击上方"+添加事项"添加</div>';
         return;
     }
 
-    reminderEl.innerHTML = top.map(t => {
-        const m = t.date.match(/-(\d{2})-(\d{2})$/);
-        const dateShort = m ? `${parseInt(m[1])}/${parseInt(m[2])}` : t.date;
-        return `<div class="cal-reminder-item">
-            <span class="cal-reminder-date">${dateShort}</span>
-            <span class="cal-reminder-text">${escapeHtml(t.text)}</span>
-        </div>`;
+    list.innerHTML = tasks.map(task => {
+        const doneCls = task.done ? 'done' : '';
+        const checkedCls = task.done ? 'checked' : '';
+        return `
+            <div class="task-item ${doneCls}" data-id="${task.id}">
+                <span class="task-checkbox ${checkedCls}" onclick="toggleTaskDone('${task.id}')"></span>
+                <span class="task-text">${escapeHtml(task.text)}</span>
+                <span class="task-delete" onclick="deleteTask('${task.id}')">×</span>
+            </div>
+        `;
     }).join('');
 }
 
-function bindCalEvents() {
-    // 月份切换
-    const nav = document.getElementById('calMonthNav');
-    if (nav) {
-        nav.addEventListener('click', (e) => {
-            const btn = e.target.closest('.cal-month-btn');
-            if (btn && btn.dataset.month) {
-                calCurrentMonth = parseInt(btn.dataset.month, 10);
-                renderCalMonthNav();
-                renderCalendar();
-            }
-        });
-    }
-
-    // 日历点击（添加/完成/删除）
-    const tbody = document.getElementById('calTableBody');
-    if (tbody) {
-        tbody.addEventListener('click', (e) => {
-            // 删除
-            const delBtn = e.target.closest('[data-action="del"]');
-            if (delBtn) {
-                e.stopPropagation();
-                deleteCalItem(delBtn.dataset.date, delBtn.dataset.id);
-                return;
-            }
-            // 点击事项（切换完成状态）
-            const item = e.target.closest('.cal-item');
-            if (item && item.dataset.id) {
-                e.stopPropagation();
-                toggleCalItemDone(item.dataset.date, item.dataset.id);
-                return;
-            }
-            // 添加按钮
-            const addBtn = e.target.closest('.cal-add-btn');
-            if (addBtn && addBtn.dataset.date) {
-                openCalModal(addBtn.dataset.date);
-            }
-        });
-    }
-
-    // 弹窗关闭
-    const closeBtn = document.getElementById('calModalClose');
-    const cancelBtn = document.getElementById('calModalCancel');
-    const confirmBtn = document.getElementById('calModalConfirm');
-    const modal = document.getElementById('calModal');
-
-    if (closeBtn) closeBtn.addEventListener('click', closeCalModal);
-    if (cancelBtn) cancelBtn.addEventListener('click', closeCalModal);
-    if (confirmBtn) confirmBtn.addEventListener('click', confirmCalItem);
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeCalModal();
-        });
-    }
-
-    // 类型选择
-    const typeBtns = document.querySelectorAll('.cal-type-btn');
-    typeBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            typeBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            calModalType = btn.dataset.type;
-        });
-    });
-
-    // 输入回车确认
-    const input = document.getElementById('calItemInput');
-    if (input) {
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') confirmCalItem();
-        });
-    }
-}
-
-function openCalModal(dateStr) {
-    const modal = document.getElementById('calModal');
-    const title = document.getElementById('calModalDate');
-    const input = document.getElementById('calItemInput');
+function openTaskModal() {
+    const modal = document.getElementById('calendarModal');
+    const title = document.getElementById('modalTitle');
+    const input = document.getElementById('taskInput');
+    
     if (!modal) return;
-
-    calModalDate = dateStr;
-    if (title) title.textContent = `添加事项 - ${dateStr}`;
-    if (input) {
-        input.value = '';
-        input.focus();
-    }
-
-    // 重置类型选择
-    calModalType = 'important';
-    const typeBtns = document.querySelectorAll('.cal-type-btn');
-    typeBtns.forEach(b => {
-        b.classList.toggle('active', b.dataset.type === 'important');
-    });
-
+    
+    title.textContent = `${selectedDate} - 添加事项`;
+    input.value = '';
+    input.focus();
     modal.classList.add('active');
 }
 
-function closeCalModal() {
-    const modal = document.getElementById('calModal');
+function closeTaskModal() {
+    const modal = document.getElementById('calendarModal');
     if (modal) modal.classList.remove('active');
 }
 
-function confirmCalItem() {
-    const input = document.getElementById('calItemInput');
-    const text = input ? input.value.trim() : '';
-    if (!text || !calModalDate) return;
-
+function addTask() {
+    const input = document.getElementById('taskInput');
+    const text = input.value.trim();
+    
+    if (!text) return;
+    
     const data = loadData();
     if (!data.calendar) data.calendar = {};
-    if (!data.calendar[calModalDate]) data.calendar[calModalDate] = [];
-
-    const newItem = {
-        id: 'it_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-        type: calModalType,
+    if (!data.calendar[selectedDate]) data.calendar[selectedDate] = [];
+    
+    data.calendar[selectedDate].push({
+        id: 'task_' + Date.now(),
         text: text,
         done: false,
         created: Date.now()
-    };
-    data.calendar[calModalDate].push(newItem);
-
+    });
+    
     saveData(data);
-    closeCalModal();
-    renderCalendar();
+    closeTaskModal();
+    renderTasks();
 }
 
-function toggleCalItemDone(dateStr, itemId) {
+function toggleTaskDone(taskId) {
     const data = loadData();
-    if (!data.calendar || !data.calendar[dateStr]) return;
-    const item = data.calendar[dateStr].find(it => it.id === itemId);
-    if (!item) return;
-    item.done = !item.done;
-    saveData(data);
-    renderCalendar();
+    if (!data.calendar?.[selectedDate]) return;
+    
+    const task = data.calendar[selectedDate].find(t => t.id === taskId);
+    if (task) {
+        task.done = !task.done;
+        saveData(data);
+        renderTasks();
+    }
 }
 
-function deleteCalItem(dateStr, itemId) {
+function deleteTask(taskId) {
     const data = loadData();
-    if (!data.calendar || !data.calendar[dateStr]) return;
-    data.calendar[dateStr] = data.calendar[dateStr].filter(it => it.id !== itemId);
-    if (data.calendar[dateStr].length === 0) delete data.calendar[dateStr];
+    if (!data.calendar?.[selectedDate]) return;
+    
+    data.calendar[selectedDate] = data.calendar[selectedDate].filter(t => t.id !== taskId);
+    if (data.calendar[selectedDate].length === 0) {
+        delete data.calendar[selectedDate];
+    }
+    
     saveData(data);
-    renderCalendar();
+    renderTasks();
 }
