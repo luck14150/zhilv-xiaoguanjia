@@ -217,26 +217,32 @@
                         <button class="modal-delete" id="modalDeleteBtn" style="display:none;">🗑️</button>
                     </div>
 
-                    <!-- 时间选择器 HH:MM:SS -->
+                    <!-- 时间选择器 HH:MM:SS（上下滚动按钮） -->
                     <div class="modal-time-picker">
                         <div class="time-unit-group">
+                            <button class="scroll-btn scroll-up" data-target="hourScroll">▲</button>
                             <div class="time-scroll" id="hourScroll">
-                                <div class="time-scroll-inner" id="hourScrollInner"></div>
+                                <div class="time-scroll-inner">00</div>
                             </div>
+                            <button class="scroll-btn scroll-down" data-target="hourScroll">▼</button>
                             <span class="time-label">时</span>
                         </div>
                         <span class="picker-sep">:</span>
                         <div class="time-unit-group">
+                            <button class="scroll-btn scroll-up" data-target="minScroll">▲</button>
                             <div class="time-scroll" id="minScroll">
-                                <div class="time-scroll-inner" id="minScrollInner"></div>
+                                <div class="time-scroll-inner">00</div>
                             </div>
+                            <button class="scroll-btn scroll-down" data-target="minScroll">▼</button>
                             <span class="time-label">分</span>
                         </div>
                         <span class="picker-sep">:</span>
                         <div class="time-unit-group">
+                            <button class="scroll-btn scroll-up" data-target="secScroll">▲</button>
                             <div class="time-scroll" id="secScroll">
-                                <div class="time-scroll-inner" id="secScrollInner"></div>
+                                <div class="time-scroll-inner">00</div>
                             </div>
+                            <button class="scroll-btn scroll-down" data-target="secScroll">▼</button>
                             <span class="time-label">秒</span>
                         </div>
                     </div>

@@ -1042,37 +1042,41 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .time-scroll {
     position: relative;
     width: 72px;
-    height: 80px;
+    height: 64px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    background: rgba(124, 140, 255, 0.08);
+    border: 1px solid rgba(124, 140, 255, 0.2);
+    border-radius: 12px;
 }
 
 .time-scroll-inner {
-    font-size: 40px;
+    font-size: 38px;
     font-weight: 900;
     color: #fff;
     letter-spacing: 2px;
     font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 20px rgba(124, 140, 255, 0.4);
+    text-shadow: 0 0 20px rgba(124, 140, 255, 0.5);
 }
 
 .scroll-btn {
-    width: 40px;
-    height: 28px;
-    background: rgba(124, 140, 255, 0.15);
-    border: 1px solid rgba(124, 140, 255, 0.3);
-    border-radius: 8px;
-    color: #7c8cff;
-    font-size: 10px;
+    width: 56px;
+    height: 32px;
+    background: rgba(124, 140, 255, 0.2);
+    border: 1px solid rgba(124, 140, 255, 0.4);
+    border-radius: 10px;
+    color: #c97cff;
+    font-size: 14px;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1082,19 +1086,22 @@ body {
 }
 
 .scroll-btn:hover {
-    background: rgba(124, 140, 255, 0.3);
+    background: rgba(201, 124, 255, 0.35);
     color: #fff;
+    border-color: #c97cff;
+    transform: scale(1.05);
 }
 
 .scroll-btn:active {
-    transform: scale(0.95);
+    transform: scale(0.92);
 }
 
 .picker-sep {
     font-size: 32px;
     font-weight: 800;
     color: #7c8cff;
-    margin-bottom: 20px;
+    margin: 0;
+    padding-bottom: 18px;
 }
 
 .time-label {

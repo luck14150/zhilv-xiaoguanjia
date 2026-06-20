@@ -765,33 +765,27 @@ function bindTimeScroll(containerId, max, onSet) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    // 确保容器内有 ▲ / ▼ 按钮
-    let upBtn = container.querySelector('.scroll-up');
-    let downBtn = container.querySelector('.scroll-down');
-    if (!upBtn) {
-        upBtn = document.createElement('button');
-        upBtn.className = 'scroll-btn scroll-up';
-        upBtn.textContent = '▲';
-        container.appendChild(upBtn);
-    }
-    if (!downBtn) {
-        downBtn = document.createElement('button');
-        downBtn.className = 'scroll-btn scroll-down';
-        downBtn.textContent = '▼';
-        container.appendChild(downBtn);
+    const parent = container.parentElement;
+    const upBtn = parent.querySelector('.scroll-up');
+    const downBtn = parent.querySelector('.scroll-down');
+
+    if (upBtn) {
+        upBtn.addEventListener('click', () => {
+            const current = parseInt(container.querySelector('.time-scroll-inner')?.textContent || '0', 10);
+            const next = (current + 1) % max;
+            onSet(next);
+            setTimeText(containerId, next);
+        });
     }
 
-    upBtn.addEventListener('click', () => {
-        const current = parseInt(container.querySelector('.time-scroll-inner')?.textContent || '0', 10);
-        onSet((current + 1) % max);
-        setTimeText(containerId, (current + 1) % max);
-    });
-    downBtn.addEventListener('click', () => {
-        const current = parseInt(container.querySelector('.time-scroll-inner')?.textContent || '0', 10);
-        const next = (current - 1 + max) % max;
-        onSet(next);
-        setTimeText(containerId, next);
-    });
+    if (downBtn) {
+        downBtn.addEventListener('click', () => {
+            const current = parseInt(container.querySelector('.time-scroll-inner')?.textContent || '0', 10);
+            const next = (current - 1 + max) % max;
+            onSet(next);
+            setTimeText(containerId, next);
+        });
+    }
 }
 
 function saveAlarm() {
