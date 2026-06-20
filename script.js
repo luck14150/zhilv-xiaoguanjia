@@ -3334,12 +3334,22 @@ function renderMemoryList() {
     const emptyEl = document.getElementById('memoryEmpty');
     if (!listEl) return;
 
-    // 根据当前筛选类型过滤数据
+    // 1. 先按筛选类型过滤
     let filtered = memoryData;
     if (currentMemoryCategory === 'folder') {
         filtered = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category));
     } else if (currentMemoryCategory === 'uncategorized') {
         filtered = memoryData.filter(item => !item.category || !FOLDER_CATEGORIES.includes(item.category));
+    }
+
+    // 2. 再按关键字过滤（标题或内容匹配）
+    const searchEl = document.getElementById('memorySearchInput');
+    if (searchEl && searchEl.value.trim()) {
+        const kw = searchEl.value.trim().toLowerCase();
+        filtered = filtered.filter(item =>
+            (item.title && item.title.toLowerCase().includes(kw)) ||
+            (item.content && item.content.toLowerCase().includes(kw))
+        );
     }
 
     // 按创建时间排序（最新的在前）
@@ -3348,40 +3358,28 @@ function renderMemoryList() {
     listEl.innerHTML = '';
 
     if (filtered.length === 0) {
-        if (emptyEl) emptyEl.style.display = 'block';
+        if (emptyEl) {
+            emptyEl.style.display = 'block';
+            const p = emptyEl.querySelector('p');
+            if (p && searchEl && searchEl.value.trim()) {
+                p.textContent = `没有匹配 "${searchEl.value.trim()}" 的笔记`;
+            } else if (p) {
+                p.textContent = '还没有笔记，点击右下角 + 添加你的第一条笔记';
+            }
+        }
     } else {
         if (emptyEl) emptyEl.style.display = 'none';
         filtered.forEach(item => {
             const div = document.createElement('div');
             div.className = 'memory-item';
+            div.setAttribute('onclick', `editMemory(${item.id})`);
             div.innerHTML =
-                `<span class="memory-tag">${item.category}</span>
-                <h4>${item.title}</h4>
-                <p>${item.content}</p>
-                <div class="memory-meta">
-                    <span>${formatDateMemory(item.createdAt)}</span>
-                    <div class="memory-actions">
-                        <button class="memory-action-btn" onclick="editMemory(${item.id})">编辑</button>
-                        <button class="memory-action-btn delete" onclick="deleteMemory(${item.id})">删除</button>
-                    </div>
-                </div>`;
+                `<h4 class="memory-item-title">${item.title}</h4>
+                <p class="memory-item-content">${item.content}</p>
+                <div class="memory-item-date">${formatDateMemory(item.createdAt)}</div>`;
             listEl.appendChild(div);
         });
     }
-
-    // 更新三个筛选按钮的统计数字
-    const total = memoryData.length;
-    const folderCount = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category)).length;
-    const uncategorizedCount = total - folderCount;
-
-    const allNumEl = document.getElementById('filterAllNum');
-    const folderNumEl = document.getElementById('filterFolderNum');
-    const uncNumEl = document.getElementById('filterUncategorizedNum');
-    const totalNumEl = document.getElementById('filterTotalNum');
-    if (allNumEl) allNumEl.textContent = total;
-    if (folderNumEl) folderNumEl.textContent = folderCount;
-    if (uncNumEl) uncNumEl.textContent = uncategorizedCount;
-    if (totalNumEl) totalNumEl.textContent = total;
 }
 
 function isToday(timestamp) {
@@ -3420,10 +3418,12 @@ function showAddMemoryModal() {
     const title = document.getElementById('memoryModalTitle');
     const titleInput = document.getElementById('memoryTitleInput');
     const contentInput = document.getElementById('memoryContentInput');
+    const delBtn = document.getElementById('memoryModalDeleteBtn');
 
     if (title) title.textContent = '添加新记忆';
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
+    if (delBtn) delBtn.style.display = 'none';
 
     // 更新分类选择状态
     updateCategorySelect();
@@ -3441,14 +3441,33 @@ function editMemory(id) {
     const title = document.getElementById('memoryModalTitle');
     const titleInput = document.getElementById('memoryTitleInput');
     const contentInput = document.getElementById('memoryContentInput');
+    const delBtn = document.getElementById('memoryModalDeleteBtn');
 
     if (title) title.textContent = '编辑记忆';
     if (titleInput) titleInput.value = memory.title;
     if (contentInput) contentInput.value = memory.content;
+    if (delBtn) {
+        delBtn.style.display = 'inline-block';
+        delBtn.style.color = '#ff6b6b';
+        delBtn.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+    }
 
     updateCategorySelect();
 
     if (modal) modal.classList.add('show');
+}
+
+// 从编辑弹窗内调用删除
+function deleteCurrentMemory() {
+    if (!editingMemoryId) return;
+    const confirmed = confirm('确定要删除这条记忆吗？');
+    if (!confirmed) return;
+    memoryData = memoryData.filter(m => m.id !== editingMemoryId);
+    saveMemoryData();
+    renderMemoryList();
+    const modal = document.getElementById('memoryModal');
+    if (modal) modal.classList.remove('show');
+    editingMemoryId = null;
 }
 
 function selectMemoryCategory(element, category) {
