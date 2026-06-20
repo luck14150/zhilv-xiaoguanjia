@@ -3165,7 +3165,7 @@ function startAICall() {
     callDuration = 0;
 
     const statusEl = document.getElementById('aiCallStatus');
-    if (statusEl) statusEl.textContent = '通话�?..';
+    if (statusEl) statusEl.textContent = '通话中...';
 
     const avatar = document.getElementById('aiCallAvatar');
     if (avatar) {
@@ -3177,7 +3177,7 @@ function startAICall() {
         const mins = Math.floor(callDuration / 60).toString().padStart(2, '0');
         const secs = (callDuration % 60).toString().padStart(2, '0');
         const durationEl = document.getElementById('aiCallDuration');
-        if (durationEl) durationEl.textContent = ${mins}:;
+        if (durationEl) durationEl.textContent = `${mins}:${secs}`;
     }, 1000);
 }
 
@@ -3227,22 +3227,22 @@ function startAICallWith(topic) {
     if (listEl) {
         const newMsg = document.createElement('div');
         newMsg.className = 'ai-call-history-item ai-user';
-        newMsg.innerHTML = <span class="history-role">�?/span><p></p>;
+        newMsg.innerHTML = `<span class="history-role">您</span><p>${topic}</p>`;
         listEl.appendChild(newMsg);
 
         const aiResp = document.createElement('div');
         aiResp.className = 'ai-call-history-item ai-ai';
-        aiResp.innerHTML = <span class="history-role">AI助手</span><p>好的，我来帮您处理关�?{topic}的内容。请问您具体需要什么帮助？</p>;
+        aiResp.innerHTML = `<span class="history-role">AI助手</span><p>好的，我来帮您处理关于${topic}的内容。请问您具体需要什么帮助？</p>`;
         listEl.appendChild(aiResp);
     }
 }
 
 /* ============ 模式切换功能 ============ */
 const modeInfo = {
-    work: { name: '💼 工作模式', desc: '专注工作，减少干扰，优化效率', focus: '09:00 - 18:00', interval: '�?0分钟', notify: '重要通知' },
-    study: { name: '📖 学习模式', desc: '沉浸学习，知识积累，提升自我', focus: '全天', interval: '�?5分钟', notify: '重要通知' },
-    exercise: { name: '💪 运动模式', desc: '活力锻炼，健康生活，增强体质', focus: '17:00 - 20:00', interval: '�?0分钟', notify: '运动提醒' },
-    rest: { name: '😴 休息模式', desc: '放松身心，恢复精力，平和安宁', focus: '22:00 - 08:00', interval: '�?小时', notify: '勿打�? }
+    work: { name: '💼 工作模式', desc: '专注工作，减少干扰，优化效率', focus: '09:00 - 18:00', interval: '每50分钟', notify: '重要通知' },
+    study: { name: '📖 学习模式', desc: '沉浸学习，知识积累，提升自我', focus: '全天', interval: '每45分钟', notify: '重要通知' },
+    exercise: { name: '💪 运动模式', desc: '活力锻炼，健康生活，增强体质', focus: '17:00 - 20:00', interval: '每60分钟', notify: '运动提醒' },
+    rest: { name: '😴 休息模式', desc: '放松身心，恢复精力，平和安宁', focus: '22:00 - 08:00', interval: '每2小时', notify: '勿打扰' }
 };
 
 let currentMode = 'work';
@@ -3263,7 +3263,7 @@ function switchMode(mode) {
     if (focusEl) focusEl.textContent = info.focus;
     if (intervalEl) intervalEl.textContent = info.interval;
     if (notifyEl) notifyEl.textContent = info.notify;
-    if (usedEl) usedEl.textContent = '已切�?;
+    if (usedEl) usedEl.textContent = '已切换';
 }
 
 /* ============ 记忆管理功能 ============ */
@@ -3284,9 +3284,9 @@ function loadMemoryData() {
     } else {
         // 默认示例数据
         memoryData = [
-            { id: 1, title: '编程学习要点', content: '记录前端开发核心知识点，包�?HTML、CSS、JavaScript 等基础内容�?, category: '学习笔记', createdAt: Date.now() - 86400000 },
-            { id: 2, title: '周末爬山心得', content: '今天去爬山，大自然让人心旷神怡，运动后状态更好。要坚持每周一次户外活动�?, category: '生活感悟', createdAt: Date.now() - 172800000 },
-            { id: 3, title: '本周重点任务', content: '完成项目A的需求评审，准备项目B的方案设计，同时跟进测试进度�?, category: '工作总结', createdAt: Date.now() - 259200000 }
+            { id: 1, title: '编程学习要点', content: '记录前端开发核心知识点，包括HTML、CSS、JavaScript 等基础内容。', category: '学习笔记', createdAt: Date.now() - 86400000 },
+            { id: 2, title: '周末爬山心得', content: '今天去爬山，大自然让人心旷神怡，运动后状态更好。要坚持每周一次户外活动。', category: '生活感悟', createdAt: Date.now() - 172800000 },
+            { id: 3, title: '本周重点任务', content: '完成项目A的需求评审，准备项目B的方案设计，同时跟进测试进度。', category: '工作总结', createdAt: Date.now() - 259200000 }
         ];
         saveMemoryData();
     }
@@ -3306,7 +3306,8 @@ function renderMemoryList() {
         filtered = memoryData.filter(item => item.category === currentMemoryCategory);
     }
 
-    // 按创建时间排序（最新的在前�?    filtered.sort((a, b) => b.createdAt - a.createdAt);
+    // 按创建时间排序（最新的在前）
+    filtered.sort((a, b) => b.createdAt - a.createdAt);
 
     listEl.innerHTML = '';
 
@@ -3317,18 +3318,17 @@ function renderMemoryList() {
         filtered.forEach(item => {
             const div = document.createElement('div');
             div.className = 'memory-item';
-            div.innerHTML = 
-                <span class="memory-tag"></span>
-                <h4></h4>
-                <p></p>
+            div.innerHTML =
+                `<span class="memory-tag">${item.category}</span>
+                <h4>${item.title}</h4>
+                <p>${item.content}</p>
                 <div class="memory-meta">
-                    <span></span>
+                    <span>${formatDateMemory(item.createdAt)}</span>
                     <div class="memory-actions">
-                        <button class="memory-action-btn" onclick="editMemory()">编辑</button>
-                        <button class="memory-action-btn delete" onclick="deleteMemory()">删除</button>
+                        <button class="memory-action-btn" onclick="editMemory(${item.id})">编辑</button>
+                        <button class="memory-action-btn delete" onclick="deleteMemory(${item.id})">删除</button>
                     </div>
-                </div>
-            ;
+                </div>`;
             listEl.appendChild(div);
         });
     }
@@ -3355,17 +3355,18 @@ function formatDateMemory(timestamp) {
     const diff = now - date;
 
     if (diff < 60000) return '刚刚';
-    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟�?;
-    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时�?;
+    if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
     if (diff < 259200000) return Math.floor(diff / 86400000) + '天前';
 
-    return ${date.getMonth() + 1}�?{date.getDate()}日`;
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 function filterMemory(category, element) {
     currentMemoryCategory = category;
 
-    // 更新选中状�?    document.querySelectorAll('.category-tag').forEach(el => el.classList.remove('active'));
+    // 更新选中状态
+    document.querySelectorAll('.category-tag').forEach(el => el.classList.remove('active'));
     if (element) element.classList.add('active');
 
     renderMemoryList();
@@ -3379,11 +3380,12 @@ function showAddMemoryModal() {
     const titleInput = document.getElementById('memoryTitleInput');
     const contentInput = document.getElementById('memoryContentInput');
 
-    if (title) title.textContent = '添加新记�?;
+    if (title) title.textContent = '添加新记忆';
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
 
-    // 更新分类选择状�?    updateCategorySelect();
+    // 更新分类选择状态
+    updateCategorySelect();
 
     if (modal) modal.classList.add('show');
 }
@@ -3433,11 +3435,11 @@ function saveMemory() {
     const content = contentInput ? contentInput.value.trim() : '';
 
     if (!title) {
-        alert('请输入标�?);
+        alert('请输入标题');
         return;
     }
     if (!content) {
-        alert('请输入内�?);
+        alert('请输入内容');
         return;
     }
 
@@ -3450,7 +3452,8 @@ function saveMemory() {
             memory.category = selectedCategory;
         }
     } else {
-        // 添加新记�?        const newId = memoryData.length > 0 ? Math.max(...memoryData.map(m => m.id)) + 1 : 1;
+        // 添加新记忆
+        const newId = memoryData.length > 0 ? Math.max(...memoryData.map(m => m.id)) + 1 : 1;
         memoryData.push({
             id: newId,
             title: title,
@@ -3471,7 +3474,7 @@ function deleteMemory(id) {
     const memory = memoryData.find(m => m.id === id);
     if (!memory) return;
 
-    const confirmed = confirm(确定要删�?"吗？);
+    const confirmed = confirm('确定要删除这条记忆吗？');
     if (!confirmed) return;
 
     memoryData = memoryData.filter(m => m.id !== id);
@@ -3486,4 +3489,5 @@ function closeMemoryModal(event) {
     }
 }
 
-// 初始化记忆数�?loadMemoryData();
+// 初始化记忆数据
+loadMemoryData();
