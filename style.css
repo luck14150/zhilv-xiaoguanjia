@@ -1173,6 +1173,15 @@ body {
 .nav-icon {
     font-size: 22px;
     transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    min-height: 28px;
+}
+
+.nav-icon svg {
+    transition: all 0.3s;
 }
 
 .nav-btn.active .nav-icon {
