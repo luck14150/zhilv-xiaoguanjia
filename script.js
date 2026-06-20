@@ -69,9 +69,9 @@ function parseTime(timeStr) {
 // 把 0~23 小时转成"上午/中午/下午/晚上"描述（纯 UI 用）
 function periodOfHour(hour) {
     if (hour < 6) return '凌晨';
-    if (hour < 12) return '上午';
+    if (hour < 12) return 'am';
     if (hour < 14) return '中午';
-    if (hour < 18) return '下午';
+    if (hour < 18) return 'pm';
     return '晚上';
 }
 
@@ -355,7 +355,9 @@ function renderSavedAlarms() {
             '  </div>' +
             '  <div class="alarm-card-right">' +
             '    <div class="alarm-card-switch ' + enabledClass + '" data-action="toggle" data-id="' + alarm.id + '">' +
+            '      <span class="switch-label switch-label-off">OFF</span>' +
             '      <div class="alarm-card-switch-thumb"></div>' +
+            '      <span class="switch-label switch-label-on">ON</span>' +
             '    </div>' +
             '  </div>' +
             '</div>'

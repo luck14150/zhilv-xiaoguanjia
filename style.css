@@ -764,15 +764,24 @@ body {
 }
 
 .alarm-card-switch {
-    width: 62px;
+    width: 88px;
     height: 34px;
-    background: rgba(255, 255, 255, 0.22);
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 17px;
     position: relative;
     cursor: pointer;
     transition: background 0.3s;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
 }
 
+/* OFF 时：左侧变绿，右侧保持暗色 */
+.alarm-card-switch:not(.on) {
+    background: #ff3b30;
+}
+
+/* ON 时：右侧变绿，左侧保持暗色 */
 .alarm-card-switch.on {
     background: #34c759;
 }
@@ -786,11 +795,44 @@ body {
     background: #ffffff;
     border-radius: 50%;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
-    transition: left 0.3s;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
 }
 
 .alarm-card-switch.on .alarm-card-switch-thumb {
-    left: 30px;
+    left: calc(88px - 32px);
+}
+
+/* ON/OFF 文字标签 */
+.switch-label {
+    flex: 1;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    z-index: 1;
+    text-align: center;
+    transition: color 0.3s;
+}
+
+.switch-label-off {
+    color: rgba(255, 255, 255, 0.6);
+    text-align: left;
+    padding-left: 6px;
+}
+
+.switch-label-on {
+    color: rgba(255, 255, 255, 0.6);
+    text-align: right;
+    padding-right: 6px;
+}
+
+/* 激活侧文字变亮 */
+.alarm-card-switch.on .switch-label-on {
+    color: #ffffff;
+}
+
+.alarm-card-switch:not(.on) .switch-label-off {
+    color: #ffffff;
 }
 
 .alarm-add-btn {
