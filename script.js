@@ -1405,4 +1405,347 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 初始化世界时钟
     updateWorldClock();
+
+    // 5. 日历
+    initCalendar();
 });
+
+/* ============ 日历作息表 ============ */
+const CAL_MONTHS_CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二'];
+const CAL_MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+
+let calCurrentYear = 2025;
+let calCurrentMonth = 1;
+let calModalDate = '';
+let calModalType = 'important';
+
+function initCalendar() {
+    const now = new Date();
+    calCurrentYear = now.getFullYear();
+    calCurrentMonth = now.getMonth() + 1;
+
+    renderCalMonthNav();
+    renderCalendar();
+    bindCalEvents();
+}
+
+function renderCalMonthNav() {
+    const nav = document.getElementById('calMonthNav');
+    if (!nav) return;
+    nav.innerHTML = CAL_MONTHS_CN.map((m, i) => {
+        const active = (i + 1) === calCurrentMonth ? 'active' : '';
+        return `<button class="cal-month-btn ${active}" data-month="${i + 1}">${m}月</button>`;
+    }).join('');
+}
+
+function renderCalendar() {
+    // 更新标题
+    const yEl = document.getElementById('calYear');
+    if (yEl) yEl.textContent = calCurrentYear;
+    const numEl = document.getElementById('calMonthNum');
+    if (numEl) numEl.textContent = calCurrentMonth;
+    const enEl = document.getElementById('calMonthEn');
+    if (enEl) enEl.textContent = CAL_MONTHS_EN[calCurrentMonth - 1];
+
+    // 生成月历
+    const tbody = document.getElementById('calTableBody');
+    if (!tbody) return;
+
+    const firstDay = new Date(calCurrentYear, calCurrentMonth - 1, 1);
+    const lastDay = new Date(calCurrentYear, calCurrentMonth, 0);
+    const totalDays = lastDay.getDate();
+
+    // JS中周日=0，我们表格第一列是周一，所以周一=0, ..., 周日=6
+    // firstDay.getDay(): 周日=0, 周一=1, ..., 周六=6
+    let startIdx = firstDay.getDay() - 1;
+    if (startIdx < 0) startIdx = 6;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const data = loadData();
+    const calData = data.calendar || {};
+
+    let cellCount = 0;
+    let html = '<tr>';
+
+    // 前置空白
+    for (let i = 0; i < startIdx; i++) {
+        html += '<td><div class="cal-cell empty"></div></td>';
+        cellCount++;
+    }
+
+    // 日期
+    for (let d = 1; d <= totalDays; d++) {
+        const dateStr = `${calCurrentYear}-${String(calCurrentMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayOfWeek = new Date(calCurrentYear, calCurrentMonth - 1, d).getDay();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const isToday = dateStr === todayStr;
+
+        const cellCls = ['cal-cell'];
+        if (isWeekend) cellCls.push('weekend');
+        if (isToday) cellCls.push('today');
+
+        const items = calData[dateStr] || [];
+        const itemsHtml = items.map(it => {
+            const doneCls = it.done ? 'done' : '';
+            return `<div class="cal-item ${it.type} ${doneCls}" data-date="${dateStr}" data-id="${it.id}">
+                <span class="cal-item-check"></span>
+                <span class="cal-item-text">${escapeHtml(it.text)}</span>
+                <span class="cal-item-del" data-action="del" data-date="${dateStr}" data-id="${it.id}">×</span>
+            </div>`;
+        }).join('');
+
+        // 判断休息日/工作日标记（默认周六周日为"休"）
+        let tagHtml = '';
+        if (isWeekend) {
+            tagHtml = '<span class="cal-cell-rest">休</span>';
+        }
+
+        html += `<td>
+            <div class="${cellCls.join(' ')}">
+                <div class="cal-cell-head">
+                    <span class="cal-cell-date">${d}</span>
+                    ${tagHtml}
+                </div>
+                <div class="cal-item-list">
+                    ${itemsHtml}
+                </div>
+                <button class="cal-add-btn" data-date="${dateStr}">+ 添加</button>
+            </div>
+        </td>`;
+        cellCount++;
+
+        if (cellCount % 7 === 0) {
+            html += '</tr><tr>';
+        }
+    }
+
+    // 填充末尾空白
+    const remaining = 7 - (cellCount % 7);
+    if (remaining < 7) {
+        for (let i = 0; i < remaining; i++) {
+            html += '<td><div class="cal-cell empty"></div></td>';
+        }
+    }
+    html += '</tr>';
+
+    tbody.innerHTML = html;
+
+    // 统计
+    updateCalStats(calData);
+    updateCalReminder(calData);
+}
+
+function updateCalStats(calData) {
+    let important = 0, normal = 0, daily = 0, rest = 0, work = 0;
+
+    // 本月休息/工作天数
+    const firstDay = new Date(calCurrentYear, calCurrentMonth - 1, 1);
+    const lastDay = new Date(calCurrentYear, calCurrentMonth, 0);
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+        const dow = new Date(calCurrentYear, calCurrentMonth - 1, d).getDay();
+        if (dow === 0 || dow === 6) rest++;
+        else work++;
+    }
+
+    // 事项统计
+    for (const date in calData) {
+        if (!date.startsWith(`${calCurrentYear}-${String(calCurrentMonth).padStart(2, '0')}`)) continue;
+        const items = calData[date] || [];
+        for (const it of items) {
+            if (it.type === 'important') important++;
+            else if (it.type === 'normal') normal++;
+            else if (it.type === 'daily') daily++;
+        }
+    }
+
+    const eImp = document.getElementById('calStatImportant');
+    const eNo = document.getElementById('calStatNormal');
+    const eDa = document.getElementById('calStatDaily');
+    const eRe = document.getElementById('calStatRest');
+    const eWo = document.getElementById('calStatWork');
+
+    if (eImp) eImp.textContent = important;
+    if (eNo) eNo.textContent = normal;
+    if (eDa) eDa.textContent = daily;
+    if (eRe) eRe.textContent = rest;
+    if (eWo) eWo.textContent = work;
+}
+
+function updateCalReminder(calData) {
+    const reminderEl = document.getElementById('calReminderList');
+    if (!reminderEl) return;
+
+    // 收集未完成的重要/一般事项（按日期排序，取前5个）
+    const pending = [];
+    for (const date in calData) {
+        const items = calData[date] || [];
+        for (const it of items) {
+            if (!it.done && (it.type === 'important' || it.type === 'normal')) {
+                pending.push({ date, ...it });
+            }
+        }
+    }
+    pending.sort((a, b) => a.date.localeCompare(b.date));
+    const top = pending.slice(0, 6);
+
+    if (top.length === 0) {
+        reminderEl.innerHTML = '<div style="color:#999;font-size:11px;text-align:center;padding:8px 0;">暂无未完成事项</div>';
+        return;
+    }
+
+    reminderEl.innerHTML = top.map(t => {
+        const m = t.date.match(/-(\d{2})-(\d{2})$/);
+        const dateShort = m ? `${parseInt(m[1])}/${parseInt(m[2])}` : t.date;
+        return `<div class="cal-reminder-item">
+            <span class="cal-reminder-date">${dateShort}</span>
+            <span class="cal-reminder-text">${escapeHtml(t.text)}</span>
+        </div>`;
+    }).join('');
+}
+
+function bindCalEvents() {
+    // 月份切换
+    const nav = document.getElementById('calMonthNav');
+    if (nav) {
+        nav.addEventListener('click', (e) => {
+            const btn = e.target.closest('.cal-month-btn');
+            if (btn && btn.dataset.month) {
+                calCurrentMonth = parseInt(btn.dataset.month, 10);
+                renderCalMonthNav();
+                renderCalendar();
+            }
+        });
+    }
+
+    // 日历点击（添加/完成/删除）
+    const tbody = document.getElementById('calTableBody');
+    if (tbody) {
+        tbody.addEventListener('click', (e) => {
+            // 删除
+            const delBtn = e.target.closest('[data-action="del"]');
+            if (delBtn) {
+                e.stopPropagation();
+                deleteCalItem(delBtn.dataset.date, delBtn.dataset.id);
+                return;
+            }
+            // 点击事项（切换完成状态）
+            const item = e.target.closest('.cal-item');
+            if (item && item.dataset.id) {
+                e.stopPropagation();
+                toggleCalItemDone(item.dataset.date, item.dataset.id);
+                return;
+            }
+            // 添加按钮
+            const addBtn = e.target.closest('.cal-add-btn');
+            if (addBtn && addBtn.dataset.date) {
+                openCalModal(addBtn.dataset.date);
+            }
+        });
+    }
+
+    // 弹窗关闭
+    const closeBtn = document.getElementById('calModalClose');
+    const cancelBtn = document.getElementById('calModalCancel');
+    const confirmBtn = document.getElementById('calModalConfirm');
+    const modal = document.getElementById('calModal');
+
+    if (closeBtn) closeBtn.addEventListener('click', closeCalModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeCalModal);
+    if (confirmBtn) confirmBtn.addEventListener('click', confirmCalItem);
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeCalModal();
+        });
+    }
+
+    // 类型选择
+    const typeBtns = document.querySelectorAll('.cal-type-btn');
+    typeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            typeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            calModalType = btn.dataset.type;
+        });
+    });
+
+    // 输入回车确认
+    const input = document.getElementById('calItemInput');
+    if (input) {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') confirmCalItem();
+        });
+    }
+}
+
+function openCalModal(dateStr) {
+    const modal = document.getElementById('calModal');
+    const title = document.getElementById('calModalDate');
+    const input = document.getElementById('calItemInput');
+    if (!modal) return;
+
+    calModalDate = dateStr;
+    if (title) title.textContent = `添加事项 - ${dateStr}`;
+    if (input) {
+        input.value = '';
+        input.focus();
+    }
+
+    // 重置类型选择
+    calModalType = 'important';
+    const typeBtns = document.querySelectorAll('.cal-type-btn');
+    typeBtns.forEach(b => {
+        b.classList.toggle('active', b.dataset.type === 'important');
+    });
+
+    modal.classList.add('active');
+}
+
+function closeCalModal() {
+    const modal = document.getElementById('calModal');
+    if (modal) modal.classList.remove('active');
+}
+
+function confirmCalItem() {
+    const input = document.getElementById('calItemInput');
+    const text = input ? input.value.trim() : '';
+    if (!text || !calModalDate) return;
+
+    const data = loadData();
+    if (!data.calendar) data.calendar = {};
+    if (!data.calendar[calModalDate]) data.calendar[calModalDate] = [];
+
+    const newItem = {
+        id: 'it_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+        type: calModalType,
+        text: text,
+        done: false,
+        created: Date.now()
+    };
+    data.calendar[calModalDate].push(newItem);
+
+    saveData(data);
+    closeCalModal();
+    renderCalendar();
+}
+
+function toggleCalItemDone(dateStr, itemId) {
+    const data = loadData();
+    if (!data.calendar || !data.calendar[dateStr]) return;
+    const item = data.calendar[dateStr].find(it => it.id === itemId);
+    if (!item) return;
+    item.done = !item.done;
+    saveData(data);
+    renderCalendar();
+}
+
+function deleteCalItem(dateStr, itemId) {
+    const data = loadData();
+    if (!data.calendar || !data.calendar[dateStr]) return;
+    data.calendar[dateStr] = data.calendar[dateStr].filter(it => it.id !== itemId);
+    if (data.calendar[dateStr].length === 0) delete data.calendar[dateStr];
+    saveData(data);
+    renderCalendar();
+}

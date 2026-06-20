@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#1a1a2e">
     <title>智律小管家</title>
-    <link rel="stylesheet" href="style.css?v=2026062004">
+    <link rel="stylesheet" href="style.css?v=2026062005">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -375,15 +375,116 @@
                 </div>
             </section>
 
-            <!-- 作息表 -->
+            <!-- 作息表（日历） -->
             <section class="page" id="page-schedule">
-                <div class="timeline-panel">
-                    <div class="tl-row"><span class="tl-time">07:00</span><span class="tl-dot done"></span><span class="tl-text">起床 · 晨间活动</span><span class="tl-status done">✓</span></div>
-                    <div class="tl-row"><span class="tl-time">09:00</span><span class="tl-dot done"></span><span class="tl-text">工作 / 学习</span><span class="tl-status done">✓</span></div>
-                    <div class="tl-row"><span class="tl-time">12:30</span><span class="tl-dot done"></span><span class="tl-text">午餐 · 午休</span><span class="tl-status done">✓</span></div>
-                    <div class="tl-row"><span class="tl-time">14:00</span><span class="tl-dot active"></span><span class="tl-text">下午专注工作</span><span class="tl-status active">●</span></div>
-                    <div class="tl-row"><span class="tl-time">18:00</span><span class="tl-dot"></span><span class="tl-text">晚餐 · 运动</span><span class="tl-status">○</span></div>
-                    <div class="tl-row"><span class="tl-time">22:30</span><span class="tl-dot"></span><span class="tl-text">准备入睡</span><span class="tl-status">○</span></div>
+                <div class="cal-wrapper">
+                    <!-- 左侧栏 -->
+                    <div class="cal-sidebar">
+                        <!-- 月份导航 -->
+                        <div class="cal-month-nav" id="calMonthNav"></div>
+                        <!-- 营销关键词 -->
+                        <div class="cal-side-panel">
+                            <div class="cal-side-title">营销关键词</div>
+                            <div class="cal-keywords" id="calKeywords">
+                                <span class="cal-kw">#2025计划</span>
+                                <span class="cal-kw">#早起打卡</span>
+                                <span class="cal-kw">#健康生活</span>
+                            </div>
+                        </div>
+                        <!-- 未完成提醒 -->
+                        <div class="cal-side-panel">
+                            <div class="cal-side-title">未完成工作提醒</div>
+                            <div class="cal-reminder-list" id="calReminderList"></div>
+                        </div>
+                    </div>
+
+                    <!-- 右侧主体 -->
+                    <div class="cal-main">
+                        <!-- 顶部标题 -->
+                        <div class="cal-header">
+                            <div class="cal-year-title">
+                                <span id="calYear">2025</span>年日历工作计划表
+                            </div>
+                        </div>
+                        <!-- 月度信息与统计 -->
+                        <div class="cal-subheader">
+                            <div class="cal-month-title">
+                                <span class="cal-month-num" id="calMonthNum">1</span>
+                                <span class="cal-month-en" id="calMonthEn">January</span>
+                            </div>
+                            <div class="cal-stat-cards">
+                                <div class="cal-stat-card red">
+                                    <span class="cal-stat-label">重要事项</span>
+                                    <span class="cal-stat-num" id="calStatImportant">0</span>
+                                    <span class="cal-stat-unit">项</span>
+                                </div>
+                                <div class="cal-stat-card yellow">
+                                    <span class="cal-stat-label">一般事项</span>
+                                    <span class="cal-stat-num" id="calStatNormal">0</span>
+                                    <span class="cal-stat-unit">项</span>
+                                </div>
+                                <div class="cal-stat-card green">
+                                    <span class="cal-stat-label">日常事项</span>
+                                    <span class="cal-stat-num" id="calStatDaily">0</span>
+                                    <span class="cal-stat-unit">项</span>
+                                </div>
+                                <div class="cal-stat-card pink">
+                                    <span class="cal-stat-icon">☕</span>
+                                    <span class="cal-stat-num" id="calStatRest">0</span>
+                                    <span class="cal-stat-unit">天</span>
+                                </div>
+                                <div class="cal-stat-card gray">
+                                    <span class="cal-stat-icon">💼</span>
+                                    <span class="cal-stat-num" id="calStatWork">0</span>
+                                    <span class="cal-stat-unit">天</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- 日历表格 -->
+                        <div class="cal-table-wrapper">
+                            <table class="cal-table">
+                                <thead>
+                                    <tr>
+                                        <th>星期一</th>
+                                        <th>星期二</th>
+                                        <th>星期三</th>
+                                        <th>星期四</th>
+                                        <th>星期五</th>
+                                        <th>星期六</th>
+                                        <th>星期日</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="calTableBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- 添加事项弹窗 -->
+                <div class="cal-modal" id="calModal">
+                    <div class="cal-modal-content">
+                        <div class="cal-modal-title">
+                            <span id="calModalDate">添加事项</span>
+                            <button class="cal-modal-close" id="calModalClose">✕</button>
+                        </div>
+                        <div class="cal-modal-body">
+                            <div class="cal-modal-input-row">
+                                <label>事项类型</label>
+                                <div class="cal-type-selector">
+                                    <button class="cal-type-btn active" data-type="important">🔴 重要事项</button>
+                                    <button class="cal-type-btn" data-type="normal">🟡 一般事项</button>
+                                    <button class="cal-type-btn" data-type="daily">🟢 日常事项</button>
+                                </div>
+                            </div>
+                            <div class="cal-modal-input-row">
+                                <label>事项内容</label>
+                                <input type="text" id="calItemInput" placeholder="例如：年终汇报" class="cal-item-input">
+                            </div>
+                        </div>
+                        <div class="cal-modal-footer">
+                            <button class="cal-modal-btn cancel" id="calModalCancel">取消</button>
+                            <button class="cal-modal-btn confirm" id="calModalConfirm">添加</button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -573,6 +674,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-    <script src="script.js?v=2026062004"></script>
+    <script src="script.js?v=2026062005"></script>
 </body>
 </html>
