@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1a1a2e">
     <title>智律小管家</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 <body>
 
@@ -211,9 +213,50 @@
                 </div>
             </section>
 
+            <!-- 智能助手 -->
+            <section class="page" id="page-ai">
+                <div class="ai-container">
+                    <div class="ai-status-bar">
+                        <span class="ai-status-dot"></span>
+                        <span class="ai-status-text">Agnes AI 已连接 · 多设备同步中</span>
+                        <button class="ai-pwa-install" id="installBtn" style="display:none;">📱 安装到桌面</button>
+                    </div>
+
+                    <div class="ai-chat-area" id="chatArea">
+                        <div class="ai-msg ai-bot">
+                            <div class="ai-avatar">🤖</div>
+                            <div class="ai-bubble">
+                                <p>你好！我是智律小管家的智能助手，由 Agnes AI 2.0 驱动。</p>
+                                <p>我可以帮你：</p>
+                                <ul>
+                                    <li>⏰ 设置智能闹钟提醒</li>
+                                    <li>📅 规划每日作息时间表</li>
+                                    <li>💡 生成习惯养成建议</li>
+                                    <li>📚 总结学习笔记</li>
+                                    <li>🔄 跨设备同步你的数据</li>
+                                </ul>
+                                <p>直接告诉我你想要什么，例如："帮我设置明天早上7点的起床闹钟"</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-quick-actions">
+                        <button class="quick-btn" data-prompt="帮我制定一个高效的一日作息表">📅 制定作息</button>
+                        <button class="quick-btn" data-prompt="给我3个养成早起习惯的建议">🌅 早起建议</button>
+                        <button class="quick-btn" data-prompt="如何提高学习效率？">📖 学习建议</button>
+                        <button class="quick-btn" data-prompt="帮我总结今天的计划">✅ 今日总结</button>
+                    </div>
+
+                    <div class="ai-input-area">
+                        <input type="text" id="aiInput" placeholder="输入你的问题或需求..." class="ai-input">
+                        <button id="sendBtn" class="ai-send-btn">发送</button>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
-        <!-- 底部：导航栏（闹钟·模式·个人中心·记忆库·作息表·数据统计） -->
+        <!-- 底部：导航栏 -->
         <nav class="bottom-nav">
             <div class="nav-bg"></div>
             <div class="nav-row">
@@ -225,21 +268,25 @@
                     <span class="nav-icon">🎯</span>
                     <span class="nav-text">模式</span>
                 </div>
-                <div class="nav-btn" data-page="profile">
-                    <span class="nav-icon">👤</span>
-                    <span class="nav-text">个人中心</span>
+                <div class="nav-btn" data-page="schedule">
+                    <span class="nav-icon">�</span>
+                    <span class="nav-text">作息</span>
                 </div>
                 <div class="nav-btn" data-page="memory">
                     <span class="nav-icon">📚</span>
-                    <span class="nav-text">记忆库</span>
-                </div>
-                <div class="nav-btn" data-page="schedule">
-                    <span class="nav-icon">📅</span>
-                    <span class="nav-text">作息表</span>
+                    <span class="nav-text">记忆</span>
                 </div>
                 <div class="nav-btn" data-page="stats">
                     <span class="nav-icon">📊</span>
-                    <span class="nav-text">数据统计</span>
+                    <span class="nav-text">统计</span>
+                </div>
+                <div class="nav-btn" data-page="ai">
+                    <span class="nav-icon">🤖</span>
+                    <span class="nav-text">AI助手</span>
+                </div>
+                <div class="nav-btn" data-page="profile">
+                    <span class="nav-icon">�</span>
+                    <span class="nav-text">我的</span>
                 </div>
             </div>
         </nav>

@@ -1,0 +1,52 @@
+{
+    "name": "智律小管家",
+    "short_name": "智律小管家",
+    "description": "智能生活管理助手 - 帮助你养成自律习惯，支持关闭网页响铃与多设备同步",
+    "start_url": "./index.html",
+    "scope": "./",
+    "display": "standalone",
+    "display_override": ["standalone", "fullscreen", "minimal-ui"],
+    "background_color": "#1a1a2e",
+    "theme_color": "#1a1a2e",
+    "orientation": "portrait-primary",
+    "lang": "zh-CN",
+    "dir": "ltr",
+    "categories": ["productivity", "lifestyle", "utilities"],
+    "gcm_sender_id": "103953800507",
+    "prefer_related_applications": false,
+    "shortcuts": [
+        {
+            "name": "闹钟",
+            "short_name": "闹钟",
+            "description": "查看与管理闹钟",
+            "url": "./index.html?page=alarm",
+            "icons": [
+                {
+                    "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%231a1a2e'/><text y='400' font-size='320' text-anchor='middle'>⏰</text></svg>",
+                    "sizes": "192x192",
+                    "type": "image/svg+xml"
+                }
+            ]
+        }
+    ],
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%231a1a2e'/><text y='150' x='96' font-size='120' text-anchor='middle'>⏰</text></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 384 384'><rect width='384' height='384' rx='80' fill='%231a1a2e'/><text y='300' x='192' font-size='240' text-anchor='middle'>⏰</text></svg>",
+            "sizes": "384x384",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='100' fill='%231a1a2e'/><text y='400' x='256' font-size='320' text-anchor='middle'>⏰</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}
