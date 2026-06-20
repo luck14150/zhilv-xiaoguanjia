@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <title>智律小管家</title>
-    <link rel="stylesheet" href="style.css?v=2026062107">
+    <link rel="stylesheet" href="style.css?v=2026062108">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -322,27 +322,83 @@
             </div>
 
             <!-- 模式 -->
+            <!-- 模式选择页面 -->
             <section class="page" id="page-mode">
-                <div class="mode-grid">
-                    <div class="mode-card">
-                        <div class="mode-icon">💼</div>
-                        <div class="mode-name">工作模式</div>
-                        <div class="mode-sub">高效专注</div>
+                <div class="mode-container">
+                    <div class="mode-header">
+                        <h2 class="mode-title">选择你的当前模式</h2>
+                        <p class="mode-subtitle">不同模式自动调整提醒、通知与专注策略</p>
                     </div>
-                    <div class="mode-card">
-                        <div class="mode-icon">📖</div>
-                        <div class="mode-name">学习模式</div>
-                        <div class="mode-sub">沉浸学习</div>
+
+                    <div class="mode-current">
+                        <div class="mode-current-label">当前模式</div>
+                        <div class="mode-current-name" id="currentModeName">💼 工作模式</div>
+                        <div class="mode-current-desc" id="currentModeDesc">专注工作，减少干扰，优化效率</div>
                     </div>
-                    <div class="mode-card">
-                        <div class="mode-icon">💪</div>
-                        <div class="mode-name">运动模式</div>
-                        <div class="mode-sub">活力锻炼</div>
+
+                    <div class="mode-grid">
+                        <div class="mode-card mode-card-work" onclick="switchMode('work')">
+                            <div class="mode-icon">💼</div>
+                            <div class="mode-name">工作模式</div>
+                            <div class="mode-sub">专注工作，减少干扰</div>
+                            <div class="mode-tags">
+                                <span>专注提醒</span>
+                                <span>番茄钟</span>
+                            </div>
+                        </div>
+
+                        <div class="mode-card mode-card-study" onclick="switchMode('study')">
+                            <div class="mode-icon">📖</div>
+                            <div class="mode-name">学习模式</div>
+                            <div class="mode-sub">沉浸学习，知识积累</div>
+                            <div class="mode-tags">
+                                <span>学习提醒</span>
+                                <span>复习提醒</span>
+                            </div>
+                        </div>
+
+                        <div class="mode-card mode-card-exercise" onclick="switchMode('exercise')">
+                            <div class="mode-icon">💪</div>
+                            <div class="mode-name">运动模式</div>
+                            <div class="mode-sub">活力锻炼，健康生活</div>
+                            <div class="mode-tags">
+                                <span>运动提醒</span>
+                                <span>饮水提醒</span>
+                            </div>
+                        </div>
+
+                        <div class="mode-card mode-card-rest" onclick="switchMode('rest')">
+                            <div class="mode-icon">😴</div>
+                            <div class="mode-name">休息模式</div>
+                            <div class="mode-sub">放松身心，恢复精力</div>
+                            <div class="mode-tags">
+                                <span>睡眠提醒</span>
+                                <span>减少打扰</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mode-card">
-                        <div class="mode-icon">😴</div>
-                        <div class="mode-name">休息模式</div>
-                        <div class="mode-sub">放松身心</div>
+
+                    <!-- 模式设置面板 -->
+                    <div class="mode-settings">
+                        <h3 class="mode-settings-title">当前模式设置</h3>
+                        <div class="mode-settings-grid" id="modeSettings">
+                            <div class="setting-row">
+                                <span class="setting-label">专注时段</span>
+                                <span class="setting-value" id="modeFocusTime">09:00 - 18:00</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">休息间隔</span>
+                                <span class="setting-value" id="modeRestInterval">每50分钟</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">通知强度</span>
+                                <span class="setting-value" id="modeNotifyLevel">重要通知</span>
+                            </div>
+                            <div class="setting-row">
+                                <span class="setting-label">已使用</span>
+                                <span class="setting-value" id="modeUsedTime">2小时 15分钟</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -362,26 +418,75 @@
                 </div>
             </section>
 
-            <!-- 记忆库 -->
+            <!-- 记忆库页面 -->
             <section class="page" id="page-memory">
-                <div class="memory-list">
-                    <div class="memory-item">
-                        <div class="memory-tag">学习笔记</div>
-                        <h4>编程学习要点</h4>
-                        <p>记录前端开发核心知识点...</p>
-                        <div class="memory-meta">今天 · 下次复习明天</div>
+                <div class="memory-container">
+                    <div class="memory-header">
+                        <h2 class="memory-title">记忆库</h2>
+                        <div class="memory-stats">
+                            <span class="memory-stat">
+                                <span class="memory-stat-num" id="memoryTotal">0</span>
+                                <span class="memory-stat-label">条记忆</span>
+                            </span>
+                            <span class="memory-stat">
+                                <span class="memory-stat-num" id="memoryReviewToday">0</span>
+                                <span class="memory-stat-label">今日复习</span>
+                            </span>
+                        </div>
                     </div>
-                    <div class="memory-item">
-                        <div class="memory-tag">生活记录</div>
-                        <h4>每周目标回顾</h4>
-                        <p>本周完成5项工作任务...</p>
-                        <div class="memory-meta">2天前</div>
+
+                    <!-- 分类标签 -->
+                    <div class="memory-categories" id="memoryCategories">
+                        <span class="category-tag active" onclick="filterMemory('all', this)">全部</span>
+                        <span class="category-tag" onclick="filterMemory('学习笔记', this)">📖 学习笔记</span>
+                        <span class="category-tag" onclick="filterMemory('生活感悟', this)">🌿 生活感悟</span>
+                        <span class="category-tag" onclick="filterMemory('工作总结', this)">💼 工作总结</span>
+                        <span class="category-tag" onclick="filterMemory('灵感创意', this)">💡 灵感创意</span>
+                        <span class="category-tag" onclick="filterMemory('其他', this)">📝 其他</span>
                     </div>
-                    <div class="memory-item">
-                        <div class="memory-tag">知识卡片</div>
-                        <h4>读书笔记 · 原则</h4>
-                        <p>核心观点：拥抱现实、应对现实...</p>
-                        <div class="memory-meta">5天前</div>
+
+                    <!-- 添加按钮 -->
+                    <button class="memory-add-btn" onclick="showAddMemoryModal()">+ 添加新记忆</button>
+
+                    <!-- 记忆列表 -->
+                    <div class="memory-list" id="memoryList">
+                        <div class="memory-empty" id="memoryEmpty" style="display:none;">
+                            <div class="memory-empty-icon">📭</div>
+                            <p>还没有记忆，点击上方按钮添加你的第一条记忆</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 添加/编辑记忆弹窗 -->
+                <div class="memory-modal" id="memoryModal" onclick="closeMemoryModal(event)">
+                    <div class="memory-modal-content" onclick="event.stopPropagation()">
+                        <div class="memory-modal-title" id="memoryModalTitle">添加新记忆</div>
+
+                        <div class="memory-form-group">
+                            <label class="memory-form-label">标题</label>
+                            <input type="text" id="memoryTitleInput" class="memory-form-input" placeholder="给这条记忆起个标题...">
+                        </div>
+
+                        <div class="memory-form-group">
+                            <label class="memory-form-label">内容</label>
+                            <textarea id="memoryContentInput" class="memory-form-textarea" placeholder="记录你的想法、心得、笔记..."></textarea>
+                        </div>
+
+                        <div class="memory-form-group">
+                            <label class="memory-form-label">分类</label>
+                            <div class="memory-form-categories" id="memoryCategorySelect">
+                                <span class="category-select" onclick="selectMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
+                                <span class="category-select" onclick="selectMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
+                                <span class="category-select" onclick="selectMemoryCategory(this, '工作总结')">💼 工作总结</span>
+                                <span class="category-select" onclick="selectMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
+                                <span class="category-select" onclick="selectMemoryCategory(this, '其他')">📝 其他</span>
+                            </div>
+                        </div>
+
+                        <div class="memory-modal-buttons">
+                            <button class="memory-modal-btn cancel" onclick="document.getElementById('memoryModal').classList.remove('show')">取消</button>
+                            <button class="memory-modal-btn confirm" onclick="saveMemory()">保存</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -561,42 +666,101 @@
             </section>
 
             <!-- 智能助手 -->
+            <!-- AI通话页面 -->
             <section class="page" id="page-ai">
-                <div class="ai-container">
-                    <div class="ai-status-bar">
-                        <span class="ai-status-dot"></span>
-                        <span class="ai-status-text">Agnes AI 已连接 · 多设备同步中</span>
-                        <button class="ai-pwa-install" id="installBtn" style="display:none;">📱 安装到桌面</button>
+                <div class="ai-call-container">
+                    <!-- AI头像和动画区域 -->
+                    <div class="ai-call-main">
+                        <div class="ai-call-avatar-wrapper">
+                            <div class="ai-call-avatar-ring ring-1"></div>
+                            <div class="ai-call-avatar-ring ring-2"></div>
+                            <div class="ai-call-avatar-ring ring-3"></div>
+                            <div class="ai-call-avatar" id="aiCallAvatar">
+                                <svg viewBox="0 0 64 64" style="width:60px;height:60px;">
+                                    <circle cx="32" cy="20" r="10" fill="rgba(255,107,107,0.3)" stroke="#ff6b6b" stroke-width="2"/>
+                                    <circle cx="28" cy="18" r="1.5" fill="#fff"/>
+                                    <circle cx="36" cy="18" r="1.5" fill="#fff"/>
+                                    <path d="M 27 24 Q 32 27 37 24" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                                    <path d="M 20 36 L 20 46" stroke="#ff6b6b" stroke-width="3" stroke-linecap="round"/>
+                                    <path d="M 44 36 L 44 46" stroke="#ff6b6b" stroke-width="3" stroke-linecap="round"/>
+                                    <path d="M 20 46 L 44 46" stroke="#ff6b6b" stroke-width="3" stroke-linecap="round"/>
+                                    <circle cx="20" cy="46" r="3" fill="#ff6b6b"/>
+                                    <circle cx="44" cy="46" r="3" fill="#ff6b6b"/>
+                                    <path d="M 24 20 Q 32 12 40 20 Q 32 28 24 20" fill="rgba(255,107,107,0.4)" stroke="none"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="ai-call-name">智律 AI 助手</div>
+                        <div class="ai-call-status" id="aiCallStatus">点击下方按钮开始通话</div>
+                        <div class="ai-call-duration" id="aiCallDuration">00:00</div>
                     </div>
 
-                    <div class="ai-chat-area" id="chatArea">
-                        <div class="ai-msg ai-bot">
-                            <div class="ai-avatar">🤖</div>
-                            <div class="ai-bubble">
-                                <p>你好！我是智律小管家的智能助手，由 Agnes AI 2.0 驱动。</p>
-                                <p>我可以帮你：</p>
-                                <ul>
-                                    <li>⏰ 设置智能闹钟提醒</li>
-                                    <li>📅 规划每日作息时间表</li>
-                                    <li>💡 生成习惯养成建议</li>
-                                    <li>📚 总结学习笔记</li>
-                                    <li>🔄 跨设备同步你的数据</li>
-                                </ul>
-                                <p>直接告诉我你想要什么，例如："帮我设置明天早上7点的起床闹钟"</p>
+                    <!-- 语音波形动画 -->
+                    <div class="ai-call-waveform" id="aiCallWaveform">
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                        <div class="wave-bar"></div>
+                    </div>
+
+                    <!-- 功能按钮 -->
+                    <div class="ai-call-controls">
+                        <button class="call-btn call-btn-primary" id="callStartBtn" onclick="toggleAICall()">
+                            <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:#fff;">
+                                <path d="M 6.62 3.00 C 6.62 3.00 6.53 3.02 6.39 3.06 C 6.25 3.10 6.08 3.20 5.92 3.40 C 5.76 3.59 5.59 3.89 5.42 4.29 C 5.25 4.69 5.05 5.20 4.89 5.81 C 4.73 6.42 4.60 7.13 4.55 7.91 C 4.49 8.69 4.53 9.53 4.69 10.36 C 4.85 11.18 5.12 11.98 5.52 12.71 C 5.91 13.44 6.41 14.08 7.00 14.59 C 7.58 15.10 8.25 15.46 8.96 15.65 C 9.67 15.84 10.40 15.84 11.10 15.65 C 11.80 15.46 12.47 15.10 13.03 14.59 C 13.58 14.08 14.01 13.44 14.31 12.71 C 14.61 11.98 14.78 11.18 14.91 10.36 C 15.04 9.53 15.11 8.69 15.11 7.91 C 15.11 7.13 15.04 6.42 14.91 5.81 C 14.78 5.20 14.58 4.69 14.37 4.29 C 14.17 3.89 13.93 3.59 13.70 3.40 C 13.47 3.20 13.24 3.10 13.05 3.06 C 12.85 3.02 12.71 3.00 12.71 3.00 C 12.71 3.00 7.40 3.00 6.62 3.00 Z M 9.75 15.50 C 9.75 15.50 9.75 17.92 9.75 18.50 C 9.75 19.08 9.75 20.50 9.75 20.50 C 9.75 20.50 9.75 21.33 10.34 21.33 C 10.94 21.33 11.06 20.50 11.06 20.50 C 11.06 20.50 11.06 19.08 11.06 18.50 C 11.06 17.92 11.06 15.50 11.06 15.50 C 11.06 15.50 10.83 15.50 9.75 15.50 Z" />
+                            </svg>
+                        </button>
+                        <button class="call-btn call-btn-secondary" onclick="toggleAIMic()" id="aiMicBtn">
+                            <span class="call-btn-icon">🎤</span>
+                            <span class="call-btn-label">说话</span>
+                        </button>
+                        <button class="call-btn call-btn-secondary" onclick="toggleAISpeaker()" id="aiSpeakerBtn">
+                            <span class="call-btn-icon">🔊</span>
+                            <span class="call-btn-label">免提</span>
+                        </button>
+                        <button class="call-btn call-btn-secondary" onclick="showAIHistory()">
+                            <span class="call-btn-icon">💬</span>
+                            <span class="call-btn-label">对话</span>
+                        </button>
+                    </div>
+
+                    <!-- 对话记录（可展开） -->
+                    <div class="ai-call-history" id="aiCallHistory" style="display:none;">
+                        <div class="ai-call-history-title">
+                            <span>通话记录</span>
+                            <span class="ai-call-history-close" onclick="document.getElementById('aiCallHistory').style.display='none'">×</span>
+                        </div>
+                        <div class="ai-call-history-list" id="aiCallHistoryList">
+                            <div class="ai-call-history-item ai-user">
+                                <span class="history-role">你</span>
+                                <p>你好，请帮我制定今日计划</p>
+                            </div>
+                            <div class="ai-call-history-item ai-ai">
+                                <span class="history-role">AI</span>
+                                <p>早上好！今天为您安排了以下重点任务：早7点起床、上午学习2小时、下午运动30分钟、晚上10点半准时休息。您看可以吗？</p>
                             </div>
                         </div>
                     </div>
 
-                    <div class="ai-quick-actions">
-                        <button class="quick-btn" data-prompt="帮我制定一个高效的一日作息表">📅 制定作息</button>
-                        <button class="quick-btn" data-prompt="给我3个养成早起习惯的建议">🌅 早起建议</button>
-                        <button class="quick-btn" data-prompt="如何提高学习效率？">📖 学习建议</button>
-                        <button class="quick-btn" data-prompt="帮我总结今天的计划">✅ 今日总结</button>
-                    </div>
-
-                    <div class="ai-input-area">
-                        <input type="text" id="aiInput" placeholder="输入你的问题或需求..." class="ai-input">
-                        <button id="sendBtn" class="ai-send-btn">发送</button>
+                    <!-- 快速发起场景 -->
+                    <div class="ai-call-quick">
+                        <div class="quick-title">快速发起</div>
+                        <div class="quick-tags">
+                            <span class="quick-tag" onclick="startAICallWith('制定今日作息')">📅 制定作息</span>
+                            <span class="quick-tag" onclick="startAICallWith('设置闹钟提醒')">⏰ 设置闹钟</span>
+                            <span class="quick-tag" onclick="startAICallWith('生成学习建议')">📖 学习建议</span>
+                            <span class="quick-tag" onclick="startAICallWith('回顾今日计划')">✅ 今日总结</span>
+                            <span class="quick-tag" onclick="startAICallWith('早起习惯建议')">🌅 习惯养成</span>
+                            <span class="quick-tag" onclick="startAICallWith('健康生活建议')">💪 健康建议</span>
+                        </div>
                     </div>
 
                     <!-- 云同步设置面板 -->
@@ -696,10 +860,46 @@
                     </span>
                     <span class="nav-text">作息</span>
                 </div>
-                <div class="nav-btn" data-page="ai">
-                    <span class="nav-icon">🤖</span>
-                    <span class="nav-text">AI助手</span>
+
+                <div class="nav-btn" data-page="memory">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 32 32" style="width:28px;height:28px;fill:none;stroke:#ffffff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <rect x="6" y="5" width="20" height="22" rx="3" fill="rgba(255,184,107,0.15)" stroke="#ffb86b"/>
+                            <line x1="10" y1="10" x2="22" y2="10" stroke="#ffb86b"/>
+                            <line x1="10" y1="14" x2="22" y2="14" stroke="#ffb86b"/>
+                            <line x1="10" y1="18" x2="18" y2="18" stroke="#ffb86b"/>
+                            <circle cx="16" cy="23" r="2" fill="rgba(201,124,255,0.2)" stroke="#c97cff"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">记忆</span>
                 </div>
+
+                <div class="nav-btn" data-page="mode">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 32 32" style="width:28px;height:28px;fill:none;stroke:#ffffff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <rect x="4" y="8" width="14" height="14" rx="2" fill="rgba(124,140,255,0.2)" stroke="#7c8cff"/>
+                            <rect x="14" y="12" width="14" height="14" rx="2" fill="rgba(201,124,255,0.2)" stroke="#c97cff"/>
+                            <circle cx="10" cy="15" r="1.5" fill="#ffb86b" stroke="none"/>
+                            <circle cx="21" cy="19" r="1.5" fill="#7c8cff" stroke="none"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">模式</span>
+                </div>
+
+                <div class="nav-btn" data-page="ai">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 32 32" style="width:28px;height:28px;fill:none;stroke:#ffffff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
+                            <circle cx="16" cy="12" r="6" fill="rgba(255,107,107,0.15)" stroke="#ff6b6b"/>
+                            <path d="M 16 18 L 16 24" stroke="#ff6b6b"/>
+                            <line x1="10" y1="24" x2="22" y2="24" stroke="#ff6b6b"/>
+                            <circle cx="10" cy="24" r="1.5" fill="#ff6b6b" stroke="none"/>
+                            <circle cx="22" cy="24" r="1.5" fill="#ff6b6b" stroke="none"/>
+                            <path d="M 12 12 Q 16 8 20 12 Q 16 16 12 12" fill="rgba(255,107,107,0.3)" stroke="none"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">AI通话</span>
+                </div>
+
                 <div class="nav-btn" data-page="profile">
                     <span class="nav-icon">
                         <svg viewBox="0 0 32 32" style="width:28px;height:28px;fill:none;stroke:#ffffff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
@@ -724,6 +924,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-    <script src="script.js?v=2026062107"></script>
+    <script src="script.js?v=2026062108"></script>
 </body>
 </html>
