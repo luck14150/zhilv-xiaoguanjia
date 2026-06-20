@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062013';
+const APP_VERSION = '2026062101';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -135,158 +135,172 @@ function saveData(data) {
 
 /* ============ 自定义铃声库管理 ============ */
 
-// 添加自定义铃声到库（自动截取前10秒）
-async function addCustomRingtone(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            try {
-                const audioData = event.target?.result || '';
-                if (!audioData || !audioData.startsWith('data:audio')) {
-                    reject('不是有效的音频文件');
-                    return;
-                }
-                
-                // 截取音频（最多10秒）
-                const clippedData = await clipAudio(audioData, 0, 10);
-                if (!clippedData) {
-                    reject('音频截取失败');
-                    return;
-                }
-                
-                const ringtone = {
-                    id: 'ringtone_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
-                    name: file.name,
-                    data: clippedData,
-                    duration: Math.min(file.duration || 10, 10),
-                    createdAt: Date.now()
-                };
-                
-                // 保存到铃声库
-                const data = loadData();
-                data.customRingtones = data.customRingtones || [];
-                data.customRingtones.push(ringtone);
-                saveData(data);
-                
-                // 预加载以便播放
-                preloadCustomTone(clippedData);
-                
-                resolve(ringtone);
-            } catch (e) {
-                reject(e.message || '保存失败');
-            }
-        };
-        reader.onerror = () => reject('文件读取失败');
-        reader.readAsDataURL(file);
-    });
+// 安全地将 ArrayBuffer 转换为 base64（避免大数据栈溢出）
+function arrayBufferToBase64(buffer) {
+    let binary = '';
+    const bytes = new Uint8Array(buffer);
+    const chunkSize = 0x8000; // 32KB 分块处理
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        const end = Math.min(i + chunkSize, bytes.length);
+        let chunkStr = '';
+        for (let j = i; j < end; j++) {
+            chunkStr += String.fromCharCode(bytes[j]);
+        }
+        binary += chunkStr;
+    }
+    return btoa(binary);
 }
 
-// 音频截取函数（startTime到endTime，单位秒）
-async function clipAudio(dataUrl, startTime = 0, endTime = 10) {
-    if (!ringingAlarmSharedCtx) initSharedAudioContext();
-    if (!ringingAlarmSharedCtx) return null;
-    
-    return new Promise((resolve) => {
-        try {
-            // Base64 -> ArrayBuffer
-            const base64 = dataUrl.split(',')[1];
-            const binaryStr = atob(base64);
-            const bytes = new Uint8Array(binaryStr.length);
-            for (let i = 0; i < binaryStr.length; i++) {
-                bytes[i] = binaryStr.charCodeAt(i);
-            }
-            
-            // 解码音频
-            ringingAlarmSharedCtx.decodeAudioData(bytes.buffer, (buffer) => {
-                try {
-                    const sampleRate = buffer.sampleRate;
-                    const startSample = Math.floor(startTime * sampleRate);
-                    const endSample = Math.floor(endTime * sampleRate);
-                    const length = Math.min(endSample - startSample, buffer.length - startSample);
-                    
-                    if (length <= 0) {
-                        resolve(null);
-                        return;
-                    }
-                    
-                    // 创建新的 AudioBuffer
-                    const clippedBuffer = ringingAlarmSharedCtx.createBuffer(
-                        buffer.numberOfChannels,
-                        length,
-                        sampleRate
-                    );
-                    
-                    // 复制音频数据
-                    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-                        const sourceData = buffer.getChannelData(channel);
-                        const destData = clippedBuffer.getChannelData(channel);
-                        for (let i = 0; i < length; i++) {
-                            destData[i] = sourceData[startSample + i];
-                        }
-                    }
-                    
-                    // 编码回 base64
-                    const wavData = audioBufferToWav(clippedBuffer);
-                    const base64Wav = btoa(String.fromCharCode(...new Uint8Array(wavData)));
-                    resolve('data:audio/wav;base64,' + base64Wav);
-                } catch (e) {
-                    console.error('音频截取失败:', e);
-                    resolve(null);
-                }
-            }, () => {
-                resolve(null);
-            });
-        } catch (e) {
-            console.error('音频处理失败:', e);
-            resolve(null);
+// 将 data URL 转换为 ArrayBuffer
+function dataUrlToArrayBuffer(dataUrl) {
+    const base64 = dataUrl.split(',')[1];
+    const binaryStr = atob(base64);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+// 添加自定义铃声到库（自动截取前10秒）
+async function addCustomRingtone(file) {
+    try {
+        // 先验证文件类型
+        const isAudio = file.type && file.type.startsWith('audio/');
+        if (!isAudio && !/\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(file.name)) {
+            throw new Error('不是有效的音频文件');
         }
-    });
+        
+        // 读取文件为 ArrayBuffer（比 dataURL 更高效）
+        const arrayBuffer = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => reject('文件读取失败');
+            reader.readAsArrayBuffer(file);
+        });
+        
+        // 初始化并激活 AudioContext
+        if (!ringingAlarmSharedCtx) initSharedAudioContext();
+        if (!ringingAlarmSharedCtx) {
+            throw new Error('浏览器不支持音频处理');
+        }
+        
+        // 确保 AudioContext 处于运行状态
+        if (ringingAlarmSharedCtx.state === 'suspended') {
+            try {
+                await ringingAlarmSharedCtx.resume();
+            } catch (e) {
+                console.warn('无法激活 AudioContext:', e);
+            }
+        }
+        
+        // 解码音频（使用 Promise 模式）
+        let audioBuffer;
+        try {
+            audioBuffer = await ringingAlarmSharedCtx.decodeAudioData(arrayBuffer.slice(0));
+        } catch (decodeErr) {
+            console.error('音频解码失败:', decodeErr);
+            throw new Error('音频格式不支持或文件已损坏');
+        }
+        
+        // 截取前10秒
+        const sampleRate = audioBuffer.sampleRate;
+        const startSample = 0;
+        const maxEndSample = Math.floor(10 * sampleRate);
+        const endSample = Math.min(maxEndSample, audioBuffer.length);
+        const clipLength = endSample - startSample;
+        
+        if (clipLength <= 0) {
+            throw new Error('音频太短');
+        }
+        
+        // 创建新的 AudioBuffer
+        const clippedBuffer = ringingAlarmSharedCtx.createBuffer(
+            audioBuffer.numberOfChannels,
+            clipLength,
+            sampleRate
+        );
+        
+        // 复制音频数据
+        for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+            const sourceData = audioBuffer.getChannelData(channel);
+            const destData = clippedBuffer.getChannelData(channel);
+            for (let i = 0; i < clipLength; i++) {
+                destData[i] = sourceData[startSample + i];
+            }
+        }
+        
+        // 编码为 WAV 并转 base64
+        const wavBuffer = audioBufferToWav(clippedBuffer);
+        const base64Data = arrayBufferToBase64(wavBuffer);
+        const dataUrl = 'data:audio/wav;base64,' + base64Data;
+        
+        const ringtone = {
+            id: 'ringtone_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+            name: file.name.replace(/\.[^/.]+$/, ''),
+            data: dataUrl,
+            duration: clipLength / sampleRate,
+            createdAt: Date.now()
+        };
+        
+        // 保存到铃声库
+        const data = loadData();
+        data.customRingtones = data.customRingtones || [];
+        data.customRingtones.push(ringtone);
+        saveData(data);
+        
+        // 预加载以便播放
+        preloadCustomTone(dataUrl);
+        
+        return ringtone;
+    } catch (error) {
+        console.error('添加铃声失败:', error);
+        throw error;
+    }
 }
 
 // AudioBuffer 转 WAV 格式
 function audioBufferToWav(buffer) {
-    const length = buffer.length * buffer.numberOfChannels * 2 + 44;
-    const arrayBuffer = new ArrayBuffer(length);
-    const view = new DataView(arrayBuffer);
-    const channels = [];
-    let offset = 0;
-    
-    // WAV 头
-    const writeString = (str) => {
-        for (let i = 0; i < str.length; i++) {
-            view.setUint8(offset + i, str.charCodeAt(i));
-        }
-        offset += str.length;
-    };
-    
-    const format = 1; // PCM
+    const numChannels = buffer.numberOfChannels;
     const sampleRate = buffer.sampleRate;
-    const bitsPerSample = 16;
-    const byteRate = sampleRate * buffer.numberOfChannels * bitsPerSample / 8;
-    const blockAlign = buffer.numberOfChannels * bitsPerSample / 8;
+    const format = 1; // PCM
+    const bitDepth = 16;
     
-    writeString('RIFF');
-    view.setUint32(offset, length - 8, true); offset += 4;
-    writeString('WAVE');
-    writeString('fmt ');
-    view.setUint32(offset, 16, true); offset += 4;
-    view.setUint16(offset, format, true); offset += 2;
-    view.setUint16(offset, buffer.numberOfChannels, true); offset += 2;
-    view.setUint32(offset, sampleRate, true); offset += 4;
-    view.setUint32(offset, byteRate, true); offset += 4;
-    view.setUint16(offset, blockAlign, true); offset += 2;
-    view.setUint16(offset, bitsPerSample, true); offset += 2;
-    writeString('data');
-    view.setUint32(offset, length - offset - 4, true); offset += 4;
+    const bytesPerSample = bitDepth / 8;
+    const blockAlign = numChannels * bytesPerSample;
+    const dataSize = buffer.length * blockAlign;
+    const bufferSize = 44 + dataSize;
     
-    // 写入音频数据
-    for (let i = 0; i < buffer.numberOfChannels; i++) {
-        channels.push(buffer.getChannelData(i));
-    }
+    const arrayBuffer = new ArrayBuffer(bufferSize);
+    const view = new DataView(arrayBuffer);
     
+    // RIFF 头
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + dataSize, true);
+    writeString(view, 8, 'WAVE');
+    
+    // fmt 子块
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true); // fmt 块大小
+    view.setUint16(20, format, true);
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * blockAlign, true);
+    view.setUint16(32, blockAlign, true);
+    view.setUint16(34, bitDepth, true);
+    
+    // data 子块
+    writeString(view, 36, 'data');
+    view.setUint32(40, dataSize, true);
+    
+    // 交错写入音频样本
+    let offset = 44;
     for (let i = 0; i < buffer.length; i++) {
-        for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
-            const sample = Math.max(-1, Math.min(1, channels[channel][i]));
+        for (let channel = 0; channel < numChannels; channel++) {
+            let sample = buffer.getChannelData(channel)[i];
+            // 限制在 -1 到 1 之间
+            sample = Math.max(-1, Math.min(1, sample));
+            // 转换为 16-bit 整数
             const intSample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
             view.setInt16(offset, intSample, true);
             offset += 2;
@@ -294,6 +308,12 @@ function audioBufferToWav(buffer) {
     }
     
     return arrayBuffer;
+}
+
+function writeString(view, offset, string) {
+    for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+    }
 }
 
 // 从铃声库获取铃声
@@ -478,14 +498,9 @@ async function preloadCustomTone(customData) {
     
     try {
         // Base64 data URL -> ArrayBuffer
-        const base64 = customData.split(',')[1];
-        const binaryStr = atob(base64);
-        const bytes = new Uint8Array(binaryStr.length);
-        for (let i = 0; i < binaryStr.length; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
-        }
-        // 解码为 AudioBuffer
-        customToneBuffer = await ringingAlarmSharedCtx.decodeAudioData(bytes.buffer);
+        const arrayBuffer = dataUrlToArrayBuffer(customData);
+        // 解码为 AudioBuffer（使用 Promise 模式）
+        customToneBuffer = await ringingAlarmSharedCtx.decodeAudioData(arrayBuffer.slice(0));
     } catch (e) {
         console.warn('[自定义铃声] 解码失败，将使用内置铃声:', e);
         customToneBuffer = null;
