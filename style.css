@@ -1725,18 +1725,19 @@ body {
 }
 
 .calendar-day {
-    min-height: 56px;
+    min-height: 90px;
     height: auto;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: flex-start;
-    padding: 6px 8px;
+    padding: 10px 6px;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
     border: 1px solid #f0f0f0;
+    gap: 0.4cm;
 }
 
 .calendar-day:hover {
@@ -1790,12 +1791,15 @@ body {
     background: #e3f2fd;
 }
 
-.day-top-row {
+/* 第一行：日期数字 + 休标签 */
+.day-first-row {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 4px;
     width: 100%;
-    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .day-date {
@@ -1803,39 +1807,55 @@ body {
     font-weight: 700;
     color: #333;
     line-height: 1;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* 休标签 - 自适应大小（使用相对单位和flex-shrink）*/
+.day-rest-tag {
+    background: #e74c3c;
+    color: #fff;
+    font-size: clamp(9px, 1vw, 12px);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-weight: 700;
+    flex-shrink: 0;
+    line-height: 1;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* 第二行：农历（居中，不换行） */
+.day-lunar-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .day-lunar {
     font-size: 10px;
     color: #999;
-    margin-top: 1px;
-    text-align: left;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* 第三行：节日名称（居中，不换行） */
+.day-holiday-row {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 .day-holiday-tag {
     font-size: 11px;
     color: #e74c3c;
-    margin-top: 2px;
     font-weight: 500;
-    text-align: left;
-}
-
-.day-date-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    width: 100%;
-    gap: 4px;
-}
-
-.day-rest-tag {
-    background: #e74c3c;
-    color: #fff;
-    font-size: 11px;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 700;
-    flex-shrink: 0;
+    text-align: center;
+    line-height: 1.2;
 }
 
 /* ============ 作息计划面板 ============ */
