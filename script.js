@@ -416,7 +416,8 @@ function renderSavedAlarms() {
         const period = periodOfHour(t.h);
         const hh12 = t.h % 12 === 0 ? 12 : (t.h % 12);
         const timeShow = String(hh12).padStart(2, '0') + ':' + String(t.m).padStart(2, '0');
-        const label = repeatLabel(alarm);
+        const placeholder = repeatLabel(alarm); // 占位符：重复方式
+        const note = alarm.note || ''; // 用户手动输入的备注
         const enabledClass = alarm.enabled ? 'on' : '';
         const dimStyle = alarm.enabled ? '' : 'opacity:0.55;';
         return (
@@ -426,9 +427,10 @@ function renderSavedAlarms() {
             '      <span class="alarm-card-period">' + period + '</span>' +
             '      <span class="alarm-card-time-main">' + timeShow + '</span>' +
             '    </div>' +
-            '    <div class="alarm-card-label alarm-card-label-clickable" data-action="cycle-repeat" data-id="' + alarm.id + '" title="点击切换重复方式">' +
-            label + ' <span class="label-cycle-indicator">↻</span>' +
-            '    </div>' +
+            '    <input type="text" class="alarm-card-note-input" data-action="edit-note" data-id="' + alarm.id + '"' +
+            '      value="' + (note ? note.replace(/"/g, '&quot;') : '') + '"' +
+            '      placeholder="' + placeholder + '"' +
+            '      maxlength="20" title="手动输入备注，例如：起床提醒">' +
             '  </div>' +
             '  <div class="alarm-card-right">' +
             '    <div class="alarm-card-switch ' + enabledClass + '" data-action="toggle" data-id="' + alarm.id + '">' +
@@ -446,21 +448,18 @@ function renderSavedAlarms() {
 function initAlarmListEventDelegation() {
     const listEl = document.getElementById('alarmList');
     if (listEl) {
+        // 1. 点击事件（处理开关）
         listEl.addEventListener('click', function (e) {
             // 优先检测：开关点击（ON/OFF 切换）
             const sw = e.target.closest('.alarm-card-switch');
             if (sw && sw.dataset.action === 'toggle') {
                 e.preventDefault();
                 e.stopPropagation();
-
-                // 1. 立即切换视觉状态（立即响应，不等待 localStorage 重新渲染）
                 sw.classList.toggle('on');
-                // 2. 同步 disabled 卡片状态
                 const card = sw.closest('.alarm-card');
                 if (card) {
                     card.style.opacity = sw.classList.contains('on') ? '' : '0.55';
                 }
-                // 3. 更新 localStorage（避免闪烁）
                 const alarmId = sw.dataset.id;
                 const data = loadData();
                 const alarm = (data.alarms || []).find(a => a.id === alarmId);
@@ -471,34 +470,9 @@ function initAlarmListEventDelegation() {
                 }
                 return;
             }
-            // 重复标签点击：循环切换重复方式（在卡片点击之前）
-            const labelEl = e.target.closest('.alarm-card-label-clickable');
-            if (labelEl && labelEl.dataset.action === 'cycle-repeat') {
-                e.preventDefault();
+            // 点击输入框 → 不打开编辑弹窗，让 input 获得焦点
+            if (e.target.classList && e.target.classList.contains('alarm-card-note-input')) {
                 e.stopPropagation();
-                const alarmId = labelEl.dataset.id;
-                const data = loadData();
-                const alarm = (data.alarms || []).find(a => a.id === alarmId);
-                if (alarm) {
-                    // 循环顺序：daily → workday → weekend → once → custom(周一,三,五) → daily
-                    const order = ['daily', 'workday', 'weekend', 'once', 'custom'];
-                    const currentIdx = order.indexOf(alarm.repeat || 'daily');
-                    const next = order[(currentIdx + 1) % order.length];
-                    alarm.repeat = next;
-                    if (next === 'custom') {
-                        alarm.customDays = [1, 3, 5]; // 默认 周一、三、五
-                    } else {
-                        alarm.customDays = [];
-                    }
-                    saveData(data);
-                    syncAlarmsToServiceWorker();
-                    // 立即更新标签文字（不刷新整个列表，避免闪烁）
-                    const newLabel = repeatLabel(alarm);
-                    labelEl.innerHTML = newLabel + ' <span class="label-cycle-indicator">↻</span>';
-                    // 短暂动画提示
-                    labelEl.classList.add('label-flash');
-                    setTimeout(() => labelEl.classList.remove('label-flash'), 500);
-                }
                 return;
             }
             // 整张卡片 → 打开编辑弹窗
@@ -506,6 +480,35 @@ function initAlarmListEventDelegation() {
             if (card && card.dataset.id) {
                 e.preventDefault();
                 openAlarmModal(card.dataset.id);
+            }
+        });
+
+        // 2. 输入框失去焦点时保存备注（input/blur）
+        listEl.addEventListener('blur', function (e) {
+            const input = e.target;
+            if (input && input.classList && input.classList.contains('alarm-card-note-input')) {
+                const alarmId = input.dataset.id;
+                const data = loadData();
+                const alarm = (data.alarms || []).find(a => a.id === alarmId);
+                if (alarm) {
+                    const value = (input.value || '').trim();
+                    alarm.note = value;
+                    saveData(data);
+                    syncAlarmsToServiceWorker();
+                    // 视觉提示
+                    input.classList.add('note-saved');
+                    setTimeout(() => input.classList.remove('note-saved'), 500);
+                }
+            }
+        }, true); // 捕获阶段触发
+
+        // 3. 回车键也触发保存
+        listEl.addEventListener('keydown', function (e) {
+            const input = e.target;
+            if (input && input.classList && input.classList.contains('alarm-card-note-input')) {
+                if (e.key === 'Enter') {
+                    input.blur();
+                }
             }
         });
     }

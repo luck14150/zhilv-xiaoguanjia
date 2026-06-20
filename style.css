@@ -760,39 +760,40 @@ body {
     margin-top: 2px;
 }
 
-.alarm-card-label-clickable {
-    display: inline-block;
-    padding: 4px 10px;
-    background: rgba(124, 140, 255, 0.12);
-    border: 1px dashed rgba(124, 140, 255, 0.35);
+.alarm-card-note-input {
+    width: 140px;
+    margin-top: 6px;
+    padding: 5px 10px;
+    background: rgba(124, 140, 255, 0.1);
+    border: 1px solid rgba(124, 140, 255, 0.35);
     border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    user-select: none;
-    color: rgba(124, 140, 255, 0.9);
-    font-weight: 500;
-}
-
-.alarm-card-label-clickable:hover {
-    background: rgba(201, 124, 255, 0.2);
-    border-color: rgba(201, 124, 255, 0.5);
     color: #fff;
-    transform: scale(1.03);
+    font-size: 15px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s;
+    caret-color: #c97cff;
 }
 
-.label-cycle-indicator {
-    font-size: 11px;
-    opacity: 0.6;
-    margin-left: 2px;
+.alarm-card-note-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 400;
 }
 
-.label-flash {
-    animation: label-flash-anim 0.5s ease;
+.alarm-card-note-input:hover {
+    background: rgba(124, 140, 255, 0.18);
+    border-color: rgba(124, 140, 255, 0.55);
 }
 
-@keyframes label-flash-anim {
-    0%   { background: rgba(201, 124, 255, 0.5); transform: scale(1.1); }
-    100% { background: rgba(124, 140, 255, 0.12); transform: scale(1); }
+.alarm-card-note-input:focus {
+    background: rgba(201, 124, 255, 0.18);
+    border-color: #c97cff;
+    box-shadow: 0 0 0 3px rgba(201, 124, 255, 0.2);
+}
+
+.alarm-card-note-input.note-saved {
+    border-color: #6ddca6;
+    background: rgba(109, 220, 166, 0.15);
 }
 
 .alarm-card-right {
