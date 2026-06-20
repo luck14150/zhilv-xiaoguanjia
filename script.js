@@ -1331,6 +1331,24 @@ function updateWorldClock() {
     });
 }
 
+/* ============ 闹钟子面板切换（闹钟/计时/倒计时/世界时钟） ============ */
+function switchAlarmPanel(sub) {
+    // 子导航按钮激活状态
+    document.querySelectorAll('.alarm-subnav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.sub === sub);
+    });
+    // 子面板显示状态
+    document.querySelectorAll('.alarm-panel').forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.sub === sub);
+    });
+}
+
+function initAlarmSubnav() {
+    document.querySelectorAll('.alarm-subnav-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchAlarmPanel(btn.dataset.sub));
+    });
+}
+
 /* ============ 唯一的启动入口 ============ */
 document.addEventListener('DOMContentLoaded', function () {
     // 1. UI 初始化
@@ -1338,11 +1356,12 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDateDisplay();
     updateClockDisplay();
 
-    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 云同步 + 计时器 + 倒计时 + 响铃贪睡）
+    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 云同步 + 计时器 + 倒计时 + 响铃贪睡 + 子面板）
     initGlobalEventListeners();
     initAlarmListEventDelegation();
     initAlarmModalListeners();
     initCloudSyncEventListeners();
+    initAlarmSubnav();
     initTimer();
     initCountdown();
 

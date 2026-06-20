@@ -83,16 +83,122 @@
         <!-- 中部：主内容区 -->
         <main class="main-content" id="mainContent">
 
-            <!-- 闹钟 -->
+            <!-- 闹钟（含计时器/倒计时/世界时钟） -->
             <section class="page active" id="page-alarm">
+                <!-- 闹钟顶部：当前时间 + 日期 -->
                 <div class="alarm-header">
                     <div class="alarm-header-time" id="alarmHeaderTime">00:00:00</div>
                     <div class="alarm-header-date" id="alarmHeaderDate">2026年6月20日 星期六</div>
                 </div>
 
-                <div class="alarm-list" id="alarmList"></div>
+                <!-- 子导航：闹钟/计时/倒计时/世界时钟 -->
+                <div class="alarm-subnav" id="alarmSubnav">
+                    <button class="alarm-subnav-btn active" data-sub="alarm">⏰ 闹钟</button>
+                    <button class="alarm-subnav-btn" data-sub="timer">⏱️ 计时</button>
+                    <button class="alarm-subnav-btn" data-sub="countdown">⏳ 倒计时</button>
+                    <button class="alarm-subnav-btn" data-sub="world">🌍 世界时钟</button>
+                </div>
 
-                <button class="alarm-add-btn" id="alarmAddBtn">+ 新闹钟</button>
+                <!-- 子面板：闹钟列表 -->
+                <div class="alarm-panel active" data-sub="alarm">
+                    <div class="alarm-list" id="alarmList"></div>
+                    <button class="alarm-add-btn" id="alarmAddBtn">+ 新闹钟</button>
+                </div>
+
+                <!-- 子面板：计时器 -->
+                <div class="alarm-panel" data-sub="timer">
+                    <div class="timer-display">
+                        <div class="timer-time" id="timerDisplay">00:00:00</div>
+                        <div class="timer-label">计时器</div>
+                    </div>
+                    <div class="timer-controls">
+                        <button class="timer-btn start" id="timerStartBtn">▶ 开始</button>
+                        <button class="timer-btn pause" id="timerPauseBtn" style="display:none;">⏸ 暂停</button>
+                        <button class="timer-btn reset" id="timerResetBtn">↺ 重置</button>
+                    </div>
+                    <div class="timer-history" id="timerHistory">
+                        <div class="timer-history-title">历史记录</div>
+                        <div class="timer-history-list" id="timerHistoryList"></div>
+                    </div>
+                </div>
+
+                <!-- 子面板：倒计时 -->
+                <div class="alarm-panel" data-sub="countdown">
+                    <div class="countdown-display">
+                        <div class="countdown-time" id="countdownDisplay">00:00:00</div>
+                        <div class="countdown-label" id="countdownLabel">设置倒计时</div>
+                    </div>
+                    <div class="countdown-setup" id="countdownSetup">
+                        <div class="countdown-input-group">
+                            <div class="countdown-input-item">
+                                <input type="number" id="countdownHour" min="0" max="23" value="0" class="countdown-input">
+                                <span class="countdown-input-label">时</span>
+                            </div>
+                            <div class="countdown-input-item">
+                                <input type="number" id="countdownMin" min="0" max="59" value="5" class="countdown-input">
+                                <span class="countdown-input-label">分</span>
+                            </div>
+                            <div class="countdown-input-item">
+                                <input type="number" id="countdownSec" min="0" max="59" value="0" class="countdown-input">
+                                <span class="countdown-input-label">秒</span>
+                            </div>
+                        </div>
+                        <button class="countdown-start-btn" id="countdownStartBtn">开始倒计时</button>
+                    </div>
+                    <div class="countdown-controls" id="countdownControls" style="display:none;">
+                        <button class="countdown-btn pause" id="countdownPauseBtn">⏸ 暂停</button>
+                        <button class="countdown-btn reset" id="countdownResetBtn">↺ 重置</button>
+                    </div>
+                </div>
+
+                <!-- 子面板：世界时钟 -->
+                <div class="alarm-panel" data-sub="world">
+                    <div class="worldclock-header">
+                        <div class="worldclock-local">
+                            <div class="worldclock-city">北京 (本地)</div>
+                            <div class="worldclock-time" id="worldclockLocal">00:00:00</div>
+                            <div class="worldclock-date" id="worldclockLocalDate"></div>
+                        </div>
+                    </div>
+                    <div class="worldclock-grid" id="worldclockGrid">
+                        <div class="worldclock-card" data-city="london" data-offset="-7">
+                            <div class="worldclock-city-name">伦敦</div>
+                            <div class="worldclock-city-time" id="wcLondon">--:--:--</div>
+                            <div class="worldclock-city-date" id="wcLondonDate"></div>
+                            <div class="worldclock-diff">UTC-7</div>
+                        </div>
+                        <div class="worldclock-card" data-city="newyork" data-offset="-12">
+                            <div class="worldclock-city-name">纽约</div>
+                            <div class="worldclock-city-time" id="wcNewYork">--:--:--</div>
+                            <div class="worldclock-city-date" id="wcNewYorkDate"></div>
+                            <div class="worldclock-diff">UTC-12</div>
+                        </div>
+                        <div class="worldclock-card" data-city="tokyo" data-offset="1">
+                            <div class="worldclock-city-name">东京</div>
+                            <div class="worldclock-city-time" id="wcTokyo">--:--:--</div>
+                            <div class="worldclock-city-date" id="wcTokyoDate"></div>
+                            <div class="worldclock-diff">UTC+1</div>
+                        </div>
+                        <div class="worldclock-card" data-city="sydney" data-offset="2">
+                            <div class="worldclock-city-name">悉尼</div>
+                            <div class="worldclock-city-time" id="wcSydney">--:--:--</div>
+                            <div class="worldclock-city-date" id="wcSydneyDate"></div>
+                            <div class="worldclock-diff">UTC+2</div>
+                        </div>
+                        <div class="worldclock-card" data-city="paris" data-offset="-6">
+                            <div class="worldclock-city-name">巴黎</div>
+                            <div class="worldclock-city-time" id="wcParis">--:--:--</div>
+                            <div class="worldclock-city-date" id="wcParisDate"></div>
+                            <div class="worldclock-diff">UTC-6</div>
+                        </div>
+                        <div class="worldclock-card" data-city="moscow" data-offset="-5">
+                            <div class="worldclock-city-name">莫斯科</div>
+                            <div class="worldclock-city-time" id="wcMoscow">--:--:--</div>
+                            <div class="worldclock-city-date" id="wcMoscowDate"></div>
+                            <div class="worldclock-diff">UTC-5</div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- 闹钟详情弹窗 -->
@@ -202,101 +308,6 @@
                     <button class="modal-save-btn" id="modalSaveBtn">保存闹钟</button>
                 </div>
             </div>
-
-            <!-- 计时器 -->
-            <section class="page" id="page-timer">
-                <div class="timer-display">
-                    <div class="timer-time" id="timerDisplay">00:00:00</div>
-                    <div class="timer-label">计时器</div>
-                </div>
-                <div class="timer-controls">
-                    <button class="timer-btn start" id="timerStartBtn">▶ 开始</button>
-                    <button class="timer-btn pause" id="timerPauseBtn" style="display:none;">⏸ 暂停</button>
-                    <button class="timer-btn reset" id="timerResetBtn">↺ 重置</button>
-                </div>
-                <div class="timer-history" id="timerHistory">
-                    <div class="timer-history-title">历史记录</div>
-                    <div class="timer-history-list" id="timerHistoryList"></div>
-                </div>
-            </section>
-
-            <!-- 倒计时 -->
-            <section class="page" id="page-countdown">
-                <div class="countdown-display">
-                    <div class="countdown-time" id="countdownDisplay">00:00:00</div>
-                    <div class="countdown-label" id="countdownLabel">设置倒计时</div>
-                </div>
-                <div class="countdown-setup" id="countdownSetup">
-                    <div class="countdown-input-group">
-                        <div class="countdown-input-item">
-                            <input type="number" id="countdownHour" min="0" max="23" value="0" class="countdown-input">
-                            <span class="countdown-input-label">时</span>
-                        </div>
-                        <div class="countdown-input-item">
-                            <input type="number" id="countdownMin" min="0" max="59" value="5" class="countdown-input">
-                            <span class="countdown-input-label">分</span>
-                        </div>
-                        <div class="countdown-input-item">
-                            <input type="number" id="countdownSec" min="0" max="59" value="0" class="countdown-input">
-                            <span class="countdown-input-label">秒</span>
-                        </div>
-                    </div>
-                    <button class="countdown-start-btn" id="countdownStartBtn">开始倒计时</button>
-                </div>
-                <div class="countdown-controls" id="countdownControls" style="display:none;">
-                    <button class="countdown-btn pause" id="countdownPauseBtn">⏸ 暂停</button>
-                    <button class="countdown-btn reset" id="countdownResetBtn">↺ 重置</button>
-                </div>
-            </section>
-
-            <!-- 世界时钟 -->
-            <section class="page" id="page-worldclock">
-                <div class="worldclock-header">
-                    <div class="worldclock-local">
-                        <div class="worldclock-city">北京 (本地)</div>
-                        <div class="worldclock-time" id="worldclockLocal">00:00:00</div>
-                        <div class="worldclock-date" id="worldclockLocalDate"></div>
-                    </div>
-                </div>
-                <div class="worldclock-grid" id="worldclockGrid">
-                    <div class="worldclock-card" data-city="london" data-offset="-7">
-                        <div class="worldclock-city-name">伦敦</div>
-                        <div class="worldclock-city-time" id="wcLondon">--:--:--</div>
-                        <div class="worldclock-city-date" id="wcLondonDate"></div>
-                        <div class="worldclock-diff">UTC-7</div>
-                    </div>
-                    <div class="worldclock-card" data-city="newyork" data-offset="-12">
-                        <div class="worldclock-city-name">纽约</div>
-                        <div class="worldclock-city-time" id="wcNewYork">--:--:--</div>
-                        <div class="worldclock-city-date" id="wcNewYorkDate"></div>
-                        <div class="worldclock-diff">UTC-12</div>
-                    </div>
-                    <div class="worldclock-card" data-city="tokyo" data-offset="1">
-                        <div class="worldclock-city-name">东京</div>
-                        <div class="worldclock-city-time" id="wcTokyo">--:--:--</div>
-                        <div class="worldclock-city-date" id="wcTokyoDate"></div>
-                        <div class="worldclock-diff">UTC+1</div>
-                    </div>
-                    <div class="worldclock-card" data-city="sydney" data-offset="2">
-                        <div class="worldclock-city-name">悉尼</div>
-                        <div class="worldclock-city-time" id="wcSydney">--:--:--</div>
-                        <div class="worldclock-city-date" id="wcSydneyDate"></div>
-                        <div class="worldclock-diff">UTC+2</div>
-                    </div>
-                    <div class="worldclock-card" data-city="paris" data-offset="-6">
-                        <div class="worldclock-city-name">巴黎</div>
-                        <div class="worldclock-city-time" id="wcParis">--:--:--</div>
-                        <div class="worldclock-city-date" id="wcParisDate"></div>
-                        <div class="worldclock-diff">UTC-6</div>
-                    </div>
-                    <div class="worldclock-card" data-city="moscow" data-offset="-5">
-                        <div class="worldclock-city-name">莫斯科</div>
-                        <div class="worldclock-city-time" id="wcMoscow">--:--:--</div>
-                        <div class="worldclock-city-date" id="wcMoscowDate"></div>
-                        <div class="worldclock-diff">UTC-5</div>
-                    </div>
-                </div>
-            </section>
 
             <!-- 模式 -->
             <section class="page" id="page-mode">
@@ -516,18 +527,7 @@
                     <span class="nav-icon">⏰</span>
                     <span class="nav-text">闹钟</span>
                 </div>
-                <div class="nav-btn" data-page="timer">
-                    <span class="nav-icon">⏱️</span>
-                    <span class="nav-text">计时</span>
-                </div>
-                <div class="nav-btn" data-page="countdown">
-                    <span class="nav-icon">⏳</span>
-                    <span class="nav-text">倒计时</span>
-                </div>
-                <div class="nav-btn" data-page="worldclock">
-                    <span class="nav-icon">�</span>
-                    <span class="nav-text">世界</span>
-                </div>
+                
                 <div class="nav-btn" data-page="schedule">
                     <span class="nav-icon">
                         <svg viewBox="0 0 32 32" style="width:28px;height:28px;fill:none;stroke:#ffffff;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;">
