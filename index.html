@@ -426,15 +426,26 @@
                         </div>
                         <div class="calendar-days" id="calDaysContainer"></div>
                     </div>
+                </div>
+            </section>
 
-                    <!-- 当日作息计划 -->
-                    <div class="schedule-panel" id="schedulePanel">
-                        <div class="schedule-header">
-                            <span class="schedule-title">📅 今日作息</span>
-                            <span class="schedule-date" id="scheduleDate"></span>
-                        </div>
-                        <div class="schedule-list" id="scheduleList"></div>
+            <!-- 每日作息详情 -->
+            <section class="page" id="page-day-schedule">
+                <div class="day-schedule-container">
+                    <!-- 顶部返回栏 -->
+                    <div class="day-schedule-header">
+                        <button class="day-back-btn" onclick="showCalendarPage()">← 返回日历</button>
+                        <span class="day-schedule-title" id="dayScheduleTitle">今日作息</span>
                     </div>
+
+                    <!-- 日期信息 -->
+                    <div class="day-schedule-info">
+                        <div class="day-date-text" id="dayDateText"></div>
+                        <div class="day-lunar-text" id="dayLunarText"></div>
+                    </div>
+
+                    <!-- 作息列表 -->
+                    <div class="day-schedule-list" id="dayScheduleList"></div>
                 </div>
             </section>
 

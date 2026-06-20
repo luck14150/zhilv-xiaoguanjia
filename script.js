@@ -1624,7 +1624,6 @@ function initCalendar() {
 
     bindCalendarEvents();
     renderCalendar();
-    initSchedulePanel();
 }
 
 function bindCalendarEvents() {
@@ -1800,11 +1799,14 @@ function renderDay(date, isOtherMonth) {
     if (isToday) classes.push('today');
     if (isHol) classes.push('holiday');
     if (isHol && !isOtherMonth) classes.push('has-rest');
+    if (!isOtherMonth) classes.push('clickable');
 
     let dateColor = '';
     if (isSun || isSat) dateColor = 'color: #e74c3c;';
 
-    let html = `<div class="${classes.join(' ')}" data-date="${dateStr}">`;
+    let onclick = !isOtherMonth ? `onclick="showDaySchedule('${dateStr}')"` : '';
+
+    let html = `<div class="${classes.join(' ')}" data-date="${dateStr}" ${onclick}>`;
     
     // 休标签（左上角）
     if (isHol && !isOtherMonth) {
@@ -1844,47 +1846,82 @@ function getPeriod(hour) {
     return 'night';
 }
 
-function renderSchedule(dateStr) {
-    const scheduleDateEl = document.getElementById('scheduleDate');
-    const scheduleListEl = document.getElementById('scheduleList');
-    
-    if (!scheduleDateEl || !scheduleListEl) return;
-    
+function formatDate(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function showDaySchedule(dateStr) {
     const date = new Date(dateStr);
-    const dateText = `${date.getMonth() + 1}月${date.getDate()}日`;
-    scheduleDateEl.textContent = dateText;
+    const todayStr = formatDate(new Date());
+    
+    // 切换到每日作息页面
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-day-schedule').classList.add('active');
+    
+    // 更新导航栏（保持作息导航激活）
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelector('.nav-btn[data-page="schedule"]').classList.add('active');
+    
+    // 渲染该日期的作息
+    const titleEl = document.getElementById('dayScheduleTitle');
+    const dateTextEl = document.getElementById('dayDateText');
+    const lunarTextEl = document.getElementById('dayLunarText');
+    const scheduleListEl = document.getElementById('dayScheduleList');
+    
+    const isToday = dateStr === todayStr;
+    titleEl.textContent = isToday ? '今日作息' : `${date.getMonth() + 1}月${date.getDate()}日作息`;
+    
+    const weekdayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    dateTextEl.textContent = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdayNames[date.getDay()]}`;
+    lunarTextEl.textContent = getLunarDate(date);
     
     let html = '';
-    const schedule = DEFAULT_SCHEDULE;
-    
-    schedule.forEach(item => {
+    DEFAULT_SCHEDULE.forEach((item, idx) => {
         const hour = parseInt(item.time.split(':')[0]);
         const period = item.period || getPeriod(hour);
-        const isChecked = item.checked ? 'checked' : '';
         
         html += `
-            <div class="schedule-item">
-                <span class="schedule-time">${item.time}</span>
-                <span class="schedule-dot ${period}"></span>
-                <span class="schedule-text">${item.label}</span>
-                <span class="schedule-check ${isChecked}" onclick="toggleScheduleCheck(this)"></span>
+            <div class="day-schedule-item">
+                <span class="day-schedule-time">${item.time}</span>
+                <span class="day-schedule-dot ${period}"></span>
+                <span class="day-schedule-label">${item.label}</span>
+                <span class="day-schedule-check" data-idx="${idx}" data-date="${dateStr}" onclick="toggleDayScheduleCheck(this)"></span>
             </div>
         `;
     });
     
     scheduleListEl.innerHTML = html;
+    
+    // 恢复保存的勾选状态
+    const savedData = localStorage.getItem(`schedule_${dateStr}`);
+    if (savedData) {
+        try {
+            const checkedIdx = JSON.parse(savedData);
+            checkedIdx.forEach(idx => {
+                const el = scheduleListEl.querySelector(`[data-idx="${idx}"]`);
+                if (el) el.classList.add('checked');
+            });
+        } catch (e) {}
+    }
+    
+    // 滚动到顶部
+    window.scrollTo(0, 0);
 }
 
-function toggleScheduleCheck(el) {
+function showCalendarPage() {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-schedule').classList.add('active');
+}
+
+function toggleDayScheduleCheck(el) {
     el.classList.toggle('checked');
-}
-
-function initSchedulePanel() {
-    const today = new Date();
-    const todayStr = formatDate(today);
-    renderSchedule(todayStr);
-}
-
-function formatDate(date) {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    
+    const dateStr = el.dataset.date;
+    const checkedList = [];
+    const container = document.getElementById('dayScheduleList');
+    container.querySelectorAll('.day-schedule-check.checked').forEach(item => {
+        checkedList.push(parseInt(item.dataset.idx));
+    });
+    
+    localStorage.setItem(`schedule_${dateStr}`, JSON.stringify(checkedList));
 }
