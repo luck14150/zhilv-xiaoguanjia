@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062103';
+const APP_VERSION = '2026062104';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -2458,10 +2458,6 @@ function renderDay(date, isOtherMonth) {
     const isSat = dayOfWeek === 6;
     const isSun = dayOfWeek === 0;
 
-    // 读取用户自定义备注
-    const savedNote = getDayNote(dateStr);
-    const noteContent = savedNote || lunar;
-
     let classes = ['calendar-day'];
     if (isOtherMonth) classes.push('other-month');
     if (isToday) classes.push('today');
@@ -2484,19 +2480,12 @@ function renderDay(date, isOtherMonth) {
     // 日期数字
     html += `<span class="day-date" style="${dateColor}">${date.getDate()}</span>`;
     
-    // 农历 + 可编辑备注（日期下方，textarea）
+    // 农历 + 节日名称（日期下方）- 保持原图简洁样式
     if (!isOtherMonth) {
-        const placeholder = holiday ? holiday : lunar;
-        html += `<div class="day-note-area" onclick="event.stopPropagation()">`;
-        html += `<textarea class="day-note-input" 
-                      data-date="${dateStr}" 
-                      rows="3" 
-                      placeholder="${placeholder}"
-                      onblur="saveDayNote('${dateStr}', this.value)"
-                      onclick="event.stopPropagation()"
-                      onmousedown="event.stopPropagation()"
-                      onfocus="event.stopPropagation()">${escapeHtml(noteContent)}</textarea>`;
-        html += `</div>`;
+        html += `<span class="day-lunar">${lunar}</span>`;
+        if (holiday) {
+            html += `<span class="day-holiday-tag">${holiday}</span>`;
+        }
     }
     
     html += '</div>';
@@ -2510,20 +2499,6 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
-}
-
-// 读取某天的备注
-function getDayNote(dateStr) {
-    return localStorage.getItem(`day_note_${dateStr}`) || '';
-}
-
-// 保存某天的备注
-function saveDayNote(dateStr, value) {
-    if (value && value.trim()) {
-        localStorage.setItem(`day_note_${dateStr}`, value);
-    } else {
-        localStorage.removeItem(`day_note_${dateStr}`);
-    }
 }
 
 /* ============ 作息计划数据与渲染 ============ */
