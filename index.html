@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智律小管家</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ============ 开场动画CG ============ -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-bg">
+            <div class="intro-stars"></div>
+            <div class="intro-stars slow"></div>
+            <div class="intro-stars medium"></div>
+        </div>
+
+        <div class="intro-particles">
+            <div class="particle" style="--x:10%;--d:0s"></div>
+            <div class="particle" style="--x:25%;--d:0.5s"></div>
+            <div class="particle" style="--x:40%;--d:1s"></div>
+            <div class="particle" style="--x:55%;--d:1.5s"></div>
+            <div class="particle" style="--x:70%;--d:2s"></div>
+            <div class="particle" style="--x:85%;--d:2.5s"></div>
+            <div class="particle" style="--x:15%;--d:0.8s"></div>
+            <div class="particle" style="--x:35%;--d:1.3s"></div>
+            <div class="particle" style="--x:65%;--d:1.8s"></div>
+            <div class="particle" style="--x:88%;--d:2.2s"></div>
+        </div>
+
+        <div class="intro-rings">
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+        </div>
+
+        <div class="intro-content">
+            <div class="intro-logo">
+                <span class="intro-icon">⚡</span>
+            </div>
+            <h1 class="intro-title">
+                <span>智</span><span>律</span><span>小</span><span>管</span><span>家</span>
+            </h1>
+            <p class="intro-sub">Smart Life Manager</p>
+            <div class="intro-divider"></div>
+            <div class="intro-progress">
+                <div class="intro-progress-bar" id="progressBar"></div>
+            </div>
+            <p class="intro-text" id="introText">正在启动...</p>
+            <button class="intro-btn" id="skipBtn">跳过 ›</button>
+        </div>
+    </div>
+
+    <!-- ============ 主应用 ============ -->
+    <div class="app-container">
+
+        <!-- 顶部：日期 + 星期 + 天气 -->
+        <header class="top-bar">
+            <div class="top-bg"></div>
+            <div class="top-content">
+                <div class="date-group">
+                    <span class="date-label">📅</span>
+                    <span class="date-text" id="currentDate">2026年6月20日</span>
+                    <span class="date-arrow">▼</span>
+                </div>
+
+                <div class="info-group">
+                    <div class="info-item">
+                        <span class="info-icon">📆</span>
+                        <span class="info-text" id="weekday">星期六</span>
+                    </div>
+                    <div class="info-item weather">
+                        <span class="info-icon">☀️</span>
+                        <span class="info-text">晴 26°</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 中部：主内容区 -->
+        <main class="main-content" id="mainContent">
+
+            <!-- 闹钟 -->
+            <section class="page active" id="page-alarm">
+                <div class="page-hero">
+                    <div class="hero-glow"></div>
+                    <h2 class="hero-title">闹钟</h2>
+                    <p class="hero-sub">设置你的提醒时间</p>
+                </div>
+                <div class="alarm-panel">
+                    <div class="alarm-row">
+                        <div class="alarm-time">07<span class="sep">:</span>00</div>
+                        <div class="alarm-info">
+                            <div class="alarm-name">起床闹钟</div>
+                            <div class="alarm-detail">工作日</div>
+                        </div>
+                        <div class="alarm-switch">ON</div>
+                    </div>
+                    <div class="alarm-row">
+                        <div class="alarm-time">12<span class="sep">:</span>30</div>
+                        <div class="alarm-info">
+                            <div class="alarm-name">午餐提醒</div>
+                            <div class="alarm-detail">每日</div>
+                        </div>
+                        <div class="alarm-switch">ON</div>
+                    </div>
+                    <div class="alarm-row">
+                        <div class="alarm-time">22<span class="sep">:</span>30</div>
+                        <div class="alarm-info">
+                            <div class="alarm-name">睡眠提醒</div>
+                            <div class="alarm-detail">每日</div>
+                        </div>
+                        <div class="alarm-switch off">OFF</div>
+                    </div>
+                    <button class="add-alarm">+ 添加新闹钟</button>
+                </div>
+            </section>
+
+            <!-- 模式 -->
+            <section class="page" id="page-mode">
+                <div class="page-hero">
+                    <div class="hero-glow"></div>
+                    <h2 class="hero-title">模式</h2>
+                    <p class="hero-sub">一键切换生活场景</p>
+                </div>
+                <div class="mode-grid">
+                    <div class="mode-card">
+                        <div class="mode-icon">💼</div>
+                        <div class="mode-name">工作模式</div>
+                        <div class="mode-sub">高效专注</div>
+                    </div>
+                    <div class="mode-card">
+                        <div class="mode-icon">📖</div>
+                        <div class="mode-name">学习模式</div>
+                        <div class="mode-sub">沉浸学习</div>
+                    </div>
+                    <div class="mode-card">
+                        <div class="mode-icon">💪</div>
+                        <div class="mode-name">运动模式</div>
+                        <div class="mode-sub">活力锻炼</div>
+                    </div>
+                    <div class="mode-card">
+                        <div class="mode-icon">😴</div>
+                        <div class="mode-name">休息模式</div>
+                        <div class="mode-sub">放松身心</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 个人中心 -->
+            <section class="page" id="page-profile">
+                <div class="page-hero">
+                    <div class="hero-glow"></div>
+                    <h2 class="hero-title">个人中心</h2>
+                    <p class="hero-sub">管理你的账户信息</p>
+                </div>
+                <div class="profile-card">
+                    <div class="profile-avatar">👤</div>
+                    <div class="profile-name">智律用户</div>
+                    <div class="profile-bio">坚持自律 · 成就更好的自己</div>
+                </div>
+                <div class="setting-list">
+                    <div class="setting-row"><span>🔔</span><span>通知设置</span><span class="arrow">›</span></div>
+                    <div class="setting-row"><span>🎨</span><span>外观主题</span><span class="arrow">›</span></div>
+                    <div class="setting-row"><span>⚙️</span><span>偏好设置</span><span class="arrow">›</span></div>
+                    <div class="setting-row"><span>🔒</span><span>数据与隐私</span><span class="arrow">›</span></div>
+                </div>
+            </section>
+
+            <!-- 记忆库 -->
+            <section class="page" id="page-memory">
+                <div class="page-hero">
+                    <div class="hero-glow"></div>
+                    <h2 class="hero-title">记忆库</h2>
+                    <p class="hero-sub">记录与复习知识</p>
+                </div>
+                <div class="memory-list">
+                    <div class="memory-item">
+                        <div class="memory-tag">学习笔记</div>
+                        <h4>编程学习要点</h4>
+                        <p>记录前端开发核心知识点...</p>
+                        <div class="memory-meta">今天 · 下次复习明天</div>
+                    </div>
+                    <div class="memory-item">
+                        <div class="memory-tag">生活记录</div>
+                        <h4>每周目标回顾</h4>
+                        <p>本周完成5项工作任务...</p>
+                        <div class="memory-meta">2天前</div>
+                    </div>
+                    <div class="memory-item">
+                        <div class="memory-tag">知识卡片</div>
+                        <h4>读书笔记 · 原则</h4>
+                        <p>核心观点：拥抱现实、应对现实...</p>
+                        <div class="memory-meta">5天前</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 作息表 -->
+            <section class="page" id="page-schedule">
+                <div class="page-hero">
+                    <div class="hero-glow"></div>
+                    <h2 class="hero-title">作息表</h2>
+                    <p class="hero-sub">规划每日作息时间</p>
+                </div>
+                <div class="timeline-panel">
+                    <div class="tl-row"><span class="tl-time">07:00</span><span class="tl-dot done"></span><span class="tl-text">起床 · 晨间活动</span><span class="tl-status done">✓</span></div>
+                    <div class="tl-row"><span class="tl-time">09:00</span><span class="tl-dot done"></span><span class="tl-text">工作 / 学习</span><span class="tl-status done">✓</span></div>
+                    <div class="tl-row"><span class="tl-time">12:30</span><span class="tl-dot done"></span><span class="tl-text">午餐 · 午休</span><span class="tl-status done">✓</span></div>
+                    <div class="tl-row"><span class="tl-time">14:00</span><span class="tl-dot active"></span><span class="tl-text">下午专注工作</span><span class="tl-status active">●</span></div>
+                    <div class="tl-row"><span class="tl-time">18:00</span><span class="tl-dot"></span><span class="tl-text">晚餐 · 运动</span><span class="tl-status">○</span></div>
+                    <div class="tl-row"><span class="tl-time">22:30</span><span class="tl-dot"></span><span class="tl-text">准备入睡</span><span class="tl-status">○</span></div>
+                </div>
+            </section>
+
+            <!-- 数据统计 -->
+            <section class="page" id="page-stats">
+                <div class="page-hero">
+                    <div class="hero-glow"></div>
+                    <h2 class="hero-title">数据统计</h2>
+                    <p class="hero-sub">查看你的健康与效率</p>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-box"><span class="stat-num">28</span><span class="stat-label">本月闹钟使用</span></div>
+                    <div class="stat-box"><span class="stat-num">85%</span><span class="stat-label">作息完成率</span></div>
+                    <div class="stat-box"><span class="stat-num">12</span><span class="stat-label">笔记数量</span></div>
+                    <div class="stat-box"><span class="stat-num">14</span><span class="stat-label">连续打卡</span></div>
+                </div>
+                <div class="chart-panel">
+                    <div class="chart-title">本周趋势</div>
+                    <div class="chart-bars">
+                        <div class="cbar" style="--h:75%"><span>一</span></div>
+                        <div class="cbar" style="--h:88%"><span>二</span></div>
+                        <div class="cbar" style="--h:92%"><span>三</span></div>
+                        <div class="cbar" style="--h:70%"><span>四</span></div>
+                        <div class="cbar" style="--h:85%"><span>五</span></div>
+                        <div class="cbar" style="--h:80%"><span>六</span></div>
+                        <div class="cbar highlight" style="--h:65%"><span>日</span></div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 底部：导航栏（闹钟·模式·个人中心·记忆库·作息表·数据统计） -->
+        <nav class="bottom-nav">
+            <div class="nav-bg"></div>
+            <div class="nav-row">
+                <div class="nav-btn active" data-page="alarm">
+                    <span class="nav-icon">⏰</span>
+                    <span class="nav-text">闹钟</span>
+                </div>
+                <div class="nav-btn" data-page="mode">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-text">模式</span>
+                </div>
+                <div class="nav-btn" data-page="profile">
+                    <span class="nav-icon">👤</span>
+                    <span class="nav-text">个人中心</span>
+                </div>
+                <div class="nav-btn" data-page="memory">
+                    <span class="nav-icon">📚</span>
+                    <span class="nav-text">记忆库</span>
+                </div>
+                <div class="nav-btn" data-page="schedule">
+                    <span class="nav-icon">📅</span>
+                    <span class="nav-text">作息表</span>
+                </div>
+                <div class="nav-btn" data-page="stats">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">数据统计</span>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
