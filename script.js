@@ -159,16 +159,33 @@ function checkAlarms() {
     }
 }
 
+/* ============ 闹钟响铃全屏提示 + 贪睡功能 ============ */
+let ringingAlarmId = null;
+let ringingAlarmAudioCtx = null;
+let ringingIntervalId = null;
+
 function triggerAlarm(alarm) {
     const t = parseTime(alarm.time);
     const showTime = String(t.h).padStart(2, '0') + ':' + String(t.m).padStart(2, '0');
+
+    // 显示全屏响铃提示
+    const overlay = document.getElementById('alarmRingingOverlay');
+    const timeEl = document.getElementById('alarmRingingTime');
+    const nameEl = document.getElementById('alarmRingingName');
+    if (overlay) {
+        overlay.style.display = 'flex';
+        if (timeEl) timeEl.textContent = showTime;
+        if (nameEl) nameEl.textContent = alarm.name || '闹钟';
+    }
+    ringingAlarmId = alarm.id;
 
     // 系统通知
     if ('Notification' in window && Notification.permission === 'granted') {
         try {
             new Notification('⏰ 智律小管家', {
                 body: (alarm.name || '闹钟') + ' - ' + showTime + ' 时间到了！',
-                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>'
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>',
+                requireInteraction: true
             });
         } catch (e) {}
     }
@@ -178,8 +195,89 @@ function triggerAlarm(alarm) {
         try { navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {}
     }
 
-    // 播放简易提示音（Web Audio，无依赖）
-    playAlarmSound(alarm.tone);
+    // 播放循环提示音
+    startRingingSound(alarm.tone);
+}
+
+function startRingingSound(tone) {
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        ringingAlarmAudioCtx = new AC();
+        const freqs = {
+            classic: [880, 660, 880, 660],
+            birds:   [1200, 1800, 1200, 1800],
+            digital: [440, 880, 440, 880],
+            nature:  [330, 220, 330, 220],
+            chime:   [1320, 1320, 1320, 1320],
+            rooster: [700, 900, 700, 1100]
+        };
+        const seq = freqs[tone] || freqs.classic;
+
+        ringingIntervalId = setInterval(() => {
+            const o = ringingAlarmAudioCtx.createOscillator();
+            const g = ringingAlarmAudioCtx.createGain();
+            o.connect(g); g.connect(ringingAlarmAudioCtx.destination);
+            o.type = 'sine';
+            let t = ringingAlarmAudioCtx.currentTime;
+            g.gain.setValueAtTime(0.0001, t);
+            seq.forEach((f, i) => {
+                o.frequency.setValueAtTime(f, t + i * 0.2);
+                g.gain.exponentialRampToValueAtTime(0.25, t + i * 0.2 + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.2 + 0.18);
+            });
+            o.start();
+            o.stop(t + seq.length * 0.2 + 0.1);
+        }, seq.length * 250 + 500);
+    } catch (e) {}
+}
+
+function stopRingingSound() {
+    if (ringingIntervalId) {
+        clearInterval(ringingIntervalId);
+        ringingIntervalId = null;
+    }
+    if (ringingAlarmAudioCtx) {
+        try { ringingAlarmAudioCtx.close(); } catch (e) {}
+        ringingAlarmAudioCtx = null;
+    }
+}
+
+function snoozeAlarm() {
+    if (!ringingAlarmId) return;
+    const data = loadData();
+    const alarm = (data.alarms || []).find(a => a.id === ringingAlarmId);
+    if (!alarm) return;
+
+    // 贪睡 5 分钟：把闹钟时间往后推 5 分钟
+    const t = parseTime(alarm.time);
+    let newMin = t.m + 5;
+    let newHour = t.h;
+    if (newMin >= 60) {
+        newMin = newMin % 60;
+        newHour = (newHour + 1) % 24;
+    }
+    alarm.time = String(newHour).padStart(2, '0') + ':' + String(newMin).padStart(2, '0') + ':' + String(t.s).padStart(2, '0');
+    alarm.name = (alarm.name || '闹钟') + ' (贪睡)';
+    saveData(data);
+    renderSavedAlarms();
+
+    // 关闭响铃界面
+    stopRingingSound();
+    const overlay = document.getElementById('alarmRingingOverlay');
+    if (overlay) overlay.style.display = 'none';
+    ringingAlarmId = null;
+
+    // 提示用户
+    const newShowTime = String(newHour).padStart(2, '0') + ':' + String(newMin).padStart(2, '0');
+    alert('闹钟已延迟 5 分钟，将在 ' + newShowTime + ' 再次响铃');
+}
+
+function stopAlarm() {
+    stopRingingSound();
+    const overlay = document.getElementById('alarmRingingOverlay');
+    if (overlay) overlay.style.display = 'none';
+    ringingAlarmId = null;
 }
 
 function playAlarmSound(tone) {
@@ -944,6 +1042,295 @@ function initGlobalEventListeners() {
     });
 }
 
+/* ============ 计时器模块 ============ */
+let timerRunning = false;
+let timerStartTime = 0;
+let timerPausedTime = 0;
+let timerTotalElapsed = 0;
+let timerHistory = [];
+
+function initTimer() {
+    const startBtn = document.getElementById('timerStartBtn');
+    const pauseBtn = document.getElementById('timerPauseBtn');
+    const resetBtn = document.getElementById('timerResetBtn');
+
+    startBtn?.addEventListener('click', () => {
+        if (!timerRunning) {
+            timerRunning = true;
+            timerStartTime = Date.now();
+            startBtn.style.display = 'none';
+            pauseBtn.style.display = 'inline-block';
+        }
+    });
+
+    pauseBtn?.addEventListener('click', () => {
+        if (timerRunning) {
+            timerRunning = false;
+            timerPausedTime = Date.now();
+            timerTotalElapsed += (timerPausedTime - timerStartTime);
+            startBtn.style.display = 'inline-block';
+            pauseBtn.style.display = 'none';
+        }
+    });
+
+    resetBtn?.addEventListener('click', () => {
+        if (timerTotalElapsed > 0 || timerRunning) {
+            // 保存历史记录
+            const elapsed = timerRunning ? (Date.now() - timerStartTime) + timerTotalElapsed : timerTotalElapsed;
+            if (elapsed > 1000) {
+                const secs = Math.floor(elapsed / 1000);
+                const h = Math.floor(secs / 3600);
+                const m = Math.floor((secs % 3600) / 60);
+                const s = secs % 60;
+                timerHistory.unshift({
+                    time: String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'),
+                    date: new Date().toLocaleString()
+                });
+                if (timerHistory.length > 10) timerHistory.pop();
+                renderTimerHistory();
+            }
+        }
+        timerRunning = false;
+        timerStartTime = 0;
+        timerPausedTime = 0;
+        timerTotalElapsed = 0;
+        startBtn.style.display = 'inline-block';
+        pauseBtn.style.display = 'none';
+        updateTimerDisplay(0);
+    });
+}
+
+function updateTimerDisplay(elapsedMs) {
+    const secs = Math.floor(elapsedMs / 1000);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    const display = document.getElementById('timerDisplay');
+    if (display) {
+        display.textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+}
+
+function renderTimerHistory() {
+    const listEl = document.getElementById('timerHistoryList');
+    if (!listEl) return;
+    if (timerHistory.length === 0) {
+        listEl.innerHTML = '<div style="color:rgba(255,255,255,0.4);font-size:13px;">暂无记录</div>';
+        return;
+    }
+    listEl.innerHTML = timerHistory.map(item =>
+        '<div class="timer-history-item"><span>' + item.time + '</span><span>' + item.date + '</span></div>'
+    ).join('');
+}
+
+function tickTimer() {
+    if (timerRunning) {
+        const elapsed = (Date.now() - timerStartTime) + timerTotalElapsed;
+        updateTimerDisplay(elapsed);
+    }
+}
+
+/* ============ 倒计时模块 ============ */
+let countdownRunning = false;
+let countdownPaused = false;
+let countdownEndTime = 0;
+let countdownRemainingMs = 0;
+let countdownAudioCtx = null;
+
+function initCountdown() {
+    const startBtn = document.getElementById('countdownStartBtn');
+    const pauseBtn = document.getElementById('countdownPauseBtn');
+    const resetBtn = document.getElementById('countdownResetBtn');
+    const endBtn = document.getElementById('countdownEndBtn');
+
+    startBtn?.addEventListener('click', () => {
+        const h = parseInt(document.getElementById('countdownHour')?.value || '0', 10);
+        const m = parseInt(document.getElementById('countdownMin')?.value || '0', 10);
+        const s = parseInt(document.getElementById('countdownSec')?.value || '0', 10);
+        const totalMs = (h * 3600 + m * 60 + s) * 1000;
+        if (totalMs <= 0) {
+            alert('请设置有效的倒计时时间');
+            return;
+        }
+        countdownRunning = true;
+        countdownPaused = false;
+        countdownEndTime = Date.now() + totalMs;
+        countdownRemainingMs = totalMs;
+
+        document.getElementById('countdownSetup').style.display = 'none';
+        document.getElementById('countdownControls').style.display = 'flex';
+        document.getElementById('countdownLabel').textContent = '倒计时进行中';
+        updateCountdownDisplay(totalMs);
+    });
+
+    pauseBtn?.addEventListener('click', () => {
+        if (countdownRunning && !countdownPaused) {
+            countdownPaused = true;
+            countdownRemainingMs = countdownEndTime - Date.now();
+            pauseBtn.textContent = '▶ 继续';
+        } else if (countdownRunning && countdownPaused) {
+            countdownPaused = false;
+            countdownEndTime = Date.now() + countdownRemainingMs;
+            pauseBtn.textContent = '⏸ 暂停';
+        }
+    });
+
+    resetBtn?.addEventListener('click', resetCountdown);
+    endBtn?.addEventListener('click', () => {
+        stopCountdownSound();
+        document.getElementById('countdownEndOverlay').style.display = 'none';
+        resetCountdown();
+    });
+}
+
+function resetCountdown() {
+    countdownRunning = false;
+    countdownPaused = false;
+    countdownEndTime = 0;
+    countdownRemainingMs = 0;
+    stopCountdownSound();
+
+    document.getElementById('countdownSetup').style.display = 'block';
+    document.getElementById('countdownControls').style.display = 'none';
+    document.getElementById('countdownLabel').textContent = '设置倒计时';
+    updateCountdownDisplay(0);
+}
+
+function updateCountdownDisplay(ms) {
+    const secs = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    const display = document.getElementById('countdownDisplay');
+    if (display) {
+        display.textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        // 最后 10 秒警告样式
+        if (secs <= 10 && secs > 0) {
+            display.classList.add('warning');
+        } else {
+            display.classList.remove('warning');
+        }
+    }
+}
+
+function tickCountdown() {
+    if (!countdownRunning) return;
+    if (countdownPaused) {
+        updateCountdownDisplay(countdownRemainingMs);
+        return;
+    }
+    const remaining = countdownEndTime - Date.now();
+    if (remaining <= 0) {
+        countdownRunning = false;
+        updateCountdownDisplay(0);
+        showCountdownEnd();
+        return;
+    }
+    updateCountdownDisplay(remaining);
+}
+
+function showCountdownEnd() {
+    const overlay = document.getElementById('countdownEndOverlay');
+    if (overlay) overlay.style.display = 'flex';
+    startCountdownSound();
+    // 震动
+    if (navigator.vibrate) {
+        try { navigator.vibrate([500, 200, 500, 200, 500]); } catch (e) {}
+    }
+    // 系统通知
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            new Notification('🎉 智律小管家', {
+                body: '倒计时结束！时间到了！',
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>'
+            });
+        } catch (e) {}
+    }
+}
+
+function startCountdownSound() {
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        countdownAudioCtx = new AC();
+        const freqs = [880, 990, 1100, 1210, 1320];
+        freqs.forEach((f, i) => {
+            const o = countdownAudioCtx.createOscillator();
+            const g = countdownAudioCtx.createGain();
+            o.connect(g); g.connect(countdownAudioCtx.destination);
+            o.type = 'sine';
+            o.frequency.value = f;
+            g.gain.setValueAtTime(0.2, countdownAudioCtx.currentTime + i * 0.15);
+            g.gain.exponentialRampToValueAtTime(0.0001, countdownAudioCtx.currentTime + i * 0.15 + 0.14);
+            o.start(countdownAudioCtx.currentTime + i * 0.15);
+            o.stop(countdownAudioCtx.currentTime + i * 0.15 + 0.15);
+        });
+    } catch (e) {}
+}
+
+function stopCountdownSound() {
+    if (countdownAudioCtx) {
+        try { countdownAudioCtx.close(); } catch (e) {}
+        countdownAudioCtx = null;
+    }
+}
+
+/* ============ 世界时钟模块 ============ */
+const WORLD_CLOCKS = [
+    { id: 'London',  offset: -7,  name: '伦敦' },
+    { id: 'NewYork', offset: -12, name: '纽约' },
+    { id: 'Tokyo',   offset: 1,   name: '东京' },
+    { id: 'Sydney',  offset: 2,   name: '悉尼' },
+    { id: 'Paris',   offset: -6,  name: '巴黎' },
+    { id: 'Moscow',  offset: -5,  name: '莫斯科' }
+];
+
+function updateWorldClock() {
+    const now = new Date();
+
+    // 本地时间
+    const localTimeEl = document.getElementById('worldclockLocal');
+    const localDateEl = document.getElementById('worldclockLocalDate');
+    if (localTimeEl) {
+        localTimeEl.textContent =
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0') + ':' +
+            String(now.getSeconds()).padStart(2, '0');
+    }
+    if (localDateEl) {
+        localDateEl.textContent = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日';
+    }
+
+    // 各城市时间
+    WORLD_CLOCKS.forEach(city => {
+        const timeEl = document.getElementById('wc' + city.id);
+        const dateEl = document.getElementById('wc' + city.id + 'Date');
+        if (!timeEl) return;
+
+        // 计算城市时间（北京时间 + offset）
+        let cityHour = now.getHours() + city.offset;
+        let cityDate = new Date(now);
+
+        // 处理跨日
+        if (cityHour < 0) {
+            cityHour += 24;
+            cityDate.setDate(cityDate.getDate() - 1);
+        } else if (cityHour >= 24) {
+            cityHour -= 24;
+            cityDate.setDate(cityDate.getDate() + 1);
+        }
+
+        timeEl.textContent =
+            String(cityHour).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0') + ':' +
+            String(now.getSeconds()).padStart(2, '0');
+
+        if (dateEl) {
+            dateEl.textContent = cityDate.getFullYear() + '/' + (cityDate.getMonth() + 1) + '/' + cityDate.getDate();
+        }
+    });
+}
+
 /* ============ 唯一的启动入口 ============ */
 document.addEventListener('DOMContentLoaded', function () {
     // 1. UI 初始化
@@ -951,14 +1338,21 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDateDisplay();
     updateClockDisplay();
 
-    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 云同步）
+    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 云同步 + 计时器 + 倒计时 + 响铃贪睡）
     initGlobalEventListeners();
     initAlarmListEventDelegation();
     initAlarmModalListeners();
     initCloudSyncEventListeners();
+    initTimer();
+    initCountdown();
+
+    // 响铃贪睡按钮
+    document.getElementById('alarmSnoozeBtn')?.addEventListener('click', snoozeAlarm);
+    document.getElementById('alarmStopBtn')?.addEventListener('click', stopAlarm);
 
     // 3. 数据 / 权限 / SW
     renderSavedAlarms();
+    renderTimerHistory();
     requestNotificationPermission();
     registerServiceWorker();
     initCloudSync();
@@ -966,5 +1360,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // 4. 定时任务
     setInterval(updateClockDisplay, 1000);   // 每秒刷新顶部时钟
     setInterval(checkAlarms, 1000);          // 每秒检查闹钟
+    setInterval(tickTimer, 100);             // 计时器刷新（100ms）
+    setInterval(tickCountdown, 100);         // 倒计时刷新（100ms）
+    setInterval(updateWorldClock, 1000);     // 世界时钟刷新
     setInterval(syncAlarmsToServiceWorker, 5 * 60 * 1000); // 每 5 分钟同步到 SW
+
+    // 初始化世界时钟
+    updateWorldClock();
 });

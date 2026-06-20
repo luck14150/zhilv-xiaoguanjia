@@ -2127,3 +2127,469 @@ body {
         min-width: calc(50% - 5px);
     }
 }
+
+/* ============ 计时器页面 ============ */
+.timer-display {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(180deg, rgba(124, 140, 255, 0.15) 0%, rgba(201, 124, 255, 0.08) 100%);
+    border-radius: 24px;
+    margin: 16px;
+}
+
+.timer-time {
+    font-size: 64px;
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: 4px;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 12px;
+}
+
+.timer-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+}
+
+.timer-btn {
+    padding: 16px 32px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.timer-btn.start {
+    background: linear-gradient(135deg, #34c759, #30d158);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(52, 199, 89, 0.4);
+}
+
+.timer-btn.start:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(52, 199, 89, 0.5);
+}
+
+.timer-btn.pause {
+    background: linear-gradient(135deg, #ff9500, #ffb86b);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(255, 149, 0, 0.4);
+}
+
+.timer-btn.pause:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(255, 149, 0, 0.5);
+}
+
+.timer-btn.reset {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.timer-btn.reset:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.timer-history {
+    margin: 16px;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+}
+
+.timer-history-title {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 12px;
+}
+
+.timer-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.timer-history-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ============ 倒计时页面 ============ */
+.countdown-display {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(180deg, rgba(201, 124, 255, 0.15) 0%, rgba(255, 157, 226, 0.08) 100%);
+    border-radius: 24px;
+    margin: 16px;
+}
+
+.countdown-time {
+    font-size: 64px;
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: 4px;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 12px;
+}
+
+.countdown-time.warning {
+    color: #ff9500;
+    animation: countdown-pulse 1s ease-in-out infinite;
+}
+
+@keyframes countdown-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.countdown-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.countdown-setup {
+    padding: 20px;
+    margin: 16px;
+}
+
+.countdown-input-group {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.countdown-input-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.countdown-input {
+    width: 80px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(124, 140, 255, 0.3);
+    border-radius: 16px;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 600;
+    text-align: center;
+    outline: none;
+    font-variant-numeric: tabular-nums;
+}
+
+.countdown-input:focus {
+    border-color: rgba(124, 140, 255, 0.6);
+    background: rgba(124, 140, 255, 0.1);
+    box-shadow: 0 0 20px rgba(124, 140, 255, 0.2);
+}
+
+.countdown-input-label {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.countdown-start-btn {
+    width: 100%;
+    padding: 18px;
+    background: linear-gradient(135deg, #c97cff, #ff9de2);
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(201, 124, 255, 0.4);
+}
+
+.countdown-start-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(201, 124, 255, 0.5);
+}
+
+.countdown-controls {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+}
+
+.countdown-btn {
+    padding: 16px 32px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.countdown-btn.pause {
+    background: linear-gradient(135deg, #ff9500, #ffb86b);
+    color: #fff;
+}
+
+.countdown-btn.reset {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ============ 世界时钟页面 ============ */
+.worldclock-header {
+    padding: 24px;
+    background: linear-gradient(180deg, rgba(124, 140, 255, 0.15) 0%, rgba(201, 124, 255, 0.08) 100%);
+    border-radius: 24px;
+    margin: 16px;
+    text-align: center;
+}
+
+.worldclock-local .worldclock-city {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+}
+
+.worldclock-local .worldclock-time {
+    font-size: 48px;
+    font-weight: 200;
+    color: #fff;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.worldclock-local .worldclock-date {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 8px;
+}
+
+.worldclock-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 16px;
+}
+
+.worldclock-card {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.worldclock-card:hover {
+    background: rgba(124, 140, 255, 0.1);
+    border-color: rgba(124, 140, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+.worldclock-city-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.worldclock-city-time {
+    font-size: 24px;
+    font-weight: 300;
+    color: #7c8cff;
+    font-variant-numeric: tabular-nums;
+}
+
+.worldclock-city-date {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-top: 4px;
+}
+
+.worldclock-diff {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.4);
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+@media (max-width: 400px) {
+    .worldclock-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============ 闹钟响铃全屏提示 ============ */
+.alarm-ringing-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(15, 52, 96, 0.95) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: ringing-bg 0.5s ease-out;
+}
+
+@keyframes ringing-bg {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.alarm-ringing-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.alarm-ringing-icon {
+    font-size: 80px;
+    animation: ringing-shake 0.5s ease-in-out infinite;
+}
+
+@keyframes ringing-shake {
+    0%, 100% { transform: rotate(-10deg); }
+    50% { transform: rotate(10deg); }
+}
+
+.alarm-ringing-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    margin: 24px 0 16px;
+}
+
+.alarm-ringing-time {
+    font-size: 56px;
+    font-weight: 200;
+    color: #7c8cff;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.alarm-ringing-name {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 16px 0 32px;
+}
+
+.alarm-ringing-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+}
+
+.alarm-ringing-btn {
+    padding: 18px 32px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    border: none;
+}
+
+.alarm-ringing-btn.snooze {
+    background: linear-gradient(135deg, #ff9500, #ffb86b);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(255, 149, 0, 0.4);
+}
+
+.alarm-ringing-btn.snooze:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(255, 149, 0, 0.5);
+}
+
+.alarm-ringing-btn.stop {
+    background: linear-gradient(135deg, #34c759, #30d158);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(52, 199, 89, 0.4);
+}
+
+.alarm-ringing-btn.stop:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(52, 199, 89, 0.5);
+}
+
+/* ============ 倒计时结束提示 ============ */
+.countdown-end-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: linear-gradient(135deg, rgba(26, 26, 46, 0.95) 0%, rgba(201, 124, 255, 0.2) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: countdown-end-in 0.5s ease-out;
+}
+
+@keyframes countdown-end-in {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.countdown-end-content {
+    text-align: center;
+    padding: 40px;
+}
+
+.countdown-end-icon {
+    font-size: 80px;
+    animation: countdown-end-bounce 1s ease-in-out infinite;
+}
+
+@keyframes countdown-end-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
+
+.countdown-end-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    margin: 24px 0 16px;
+}
+
+.countdown-end-message {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 32px;
+}
+
+.countdown-end-btn {
+    padding: 18px 48px;
+    background: linear-gradient(135deg, #7c8cff, #c97cff);
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(124, 140, 255, 0.4);
+}
+
+.countdown-end-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(124, 140, 255, 0.5);
+}
