@@ -85,34 +85,150 @@
 
             <!-- 闹钟 -->
             <section class="page active" id="page-alarm">
-                <div class="alarm-panel">
-                    <div class="alarm-row">
-                        <div class="alarm-time">07<span class="sep">:</span>00</div>
+                <!-- 当前时间大字显示 -->
+                <div class="alarm-clock-display" id="alarmClockDisplay">
+                    <div class="clock-time" id="clockTime">00<span class="clock-sep">:</span>00<span class="clock-sep">:</span>00</div>
+                    <div class="clock-date" id="clockDate">2026年6月20日 星期六</div>
+                </div>
+
+                <!-- 闹钟列表 -->
+                <div class="alarm-panel" id="alarmPanel">
+                    <div class="alarm-row saved" data-id="0">
+                        <div class="alarm-time">07<span class="sep">:</span>00<span class="sec-part"><span class="sep">:</span>00</span></div>
                         <div class="alarm-info">
                             <div class="alarm-name">起床闹钟</div>
                             <div class="alarm-detail">工作日</div>
                         </div>
                         <div class="alarm-switch">ON</div>
                     </div>
-                    <div class="alarm-row">
-                        <div class="alarm-time">12<span class="sep">:</span>30</div>
+                    <div class="alarm-row saved" data-id="1">
+                        <div class="alarm-time">12<span class="sep">:</span>30<span class="sec-part"><span class="sep">:</span>00</span></div>
                         <div class="alarm-info">
                             <div class="alarm-name">午餐提醒</div>
                             <div class="alarm-detail">每日</div>
                         </div>
                         <div class="alarm-switch">ON</div>
                     </div>
-                    <div class="alarm-row">
-                        <div class="alarm-time">22<span class="sep">:</span>30</div>
+                    <div class="alarm-row saved" data-id="2">
+                        <div class="alarm-time">22<span class="sep">:</span>30<span class="sec-part"><span class="sep">:</span>00</span></div>
                         <div class="alarm-info">
                             <div class="alarm-name">睡眠提醒</div>
                             <div class="alarm-detail">每日</div>
                         </div>
                         <div class="alarm-switch off">OFF</div>
                     </div>
-                    <button class="add-alarm">+ 添加新闹钟</button>
                 </div>
+
+                <button class="add-alarm" id="addAlarmBtn">+ 添加新闹钟</button>
             </section>
+
+            <!-- 闹钟详情弹窗 -->
+            <div class="alarm-modal-overlay" id="alarmModalOverlay">
+                <div class="alarm-modal" id="alarmModal">
+                    <!-- 弹窗顶部：时间选择器 -->
+                    <div class="modal-header">
+                        <button class="modal-close" id="modalCloseBtn">✕</button>
+                        <div class="modal-title" id="modalTitle">添加闹钟</div>
+                        <button class="modal-delete" id="modalDeleteBtn" style="display:none;">🗑️</button>
+                    </div>
+
+                    <!-- 时间选择器 HH:MM:SS -->
+                    <div class="modal-time-picker">
+                        <div class="time-unit-group">
+                            <div class="time-scroll" id="hourScroll">
+                                <div class="time-scroll-inner" id="hourScrollInner"></div>
+                            </div>
+                            <span class="time-label">时</span>
+                        </div>
+                        <span class="picker-sep">:</span>
+                        <div class="time-unit-group">
+                            <div class="time-scroll" id="minScroll">
+                                <div class="time-scroll-inner" id="minScrollInner"></div>
+                            </div>
+                            <span class="time-label">分</span>
+                        </div>
+                        <span class="picker-sep">:</span>
+                        <div class="time-unit-group">
+                            <div class="time-scroll" id="secScroll">
+                                <div class="time-scroll-inner" id="secScrollInner"></div>
+                            </div>
+                            <span class="time-label">秒</span>
+                        </div>
+                    </div>
+
+                    <!-- 闹钟名称 -->
+                    <div class="modal-field">
+                        <label class="modal-field-label">闹钟名称</label>
+                        <input type="text" class="modal-input" id="modalAlarmName" placeholder="例如：起床闹钟" maxlength="20">
+                    </div>
+
+                    <!-- 铃声选择 -->
+                    <div class="modal-field">
+                        <label class="modal-field-label">铃声</label>
+                        <div class="ringtone-list" id="ringtoneList">
+                            <div class="ringtone-item selected" data-tone="classic">
+                                <span class="ringtone-icon">🔔</span>
+                                <span class="ringtone-name">经典铃声</span>
+                            </div>
+                            <div class="ringtone-item" data-tone="birds">
+                                <span class="ringtone-icon">🐦</span>
+                                <span class="ringtone-name">鸟鸣</span>
+                            </div>
+                            <div class="ringtone-item" data-tone="digital">
+                                <span class="ringtone-icon">📡</span>
+                                <span class="ringtone-name">电子音</span>
+                            </div>
+                            <div class="ringtone-item" data-tone="nature">
+                                <span class="ringtone-icon">🌿</span>
+                                <span class="ringtone-name">自然音</span>
+                            </div>
+                            <div class="ringtone-item" data-tone="chime">
+                                <span class="ringtone-icon">🎐</span>
+                                <span class="ringtone-name">风铃声</span>
+                            </div>
+                            <div class="ringtone-item" data-tone="rooster">
+                                <span class="ringtone-icon">🐓</span>
+                                <span class="ringtone-name">公鸡叫</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 重复设置 -->
+                    <div class="modal-field">
+                        <label class="modal-field-label">重复</label>
+                        <div class="repeat-options" id="repeatOptions">
+                            <div class="repeat-chip selected" data-repeat="daily">每日</div>
+                            <div class="repeat-chip" data-repeat="workday">工作日</div>
+                            <div class="repeat-chip" data-repeat="weekend">周末</div>
+                            <div class="repeat-chip" data-repeat="once">仅一次</div>
+                            <div class="repeat-chip" data-repeat="custom">自定义</div>
+                        </div>
+                        <div class="custom-days" id="customDays" style="display:none;">
+                            <div class="day-chip" data-day="0">日</div>
+                            <div class="day-chip" data-day="1">一</div>
+                            <div class="day-chip" data-day="2">二</div>
+                            <div class="day-chip" data-day="3">三</div>
+                            <div class="day-chip" data-day="4">四</div>
+                            <div class="day-chip" data-day="5">五</div>
+                            <div class="day-chip" data-day="6">六</div>
+                        </div>
+                    </div>
+
+                    <!-- 震动开关 -->
+                    <div class="modal-field">
+                        <label class="modal-field-label">震动</label>
+                        <div class="vibrate-toggle" id="vibrateToggle">
+                            <div class="vibrate-track">
+                                <div class="vibrate-thumb" id="vibrateThumb"></div>
+                            </div>
+                            <span class="vibrate-status" id="vibrateStatus">关闭</span>
+                        </div>
+                    </div>
+
+                    <!-- 保存按钮 -->
+                    <button class="modal-save-btn" id="modalSaveBtn">保存闹钟</button>
+                </div>
+            </div>
 
             <!-- 模式 -->
             <section class="page" id="page-mode">

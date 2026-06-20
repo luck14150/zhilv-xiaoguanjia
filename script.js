@@ -23,32 +23,142 @@ function saveData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 }
 
-/* ============ 实时时钟 & 闹钟功能 ============ */
+/* ============ 实时时钟 & 闹钟功能（HH:MM:SS） ============ */
 let alarmTimers = [];
+
+function updateClockDisplay() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    const dateEl = document.getElementById('clockTime');
+    if (dateEl) {
+        dateEl.innerHTML = `${h}<span class="clock-sep">:</span>${m}<span class="clock-sep">:</span>${s}`;
+    }
+
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    const day = now.getDate();
+    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    const weekday = weekdays[now.getDay()];
+    const dateStrEl = document.getElementById('clockDate');
+    if (dateStrEl) {
+        dateStrEl.textContent = `${year}年${month}月${day}日 ${weekday}`;
+    }
+}
 
 function checkAlarms() {
     const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const dayOfWeek = now.getDay();
 
     const alarms = document.querySelectorAll('.alarm-row');
     alarms.forEach(row => {
         const timeEl = row.querySelector('.alarm-time');
         const switchEl = row.querySelector('.alarm-switch');
-        if (timeEl && switchEl && !switchEl.classList.contains('off')) {
-            const alarmTime = timeEl.textContent.replace(/[^\d:]/g, '');
-            if (alarmTime === currentTime) {
-                triggerAlarm(row);
+        if (!timeEl || !switchEl) return;
+
+        const alarmData = getAlarmDataFromRow(row);
+        if (!alarmData) return;
+
+        if (!switchEl.classList.contains('off') && alarmData.enabled !== false) {
+            const matchesTime = alarmData.time === currentTime;
+            const matchesDay = isDayMatch(alarmData.repeat, dayOfWeek);
+            if (matchesTime && matchesDay) {
+                triggerAlarm(row, alarmData);
             }
         }
     });
 }
 
-function triggerAlarm(row) {
+function isDayMatch(repeat, dayOfWeek) {
+    if (!repeat || repeat === 'daily' || repeat === 'once') return true;
+    if (repeat === 'workday') return dayOfWeek >= 1 && dayOfWeek <= 5;
+    if (repeat === 'weekend') return dayOfWeek === 0 || dayOfWeek === 6;
+    if (repeat === 'custom' && Array.isArray(alarmCustomDays)) {
+        return alarmCustomDays.includes(dayOfWeek);
+    }
+    return true;
+}
+
+function getAlarmDataFromRow(row) {
+    try {
+        const id = row.dataset.id;
+        const data = loadData();
+        return data.alarms.find(a => a._id === id || a.id === id) || null;
+    } catch(e) {
+        return null;
+    }
+}
+
+function triggerAlarm(row, alarmData) {
     if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('⏰ 智律小管家', {
-            body: row.querySelector('.alarm-name')?.textContent || '闹钟响了！',
-            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>'
-        });
+        const body = alarmData.name ? `${alarmData.name} - 时间到了！` : '闹钟响了！';
+        new Notification('⏰ 智律小管家', { body });
+    }
+
+    // 震动
+    if (alarmData.vibrate && navigator.vibrate) {
+        navigator.vibrate([300, 100, 300, 100, 300]);
+    }
+
+    // 播放铃声
+    playAlarmSound(alarmData.tone || 'classic');
+}
+
+function playAlarmSound(tone) {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        switch(tone) {
+            case 'birds':
+                osc.frequency.setValueAtTime(800, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(1200, ctx.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                break;
+            case 'digital':
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                break;
+            case 'nature':
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(400, ctx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                break;
+            case 'chime':
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523, ctx.currentTime);
+                osc.frequency.setValueAtTime(659, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                break;
+            case 'rooster':
+                osc.frequency.setValueAtTime(300, ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.1);
+                osc.frequency.linearRampToValueAtTime(500, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                break;
+            default: // classic
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                osc.frequency.setValueAtTime(440, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        }
+
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 1.5);
+
+        setTimeout(() => { try { ctx.close(); } catch(e) {} }, 2000);
+    } catch(e) {
+        console.log('无法播放闹钟音效', e);
     }
 }
 
@@ -187,35 +297,72 @@ window.addEventListener('storage', (e) => {
 /* ============ 闹钟持久化 ============ */
 function renderSavedAlarms() {
     const data = loadData();
-    const alarmPanel = document.querySelector('.alarm-panel');
+    const alarmPanel = document.getElementById('alarmPanel');
     if (!alarmPanel || !data.alarms || data.alarms.length === 0) return;
 
-    // 清空除了默认显示之外的已保存闹钟（避免重复渲染）
+    // 清空非默认闹钟
     const existing = alarmPanel.querySelectorAll('.alarm-row.saved');
     existing.forEach(el => el.remove());
 
-    const addBtn = document.querySelector('.add-alarm');
+    const defaultRows = alarmPanel.querySelectorAll('.alarm-row:not(.saved)');
+    const addBtn = document.getElementById('addAlarmBtn');
+    const insertBefore = defaultRows.length > 0 ? defaultRows[defaultRows.length - 1].nextSibling : addBtn;
 
-    data.alarms.forEach(alarm => {
-        const [h, m] = alarm.time.split(':');
+    data.alarms.forEach((alarm, idx) => {
+        const [h, m, s] = (alarm.time || '00:00:00').split(':');
+        const sec = s || '00';
         const newAlarm = document.createElement('div');
         newAlarm.className = 'alarm-row saved';
+        newAlarm.dataset.id = alarm._id || alarm.id || ('saved_' + idx);
+
+        const repeatLabel = getRepeatLabel(alarm.repeat);
+        const switchOn = alarm.enabled !== false;
+
         newAlarm.innerHTML = `
-            <div class="alarm-time">${String(h).padStart(2, '0')}<span class="sep">:</span>${String(m).padStart(2, '0')}</div>
+            <div class="alarm-time">${String(h).padStart(2, '0')}<span class="sep">:</span>${String(m).padStart(2, '0')}<span class="sec-part"><span class="sep">:</span>${String(sec).padStart(2, '0')}</span></div>
             <div class="alarm-info">
-                <div class="alarm-name">${alarm.name}</div>
-                <div class="alarm-detail">已同步</div>
+                <div class="alarm-name">${alarm.name || '闹钟'}</div>
+                <div class="alarm-detail">${repeatLabel}</div>
             </div>
-            <div class="alarm-switch">ON</div>
+            <div class="alarm-switch ${switchOn ? '' : 'off'}">${switchOn ? 'ON' : 'OFF'}</div>
         `;
+
         alarmPanel.insertBefore(newAlarm, addBtn);
 
+        // 开关事件
         const sw = newAlarm.querySelector('.alarm-switch');
-        sw.addEventListener('click', function () {
+        sw.addEventListener('click', function(e) {
+            e.stopPropagation();
             this.classList.toggle('off');
-            this.textContent = this.classList.contains('off') ? 'OFF' : 'ON';
+            const isOn = !this.classList.contains('off');
+            this.textContent = isOn ? 'ON' : 'OFF';
+            updateAlarmEnabled(newAlarm.dataset.id, isOn);
+        });
+
+        // 点击行体 → 打开详情弹窗
+        newAlarm.addEventListener('click', function(e) {
+            if (e.target === sw || sw.contains(e.target)) return;
+            openAlarmModal(newAlarm.dataset.id);
         });
     });
+}
+
+function getRepeatLabel(repeat) {
+    if (!repeat || repeat === 'daily') return '每日';
+    if (repeat === 'workday') return '工作日';
+    if (repeat === 'weekend') return '周末';
+    if (repeat === 'once') return '仅一次';
+    if (repeat === 'custom') return '自定义';
+    return repeat;
+}
+
+function updateAlarmEnabled(id, enabled) {
+    const data = loadData();
+    const alarm = data.alarms.find(a => (a._id || a.id) === id);
+    if (alarm) {
+        alarm.enabled = enabled;
+        saveData(data);
+    }
 }
 
 /* ============ Service Worker 注册（关闭网页也能响铃）============ */
@@ -371,46 +518,313 @@ function initEventListeners() {
         });
     });
 
-    // 添加闹钟按钮
-    const addAlarmBtn = document.querySelector('.add-alarm');
-    addAlarmBtn?.addEventListener('click', () => {
-        const time = prompt('请输入闹钟时间 (例如: 08:00', '08:00');
-        const name = prompt('请输入闹钟名称', '新闹钟');
-        if (time && name) {
-            const alarmPanel = document.querySelector('.alarm-panel');
-            const newAlarm = document.createElement('div');
-            newAlarm.className = 'alarm-row';
-            const [h, m] = time.split(':');
-            newAlarm.innerHTML = `
-                <div class="alarm-time">${String(h).padStart(2, '0')}<span class="sep">:</span>${String(m).padStart(2, '0')}</div>
-                <div class="alarm-info">
-                    <div class="alarm-name">${name}</div>
-                    <div class="alarm-detail">自定义</div>
-                </div>
-                <div class="alarm-switch">ON</div>
-            `;
-            alarmPanel.insertBefore(newAlarm, addAlarmBtn);
+    // 添加闹钟按钮 → 打开弹窗
+    const addAlarmBtn = document.getElementById('addAlarmBtn');
+    addAlarmBtn?.addEventListener('click', () => openAlarmModal(null));
+}
 
-            newAlarm.querySelector('.alarm-switch').addEventListener('click', function() {
-                this.classList.toggle('off');
-                this.textContent = this.classList.contains('off') ? 'OFF' : 'ON';
-            });
+/* ============ 闹钟详情弹窗 ============ */
+let currentEditingId = null;
+let alarmCustomDays = [];
+let alarmVibrateEnabled = false;
+let alarmRepeatSelected = 'daily';
+let alarmToneSelected = 'classic';
+let selectedHour = 0;
+let selectedMin = 0;
+let selectedSec = 0;
 
-            // 保存到本地
-            const data = loadData();
-            data.alarms.push({ time, name });
-            saveData(data);
+function openAlarmModal(id) {
+    currentEditingId = id;
+    const overlay = document.getElementById('alarmModalOverlay');
+    const modal = document.getElementById('alarmModal');
+    const title = document.getElementById('modalTitle');
+    const deleteBtn = document.getElementById('modalDeleteBtn');
+    const nameInput = document.getElementById('modalAlarmName');
+
+    // 重置所有选项
+    alarmRepeatSelected = 'daily';
+    alarmCustomDays = [];
+    alarmVibrateEnabled = false;
+    alarmToneSelected = 'classic';
+    alarmCustomDays = [];
+
+    if (id === null) {
+        // 新增模式
+        title.textContent = '添加闹钟';
+        deleteBtn.style.display = 'none';
+        const now = new Date();
+        selectedHour = now.getHours();
+        selectedMin = now.getMinutes() + 1;
+        selectedSec = 0;
+        nameInput.value = '';
+    } else {
+        // 编辑模式
+        title.textContent = '编辑闹钟';
+        deleteBtn.style.display = 'block';
+
+        const data = loadData();
+        const alarm = data.alarms.find(a => (a._id || a.id) === id);
+        if (alarm) {
+            const [h, m, s] = (alarm.time || '00:00:00').split(':');
+            selectedHour = parseInt(h, 10);
+            selectedMin = parseInt(m, 10);
+            selectedSec = parseInt(s || '0', 10);
+            nameInput.value = alarm.name || '';
+            alarmRepeatSelected = alarm.repeat || 'daily';
+            alarmVibrateEnabled = alarm.vibrate || false;
+            alarmToneSelected = alarm.tone || 'classic';
+            alarmCustomDays = alarm.customDays || [];
+        } else {
+            selectedHour = 0; selectedMin = 0; selectedSec = 0;
+            nameInput.value = '';
         }
+    }
+
+    // 更新时间滚轮
+    updateTimePickerDisplay();
+    // 更新选项状态
+    updateRepeatUI();
+    updateVibrateUI();
+    updateToneUI();
+
+    // 显示弹窗
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+        overlay.classList.add('active');
+        modal.classList.add('active');
+    }, 10);
+}
+
+function closeAlarmModal() {
+    const overlay = document.getElementById('alarmModalOverlay');
+    const modal = document.getElementById('alarmModal');
+    overlay.classList.remove('active');
+    modal.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 300);
+    currentEditingId = null;
+}
+
+function updateTimePickerDisplay() {
+    // 更新时间显示
+    const hourEl = document.getElementById('hourScroll');
+    const minEl = document.getElementById('minScroll');
+    const secEl = document.getElementById('secScroll');
+    if (hourEl) hourEl.querySelector('.time-scroll-inner').textContent = String(selectedHour).padStart(2, '0');
+    if (minEl) minEl.querySelector('.time-scroll-inner').textContent = String(selectedMin).padStart(2, '0');
+    if (secEl) secEl.querySelector('.time-scroll-inner').textContent = String(selectedSec).padStart(2, '0');
+}
+
+function updateRepeatUI() {
+    document.querySelectorAll('.repeat-chip').forEach(chip => {
+        chip.classList.toggle('selected', chip.dataset.repeat === alarmRepeatSelected);
+    });
+    const customDaysEl = document.getElementById('customDays');
+    if (customDaysEl) {
+        customDaysEl.style.display = alarmRepeatSelected === 'custom' ? 'flex' : 'none';
+    }
+    if (alarmRepeatSelected === 'custom') {
+        document.querySelectorAll('.day-chip').forEach(chip => {
+            chip.classList.toggle('selected', alarmCustomDays.includes(parseInt(chip.dataset.day, 10)));
+        });
+    }
+}
+
+function updateVibrateUI() {
+    const thumb = document.getElementById('vibrateThumb');
+    const status = document.getElementById('vibrateStatus');
+    if (thumb) thumb.style.left = alarmVibrateEnabled ? '28px' : '2px';
+    if (status) status.textContent = alarmVibrateEnabled ? '开启' : '关闭';
+}
+
+function updateToneUI() {
+    document.querySelectorAll('.ringtone-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.tone === alarmToneSelected);
     });
 }
+
+function saveAlarm() {
+    const nameInput = document.getElementById('modalAlarmName');
+    const name = nameInput?.value.trim() || '新闹钟';
+    const time = `${String(selectedHour).padStart(2, '0')}:${String(selectedMin).padStart(2, '0')}:${String(selectedSec).padStart(2, '0')}`;
+
+    const alarmObj = {
+        _id: currentEditingId || ('id_' + Date.now()),
+        id: currentEditingId || ('id_' + Date.now()),
+        time,
+        name,
+        repeat: alarmRepeatSelected,
+        vibrate: alarmVibrateEnabled,
+        tone: alarmToneSelected,
+        enabled: true,
+        customDays: alarmRepeatSelected === 'custom' ? [...alarmCustomDays] : []
+    };
+
+    const data = loadData();
+    if (currentEditingId) {
+        const idx = data.alarms.findIndex(a => (a._id || a.id) === currentEditingId);
+        if (idx >= 0) {
+            data.alarms[idx] = alarmObj;
+        } else {
+            data.alarms.push(alarmObj);
+        }
+    } else {
+        data.alarms.push(alarmObj);
+    }
+    saveData(data);
+
+    closeAlarmModal();
+    // 刷新列表
+    renderSavedAlarms();
+    // 同步到 Service Worker
+    syncAlarmsToServiceWorker();
+}
+
+function deleteAlarm() {
+    if (!currentEditingId) return;
+    if (!confirm('确定要删除这个闹钟吗？')) return;
+    const data = loadData();
+    data.alarms = data.alarms.filter(a => (a._id || a.id) !== currentEditingId);
+    saveData(data);
+    closeAlarmModal();
+    renderSavedAlarms();
+    syncAlarmsToServiceWorker();
+}
+
+function initAlarmModal() {
+    // 构建时间滚轮
+    buildTimeScroll('hourScroll', 24, 0, v => { selectedHour = v; });
+    buildTimeScroll('minScroll', 60, 0, v => { selectedMin = v; });
+    buildTimeScroll('secScroll', 60, 0, v => { selectedSec = v; });
+
+    // 点击遮罩关闭
+    document.getElementById('alarmModalOverlay')?.addEventListener('click', function(e) {
+        if (e.target === this) closeAlarmModal();
+    });
+
+    // 关闭按钮
+    document.getElementById('modalCloseBtn')?.addEventListener('click', closeAlarmModal);
+
+    // 删除按钮
+    document.getElementById('modalDeleteBtn')?.addEventListener('click', deleteAlarm);
+
+    // 保存按钮
+    document.getElementById('modalSaveBtn')?.addEventListener('click', saveAlarm);
+
+    // 重复选项
+    document.querySelectorAll('.repeat-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            alarmRepeatSelected = chip.dataset.repeat;
+            if (alarmRepeatSelected !== 'custom') alarmCustomDays = [];
+            updateRepeatUI();
+        });
+    });
+
+    // 自定义星期
+    document.querySelectorAll('.day-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+            const day = parseInt(chip.dataset.day, 10);
+            if (alarmCustomDays.includes(day)) {
+                alarmCustomDays = alarmCustomDays.filter(d => d !== day);
+            } else {
+                alarmCustomDays.push(day);
+                alarmCustomDays.sort();
+            }
+            updateRepeatUI();
+        });
+    });
+
+    // 震动开关
+    document.getElementById('vibrateToggle')?.addEventListener('click', () => {
+        alarmVibrateEnabled = !alarmVibrateEnabled;
+        updateVibrateUI();
+        if (alarmVibrateEnabled && navigator.vibrate) {
+            navigator.vibrate(100);
+        }
+    });
+
+    // 铃声选项
+    document.querySelectorAll('.ringtone-item').forEach(item => {
+        item.addEventListener('click', () => {
+            alarmToneSelected = item.dataset.tone;
+            updateToneUI();
+            playAlarmSound(alarmToneSelected);
+        });
+    });
+
+    // 滚轮上下按钮（每列时间滚轮）
+    setupTimeScrollButtons('hourScroll', 24, v => { selectedHour = v; });
+    setupTimeScrollButtons('minScroll', 60, v => { selectedMin = v; });
+    setupTimeScrollButtons('secScroll', 60, v => { selectedSec = v; });
+}
+
+function buildTimeScroll(id, max, initial, onChange) {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    // 上下箭头按钮
+    const upBtn = document.createElement('button');
+    upBtn.className = 'scroll-btn scroll-up';
+    upBtn.textContent = '▲';
+    upBtn.addEventListener('click', () => {
+        if (id === 'hourScroll') { selectedHour = (selectedHour + 1) % 24; onChange(selectedHour); }
+        else if (id === 'minScroll') { selectedMin = (selectedMin + 1) % 60; onChange(selectedMin); }
+        else { selectedSec = (selectedSec + 1) % 60; onChange(selectedSec); }
+        updateTimePickerDisplay();
+    });
+
+    const downBtn = document.createElement('button');
+    downBtn.className = 'scroll-btn scroll-down';
+    downBtn.textContent = '▼';
+    downBtn.addEventListener('click', () => {
+        if (id === 'hourScroll') { selectedHour = (selectedHour - 1 + 24) % 24; onChange(selectedHour); }
+        else if (id === 'minScroll') { selectedMin = (selectedMin - 1 + 60) % 60; onChange(selectedMin); }
+        else { selectedSec = (selectedSec - 1 + 60) % 60; onChange(selectedSec); }
+        updateTimePickerDisplay();
+    });
+
+    el.appendChild(upBtn);
+    el.appendChild(downBtn);
+
+    // 中间显示
+    const inner = el.querySelector('.time-scroll-inner') || (() => {
+        const d = document.createElement('div');
+        d.className = 'time-scroll-inner';
+        el.insertBefore(d, upBtn);
+        return d;
+    })();
+    inner.textContent = String(initial).padStart(2, '0');
+}
+
+function setupTimeScrollButtons(id, max, onChange) {
+    // 已在 buildTimeScroll 中处理
+}
+
+/* ============ 初始化 ============ */
+document.addEventListener('DOMContentLoaded', () => {
+    initIntro();
+    initEventListeners();
+    initCloudSyncEventListeners();
+    initAlarmModal();
+    updateDateDisplay();
+    updateClockDisplay();
+    requestNotificationPermission();
+    renderSavedAlarms();
+    registerServiceWorker();
+    initCloudSync();
+
+    // 每秒更新时间显示
+    setInterval(updateClockDisplay, 1000);
+    // 每秒检查闹钟
+    setInterval(checkAlarms, 1000);
+    // 每 5 分钟同步一次闹钟到 Service Worker
+    setInterval(syncAlarmsToServiceWorker, 5 * 60 * 1000);
+});
 
 /* ============ 云同步模块（跨设备同步闹钟与数据） ============ */
 
 // 默认 Firebase 配置（演示用，推荐你自己的替换为你自己的 Firebase 项目
-// 如需你自己的 Firebase 如下：
-// 1. 访问 https://console.firebase.google.com → 创建项目
-// 2. 开启 Realtime Database → 选择 "启动在测试模式" 选择 "在 Firebase 控制台创建项目创建数据库"
-// 3. 复制配置信息填入到 "项目设置 → "添加应用" → "配置 Firebase →  配置项目设置 "⚙️ "项目设置" → "你的应用 "添加应用" → "将配置信息复制"
 const DEFAULT_FIREBASE_CONFIG = {
     apiKey: "AIzaSyD4kF_5154321567897654321",
     authDomain: "zhilv-demo.firebaseapp.com",
@@ -432,9 +846,7 @@ let syncingFromCloud = false;
 function getFirebaseConfig() {
     try {
         const saved = localStorage.getItem('zhilv_firebase_config');
-        if (saved) {
-            return JSON.parse(saved);
-        }
+        if (saved) return JSON.parse(saved);
     } catch (e) {}
     return DEFAULT_FIREBASE_CONFIG;
 }
@@ -447,23 +859,18 @@ function saveFirebaseConfig(config) {
 // 初始化 Firebase
 function initFirebase() {
     if (firebaseApp) return firebaseApp;
-
-    // 检查 Firebase SDK 是否已加载
     if (typeof firebase === 'undefined') {
-        console.log('⚠️ Firebase SDK 未加载（可能是网络问题');
+        console.log('⚠️ Firebase SDK 未加载');
         setSyncStatus('⚠️ Firebase 加载失败，请检查网络');
         return null;
     }
-
     try {
         const config = getFirebaseConfig();
         if (!config || !config.apiKey || config.apiKey.indexOf('demo') > -1 || !config.databaseURL) {
-            console.log('⚠️ Firebase: 未配置有效的 Firebase 配置，云同步功能暂不可用');
+            console.log('⚠️ Firebase: 未配置有效的 Firebase 配置');
             setSyncStatus('⚠️ 未配置 Firebase，仅本地模式');
             return null;
         }
-
-        // 检查是否已经有应用初始化
         if (firebase.apps.length > 0) {
             firebaseApp = firebase.apps[0];
         } else {

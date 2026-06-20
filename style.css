@@ -680,10 +680,47 @@ body {
 }
 
 /* ============ 闹钟页面 ============ */
+.alarm-clock-display {
+    text-align: center;
+    padding: 28px 16px 20px 16px;
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.12) 0%, rgba(201, 124, 255, 0.06) 100%);
+    border-bottom: 1px solid rgba(124, 140, 255, 0.2);
+    margin-bottom: 12px;
+    border-radius: 0 0 24px 24px;
+}
+
+.clock-time {
+    font-size: 52px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 4px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 20px rgba(124, 140, 255, 0.5);
+}
+
+.clock-sep {
+    color: #7c8cff;
+    margin: 0 1px;
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 50%, 100% { opacity: 1; }
+    25%, 75% { opacity: 0.3; }
+}
+
+.clock-date {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 6px;
+    letter-spacing: 1px;
+}
+
 .alarm-panel {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    padding: 0 16px;
 }
 
 .alarm-row {
@@ -695,30 +732,32 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 18px;
     transition: all 0.3s;
+    cursor: pointer;
 }
 
 .alarm-row:hover {
     border-color: rgba(124, 140, 255, 0.4);
     transform: translateX(4px);
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.08) 0%, rgba(201, 124, 255, 0.04) 100%);
 }
 
 .alarm-time {
-    font-size: 34px;
+    font-size: 30px;
     font-weight: 800;
     color: #fff;
     letter-spacing: 2px;
-    min-width: 110px;
+    min-width: 140px;
+    font-variant-numeric: tabular-nums;
 }
 
 .alarm-time .sep {
     color: #7c8cff;
-    margin: 0 2px;
-    animation: blink 1.2s ease-in-out infinite;
+    margin: 0 1px;
 }
 
-@keyframes blink {
-    0%, 50%, 100% { opacity: 1; }
-    25%, 75% { opacity: 0.3; }
+.sec-part {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.55);
 }
 
 .alarm-info {
@@ -747,6 +786,7 @@ body {
     box-shadow: 0 4px 15px rgba(124, 140, 255, 0.4);
     cursor: pointer;
     transition: all 0.3s;
+    user-select: none;
 }
 
 .alarm-switch.off {
@@ -756,23 +796,402 @@ body {
 }
 
 .add-alarm {
+    margin: 14px 16px 30px 16px;
     padding: 16px;
     background: transparent;
     border: 2px dashed rgba(124, 140, 255, 0.4);
     border-radius: 18px;
-    color: #a0cfff;
-    font-size: 14px;
+    color: rgba(124, 140, 255, 0.8);
+    font-size: 15px;
     font-weight: 600;
-    letter-spacing: 2px;
     cursor: pointer;
     transition: all 0.3s;
-    font-family: inherit;
+    letter-spacing: 1px;
 }
 
 .add-alarm:hover {
-    background: rgba(124, 140, 255, 0.1);
-    border-color: #7c8cff;
+    background: rgba(124, 140, 255, 0.08);
+    border-color: rgba(124, 140, 255, 0.7);
     color: #fff;
+    transform: scale(1.01);
+}
+
+/* ============ 闹钟详情弹窗 ============ */
+.alarm-modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: flex-end;
+    transition: all 0.3s;
+}
+
+.alarm-modal-overlay.active {
+    display: flex;
+}
+
+.alarm-modal {
+    width: 100%;
+    max-width: 480px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%);
+    border-radius: 24px 24px 0 0;
+    padding: 24px 24px 40px 24px;
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(124, 140, 255, 0.2);
+    border-bottom: none;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.alarm-modal.active {
+    transform: translateY(0);
+}
+
+/* 桌面端居中 */
+@media (min-width: 500px) {
+    .alarm-modal-overlay {
+        align-items: center;
+    }
+    .alarm-modal {
+        border-radius: 24px;
+        border-bottom: 1px solid rgba(124, 140, 255, 0.2);
+        margin: 20px;
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.modal-close {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.modal-close:hover {
+    background: rgba(255, 100, 100, 0.2);
+    color: #ff6b6b;
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    flex: 1;
+    text-align: center;
+}
+
+.modal-delete {
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 80, 80, 0.1);
+    border: 1px solid rgba(255, 80, 80, 0.3);
+    border-radius: 50%;
+    color: #ff6b6b;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.modal-delete:hover {
+    background: rgba(255, 80, 80, 0.25);
+}
+
+/* 时间选择器 */
+.modal-time-picker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 20px;
+}
+
+.time-unit-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.time-scroll {
+    position: relative;
+    width: 72px;
+    height: 80px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.time-scroll-inner {
+    font-size: 40px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 20px rgba(124, 140, 255, 0.4);
+}
+
+.scroll-btn {
+    width: 40px;
+    height: 28px;
+    background: rgba(124, 140, 255, 0.15);
+    border: 1px solid rgba(124, 140, 255, 0.3);
+    border-radius: 8px;
+    color: #7c8cff;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.scroll-btn:hover {
+    background: rgba(124, 140, 255, 0.3);
+    color: #fff;
+}
+
+.scroll-btn:active {
+    transform: scale(0.95);
+}
+
+.picker-sep {
+    font-size: 32px;
+    font-weight: 800;
+    color: #7c8cff;
+    margin-bottom: 20px;
+}
+
+.time-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 1px;
+}
+
+/* 弹窗表单字段 */
+.modal-field {
+    margin-bottom: 20px;
+}
+
+.modal-field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(124, 140, 255, 0.25);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.3s;
+    box-sizing: border-box;
+}
+
+.modal-input:focus {
+    border-color: rgba(124, 140, 255, 0.6);
+    background: rgba(124, 140, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(124, 140, 255, 0.15);
+}
+
+.modal-input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* 铃声列表 */
+.ringtone-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.ringtone-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.ringtone-item:hover {
+    border-color: rgba(124, 140, 255, 0.4);
+    background: rgba(124, 140, 255, 0.08);
+}
+
+.ringtone-item.selected {
+    background: rgba(124, 140, 255, 0.15);
+    border-color: rgba(124, 140, 255, 0.6);
+    box-shadow: 0 0 12px rgba(124, 140, 255, 0.2);
+}
+
+.ringtone-icon {
+    font-size: 22px;
+}
+
+.ringtone-name {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* 重复选项 */
+.repeat-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.repeat-chip {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.repeat-chip:hover {
+    border-color: rgba(124, 140, 255, 0.4);
+    color: #fff;
+}
+
+.repeat-chip.selected {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.25) 0%, rgba(201, 124, 255, 0.2) 100%);
+    border-color: rgba(124, 140, 255, 0.6);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(124, 140, 255, 0.2);
+}
+
+/* 自定义星期 */
+.custom-days {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.day-chip {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.day-chip:hover {
+    border-color: rgba(201, 124, 255, 0.4);
+}
+
+.day-chip.selected {
+    background: rgba(201, 124, 255, 0.25);
+    border-color: rgba(201, 124, 255, 0.7);
+    color: #c97cff;
+}
+
+/* 震动开关 */
+.vibrate-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.vibrate-track {
+    width: 54px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    position: relative;
+    transition: all 0.3s;
+}
+
+.vibrate-thumb {
+    width: 26px;
+    height: 26px;
+    background: linear-gradient(135deg, #7c8cff, #c97cff);
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(124, 140, 255, 0.4);
+}
+
+.vibrate-status {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* 保存按钮 */
+.modal-save-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #7c8cff, #c97cff);
+    border: none;
+    border-radius: 16px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 20px rgba(124, 140, 255, 0.4);
+    letter-spacing: 1px;
+}
+
+.modal-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(124, 140, 255, 0.5);
 }
 
 /* ============ 模式页面 ============ */
