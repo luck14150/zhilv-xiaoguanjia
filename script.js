@@ -271,11 +271,21 @@ function triggerAlarm(alarm) {
     }
 
     // 播放循环提示音
-    startRingingSound(alarm.tone);
+    startRingingSound(alarm.tone, alarm.customToneData);
 }
 
-function startRingingSound(tone) {
+function startRingingSound(tone, customData) {
     try {
+        // 如果是自定义铃声，循环播放上传的音频
+        if (tone === 'custom' && customData) {
+            const audio = new Audio(customData);
+            audio.volume = 0.5;
+            audio.loop = true;
+            audio.play().catch(() => {});
+            ringingAlarmAudioCtx = audio; // 保存音频对象用于停止
+            return;
+        }
+        
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         ringingAlarmAudioCtx = new AC();
@@ -313,7 +323,14 @@ function stopRingingSound() {
         ringingIntervalId = null;
     }
     if (ringingAlarmAudioCtx) {
-        try { ringingAlarmAudioCtx.close(); } catch (e) {}
+        // 如果是 Audio 对象（自定义铃声）
+        if (ringingAlarmAudioCtx instanceof Audio) {
+            ringingAlarmAudioCtx.pause();
+            ringingAlarmAudioCtx.currentTime = 0;
+        } else {
+            // 如果是 AudioContext（内置铃声）
+            try { ringingAlarmAudioCtx.close(); } catch (e) {}
+        }
         ringingAlarmAudioCtx = null;
     }
 }
@@ -355,8 +372,16 @@ function stopAlarm() {
     ringingAlarmId = null;
 }
 
-function playAlarmSound(tone) {
+function playAlarmSound(tone, customData) {
     try {
+        // 如果是自定义铃声，播放上传的音频
+        if (tone === 'custom' && customData) {
+            const audio = new Audio(customData);
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+            return;
+        }
+        
         const AC = window.AudioContext || window.webkitAudioContext;
         if (!AC) return;
         const ctx = new AC();
@@ -607,7 +632,9 @@ let modalState = {
     tone: 'classic',
     repeat: 'daily',
     vibrate: false,
-    customDays: []
+    customDays: [],
+    customToneName: '',
+    customToneData: ''
 };
 
 const RINGTONE_OPTIONS = [
@@ -616,7 +643,8 @@ const RINGTONE_OPTIONS = [
     { id: 'digital', icon: '📡', name: '电子音' },
     { id: 'nature',  icon: '🌿', name: '自然音' },
     { id: 'chime',   icon: '🎐', name: '风铃' },
-    { id: 'rooster', icon: '🐓', name: '公鸡' }
+    { id: 'rooster', icon: '🐓', name: '公鸡' },
+    { id: 'custom',  icon: '📁', name: '自定义' }
 ];
 
 const REPEAT_OPTIONS = [
@@ -649,6 +677,8 @@ function openAlarmModal(id) {
             modalState.repeat = alarm.repeat || 'daily';
             modalState.vibrate = !!alarm.vibrate;
             modalState.customDays = (alarm.customDays || []).slice();
+            modalState.customToneName = alarm.customToneName || '';
+            modalState.customToneData = alarm.customToneData || '';
             if (titleEl) titleEl.textContent = '编辑闹钟';
             if (delBtn) delBtn.style.display = 'flex';
         }
@@ -662,6 +692,8 @@ function openAlarmModal(id) {
         modalState.repeat = 'daily';
         modalState.vibrate = false;
         modalState.customDays = [];
+        modalState.customToneName = '';
+        modalState.customToneData = '';
         if (titleEl) titleEl.textContent = '添加闹钟';
         if (delBtn) delBtn.style.display = 'none';
     }
@@ -694,12 +726,20 @@ function renderModalControls() {
     // 铃声
     const toneEl = document.getElementById('ringtoneList');
     if (toneEl) {
-        toneEl.innerHTML = RINGTONE_OPTIONS.map(o =>
-            '<div class="ringtone-item' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
-            '  <span class="ringtone-icon">' + o.icon + '</span>' +
-            '  <span class="ringtone-name">' + o.name + '</span>' +
-            '</div>'
-        ).join('');
+        const customToneName = modalState.customToneName || '点击上传';
+        toneEl.innerHTML = RINGTONE_OPTIONS.map(o => {
+            if (o.id === 'custom') {
+                return '<div class="ringtone-item ringtone-item-custom' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
+                       '  <span class="ringtone-icon">' + o.icon + '</span>' +
+                       '  <span class="ringtone-name">' + customToneName + '</span>' +
+                       '  <input type="file" class="ringtone-file-input" accept="audio/*" style="display:none;" />' +
+                       '</div>';
+            }
+            return '<div class="ringtone-item' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
+                   '  <span class="ringtone-icon">' + o.icon + '</span>' +
+                   '  <span class="ringtone-name">' + o.name + '</span>' +
+                   '</div>';
+        }).join('');
     }
 
     // 重复
@@ -761,9 +801,48 @@ function initAlarmModalListeners() {
     document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
         const item = e.target.closest('.ringtone-item');
         if (!item) return;
-        modalState.tone = item.dataset.tone;
+        
+        const tone = item.dataset.tone;
+        if (tone === 'custom') {
+            // 点击自定义铃声，触发文件选择
+            const fileInput = item.querySelector('.ringtone-file-input');
+            if (fileInput) {
+                fileInput.click();
+            }
+            return;
+        }
+        
+        modalState.tone = tone;
         renderModalControls();
         playAlarmSound(modalState.tone);
+    });
+
+    // 自定义铃声文件上传
+    document.getElementById('ringtoneList')?.addEventListener('change', function (e) {
+        const fileInput = e.target.closest('.ringtone-file-input');
+        if (!fileInput) return;
+        
+        const file = fileInput.files?.[0];
+        if (!file) return;
+        
+        // 限制文件大小（10MB）
+        if (file.size > 10 * 1024 * 1024) {
+            alert('文件太大，请选择小于10MB的音频文件');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            modalState.tone = 'custom';
+            modalState.customToneName = file.name;
+            modalState.customToneData = event.target?.result || '';
+            renderModalControls();
+            // 预览播放
+            const audio = new Audio(modalState.customToneData);
+            audio.volume = 0.5;
+            audio.play().catch(() => {});
+        };
+        reader.readAsDataURL(file);
     });
 
     // 重复
@@ -858,6 +937,8 @@ function saveAlarm() {
             existing.repeat = modalState.repeat;
             existing.vibrate = modalState.vibrate;
             existing.customDays = modalState.customDays.slice();
+            existing.customToneName = modalState.customToneName;
+            existing.customToneData = modalState.customToneData;
         }
     } else {
         const newAlarm = buildAlarmData(timeStr, name, true);
@@ -865,6 +946,8 @@ function saveAlarm() {
         newAlarm.repeat = modalState.repeat;
         newAlarm.vibrate = modalState.vibrate;
         newAlarm.customDays = modalState.customDays.slice();
+        newAlarm.customToneName = modalState.customToneName;
+        newAlarm.customToneData = modalState.customToneData;
         data.alarms.push(newAlarm);
     }
 
