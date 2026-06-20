@@ -404,14 +404,366 @@ function initEventListeners() {
     });
 }
 
+/* ============ 云同步模块（跨设备同步闹钟与数据） ============ */
+
+// 默认 Firebase 配置（演示用，推荐你自己的替换为你自己的 Firebase 项目
+// 如需你自己的 Firebase 如下：
+// 1. 访问 https://console.firebase.google.com → 创建项目
+// 2. 开启 Realtime Database → 选择 "启动在测试模式" 选择 "在 Firebase 控制台创建项目创建数据库"
+// 3. 复制配置信息填入到 "项目设置 → "添加应用" → "配置 Firebase →  配置项目设置 "⚙️ "项目设置" → "你的应用 "添加应用" → "将配置信息复制"
+const DEFAULT_FIREBASE_CONFIG = {
+    apiKey: "AIzaSyD4kF_5154321567897654321",
+    authDomain: "zhilv-demo.firebaseapp.com",
+    databaseURL: "https://zhilv-demo-default-rtdb.firebaseio.com",
+    projectId: "zhilv-demo",
+    storageBucket: "zhilv-demo.appspot.com",
+    messagingSenderId: "417770321",
+    appId: "1:417770321:web:demo1234567890"
+};
+
+// 云同步状态
+let cloudSyncKey = null;
+let firebaseApp = null;
+let firebaseDb = null;
+let lastLocalUpdate = 0;
+let syncingFromCloud = false;
+
+// 加载用户的 Firebase 配置（如果没有则使用默认配置）
+function getFirebaseConfig() {
+    try {
+        const saved = localStorage.getItem('zhilv_firebase_config');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+    } catch (e) {}
+    return DEFAULT_FIREBASE_CONFIG;
+}
+
+// 保存用户自定义 Firebase 配置
+function saveFirebaseConfig(config) {
+    localStorage.setItem('zhilv_firebase_config', JSON.stringify(config));
+}
+
+// 初始化 Firebase
+function initFirebase() {
+    if (firebaseApp) return firebaseApp;
+
+    // 检查 Firebase SDK 是否已加载
+    if (typeof firebase === 'undefined') {
+        console.log('⚠️ Firebase SDK 未加载（可能是网络问题');
+        setSyncStatus('⚠️ Firebase 加载失败，请检查网络');
+        return null;
+    }
+
+    try {
+        const config = getFirebaseConfig();
+        if (!config || !config.apiKey || config.apiKey.indexOf('demo') > -1 || !config.databaseURL) {
+            console.log('⚠️ Firebase: 未配置有效的 Firebase 配置，云同步功能暂不可用');
+            setSyncStatus('⚠️ 未配置 Firebase，仅本地模式');
+            return null;
+        }
+
+        // 检查是否已经有应用初始化
+        if (firebase.apps.length > 0) {
+            firebaseApp = firebase.apps[0];
+        } else {
+            firebaseApp = firebase.initializeApp(config);
+        }
+        firebaseDb = firebaseApp.database();
+        console.log('✅ Firebase 初始化成功');
+        return firebaseApp;
+    } catch (e) {
+        console.log('❌ Firebase 初始化失败', e);
+        setSyncStatus('❌ Firebase 连接失败: ' + (e.message || e));
+        return null;
+    }
+}
+
+// 更新同步状态显示
+function setSyncStatus(text) {
+    const statusEl = document.getElementById('cloudSyncStatus');
+    if (statusEl) statusEl.textContent = text;
+}
+
+// 获取同步密钥
+function getSyncKey() {
+    return localStorage.getItem('zhilv_sync_key') || '';
+}
+
+// 设置同步密钥
+function setSyncKey(key) {
+    if (!key || key.trim() === '') {
+        alert('请输入同步密钥（任意字符串，如：你的名字+幸运数字');
+        return;
+    }
+    localStorage.setItem('zhilv_sync_key', key.trim());
+    cloudSyncKey = key.trim();
+    console.log('🔑 同步密钥已设置: ' + cloudSyncKey);
+    alert('✅ 同步密钥已设置！现在可以上传/下载数据了。\n\n在其他设备上输入相同的密钥即可同步。');
+    setSyncStatus('🔑 已设置密钥: ' + cloudSyncKey);
+
+    // 自动从云端拉取一次
+    downloadFromCloud();
+}
+
+// 导出数据（手动备份）
+function exportData() {
+    const data = loadData();
+    data._exportTime = new Date().toISOString();
+    const jsonStr = JSON.stringify(data, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'zhilv-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    alert('✅ 数据已导出到下载文件夹！');
+}
+
+// 导入数据（从文件恢复）
+function importData(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data || typeof data !== 'object') throw new Error('数据格式错误');
+            saveData(data);
+            renderSavedAlarms();
+            alert('✅ 数据已成功导入！页面将刷新以应用新数据。');
+            setTimeout(() => location.reload(), 500);
+        } catch (err) {
+            alert('❌ 导入失败: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+// 上传数据到云端（Firebase Realtime Database）
+function uploadToCloud() {
+    if (!cloudSyncKey) {
+        alert('⚠️ 请先设置同步密钥！');
+        return;
+    }
+
+    initFirebase();
+    if (!firebaseDb) {
+        alert('❌ Firebase 未初始化');
+        return;
+    }
+
+    const data = loadData();
+    data._syncTime = Date.now();
+
+    setSyncStatus('⬆️ 正在上传到云端...');
+
+    try {
+        const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
+        firebaseDb.ref(path).set(data)
+            .then(() => {
+                console.log('✅ 数据已上传到云端');
+                setSyncStatus('✅ 已同步到云端 · ' + new Date().toLocaleTimeString());
+                alert('✅ 数据已成功上传到云端！\n其他设备使用相同密钥即可同步此数据。');
+                lastLocalUpdate = Date.now();
+            })
+            .catch(err => {
+                console.error('❌ 上传失败', err);
+                setSyncStatus('❌ 上传失败: ' + (err.message || err));
+                alert('❌ 上传失败: ' + (err.message || err) + '\n\n建议：配置你自己的 Firebase 项目');
+            });
+    } catch (e) {
+        console.error('❌ 上传异常', e);
+        alert('❌ 上传异常: ' + (e.message || e));
+    }
+}
+
+// 从云端下载数据
+function downloadFromCloud() {
+    if (!cloudSyncKey) {
+        alert('⚠️ 请先设置同步密钥！');
+        return;
+    }
+
+    initFirebase();
+    if (!firebaseDb) {
+        alert('❌ Firebase 未初始化，请先配置 Firebase');
+        return;
+    }
+
+    setSyncStatus('⬇️ 正在从云端下载...');
+
+    try {
+        const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
+        firebaseDb.ref(path).once('value')
+            .then(snapshot => {
+                const data = snapshot.val();
+                if (!data) {
+                    setSyncStatus('⚠️ 云端暂无数据（密钥: ' + cloudSyncKey);
+                    alert('⚠️ 云端暂无数据（密钥: ' + cloudSyncKey + ')\n请先在其他设备上上传数据。');
+                    return;
+                }
+
+                syncingFromCloud = true;
+                saveData(data);
+                renderSavedAlarms();
+                syncingFromCloud = false;
+                setSyncStatus('✅ 已从云端同步 · ' + new Date().toLocaleTimeString());
+                alert('✅ 数据已从云端下载成功！页面将刷新以应用新数据。');
+                setTimeout(() => location.reload(), 500);
+            })
+            .catch(err => {
+                console.error('❌ 下载失败', err);
+                setSyncStatus('❌ 下载失败: ' + (err.message || err));
+                alert('❌ 下载失败: ' + (err.message || err) + '\n\n建议：配置你自己的 Firebase 项目');
+            });
+    } catch (e) {
+        console.error('❌ 下载异常', e);
+        alert('❌ 下载异常: ' + (e.message || e));
+    }
+}
+
+// 实时监听云端数据变化（实时同步
+let cloudListenerCallback = null;
+let cloudListenerRef = null;
+function startCloudListener() {
+    if (!cloudSyncKey || !firebaseDb) return;
+
+    // 移除旧的监听器
+    if (cloudListenerRef && cloudListenerCallback) {
+        try { cloudListenerRef.off('value', cloudListenerCallback); } catch(e) {}
+    }
+
+    try {
+        const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
+        cloudListenerRef = firebaseDb.ref(path);
+        cloudListenerCallback = function(snapshot) {
+            const data = snapshot.val();
+            if (!data || !data._syncTime) return;
+
+            // 防止循环更新
+            if (syncingFromCloud) return;
+            if (data._syncTime <= lastLocalUpdate) return;
+
+            console.log('🔄 检测到云端数据更新，时间:', data._syncTime);
+            syncingFromCloud = true;
+            saveData(data);
+            renderSavedAlarms();
+            syncingFromCloud = false;
+            setSyncStatus('🔄 实时同步中 · ' + new Date().toLocaleTimeString());
+        };
+        cloudListenerRef.on('value', cloudListenerCallback);
+    } catch (e) {
+        console.error('❌ 实时监听失败', e);
+    }
+}
+
+// 初始化云同步功能（在页面加载时调用
+function initCloudSync() {
+    const savedKey = getSyncKey();
+    if (savedKey) {
+        cloudSyncKey = savedKey;
+        setSyncStatus('🔑 已连接密钥: ' + cloudSyncKey);
+        initFirebase();
+        if (firebaseDb) {
+            startCloudListener();
+        }
+    }
+}
+
+// 更新 saveData，增加云端自动上传
+const originalSaveData = saveData;
+saveData = function(data) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    lastLocalUpdate = Date.now();
+    // 如果有云同步密钥，自动上传到云端
+    if (cloudSyncKey && firebaseDb) {
+        try {
+            const toUpload = JSON.parse(JSON.stringify(data));
+            toUpload._syncTime = lastLocalUpdate;
+            const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
+            firebaseDb.ref(path).set(toUpload).catch(err => {
+                console.log('自动上传到云端失败', err);
+            });
+        } catch (e) {
+            console.log('自动上传到云端异常', e);
+        }
+    }
+};
+
+/* ============ 云同步按钮事件绑定 ============ */
+function initCloudSyncEventListeners() {
+    // 设置同步密钥
+    const setKeyBtn = document.getElementById('setSyncKeyBtn');
+    const keyInput = document.getElementById('syncKeyInput');
+    setKeyBtn?.addEventListener('click', () => {
+        const val = keyInput?.value.trim();
+        setSyncKey(val);
+    });
+    keyInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            setSyncKey(keyInput.value.trim());
+        }
+    });
+    // 如果已有密钥，显示在输入框
+    if (keyInput) keyInput.value = getSyncKey();
+
+    // 导出数据
+    document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
+
+    // 导入数据
+    const importBtn = document.getElementById('importDataBtn');
+    const importFile = document.getElementById('importFileInput');
+    importBtn?.addEventListener('click', () => importFile?.click());
+    importFile?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) importData(file);
+        e.target.value = '';
+    });
+
+    // 上传到云端
+    document.getElementById('uploadCloudBtn')?.addEventListener('click', uploadToCloud);
+
+    // 从云端下载
+    document.getElementById('downloadCloudBtn')?.addEventListener('click', downloadFromCloud);
+
+    // 保存 Firebase 配置
+    document.getElementById('saveFirebaseBtn')?.addEventListener('click', () => {
+        const input = document.getElementById('firebaseConfigInput');
+        if (!input) return;
+        try {
+            const config = JSON.parse(input.value.trim());
+            if (!config.apiKey || !config.databaseURL) {
+                alert('❌ Firebase 配置必须包含 apiKey 和 databaseURL');
+                return;
+            }
+            saveFirebaseConfig(config);
+            alert('✅ Firebase 配置已保存！页面将刷新以应用新配置。');
+            setTimeout(() => location.reload(), 500);
+        } catch (e) {
+            alert('❌ 配置格式错误，请粘贴完整的 JSON 配置');
+        }
+    });
+
+    // 如果已有 Firebase 配置，显示在输入框
+    const fbInput = document.getElementById('firebaseConfigInput');
+    if (fbInput) {
+        const saved = getFirebaseConfig();
+        if (saved && saved.apiKey && saved.apiKey.indexOf('demo') === -1) {
+            fbInput.value = JSON.stringify(saved, null, 2);
+        }
+    }
+}
+
 /* ============ 初始化 ============ */
 document.addEventListener('DOMContentLoaded', () => {
     initIntro();
     initEventListeners();
+    initCloudSyncEventListeners();
     updateDateDisplay();
     requestNotificationPermission();
     renderSavedAlarms();
     registerServiceWorker();
+    initCloudSync();
 
     // 每分钟检查闹钟
     setInterval(checkAlarms, 60000);

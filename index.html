@@ -251,6 +251,50 @@
                         <input type="text" id="aiInput" placeholder="输入你的问题或需求..." class="ai-input">
                         <button id="sendBtn" class="ai-send-btn">发送</button>
                     </div>
+
+                    <!-- 云同步设置面板 -->
+                    <div class="sync-panel">
+                        <div class="sync-title">
+                            <span class="sync-icon">☁️</span>
+                            <span>多设备云同步</span>
+                        </div>
+
+                        <div class="sync-row">
+                            <span class="sync-label">同步状态</span>
+                            <span class="sync-status" id="cloudSyncStatus">⚪ 未连接（本地存储）</span>
+                        </div>
+
+                        <div class="sync-row">
+                            <span class="sync-label">同步密钥</span>
+                            <div class="sync-input-group">
+                                <input type="text" id="syncKeyInput" placeholder="输入你的同步密钥（任意字符串）" class="sync-key-input">
+                                <button class="sync-btn" id="setSyncKeyBtn">设置</button>
+                            </div>
+                        </div>
+
+                        <div class="sync-buttons">
+                            <button class="sync-action-btn" id="exportDataBtn">📤 导出数据</button>
+                            <button class="sync-action-btn" id="importDataBtn">📥 导入数据</button>
+                            <button class="sync-action-btn" id="uploadCloudBtn">☁️ 上传到云端</button>
+                            <button class="sync-action-btn" id="downloadCloudBtn">⬇️ 从云端下载</button>
+                        </div>
+
+                        <input type="file" id="importFileInput" accept=".json" style="display:none;">
+
+                        <div class="sync-tip">
+                            💡 提示：设置相同的同步密钥，即可在手机、电脑、平板之间自动同步闹钟和数据。<br>
+                            💡 云同步使用免费的 Firebase Realtime Database（默认使用内置演示配置，也可在下方填入你自己的）。
+                        </div>
+
+                        <!-- 高级：自定义 Firebase 配置 -->
+                        <details class="sync-advanced">
+                            <summary>⚙️ 高级：使用你自己的 Firebase</summary>
+                            <div class="sync-firebase-config">
+                                <textarea id="firebaseConfigInput" placeholder='粘贴 Firebase 配置 JSON，例如：&#10;{&#10;  "apiKey": "...",&#10;  "authDomain": "...",&#10;  "databaseURL": "...",&#10;  "projectId": "..."&#10;}' class="sync-textarea"></textarea>
+                                <button class="sync-btn" id="saveFirebaseBtn">保存 Firebase 配置</button>
+                            </div>
+                        </details>
+                    </div>
                 </div>
             </section>
 
@@ -291,6 +335,10 @@
             </div>
         </nav>
     </div>
+
+    <!-- Firebase SDK（云同步所需） -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
     <script src="script.js"></script>
 </body>

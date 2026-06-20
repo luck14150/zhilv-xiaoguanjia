@@ -1515,3 +1515,191 @@ body {
         min-width: 100%;
     }
 }
+
+/* ============ 云同步面板 ============ */
+.sync-panel {
+    margin: 24px auto 40px auto;
+    padding: 24px;
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.08) 0%, rgba(201, 124, 255, 0.05) 100%);
+    border: 1px solid rgba(124, 140, 255, 0.25);
+    border-radius: 16px;
+    max-width: 700px;
+}
+
+.sync-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(124, 140, 255, 0.2);
+}
+
+.sync-icon {
+    font-size: 24px;
+}
+
+.sync-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.sync-label {
+    min-width: 90px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+}
+
+.sync-status {
+    color: #ffb86b;
+    font-size: 13px;
+    flex: 1;
+}
+
+.sync-input-group {
+    display: flex;
+    gap: 10px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.sync-key-input {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(124, 140, 255, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+}
+
+.sync-key-input:focus {
+    border-color: rgba(124, 140, 255, 0.7);
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 3px rgba(124, 140, 255, 0.15);
+}
+
+.sync-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #7c8cff, #c97cff);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.sync-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124, 140, 255, 0.4);
+}
+
+.sync-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+
+.sync-action-btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(124, 140, 255, 0.3);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.sync-action-btn:hover {
+    background: rgba(124, 140, 255, 0.15);
+    border-color: rgba(124, 140, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.sync-tip {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(255, 184, 107, 0.08);
+    border-left: 3px solid #ffb86b;
+    border-radius: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+}
+
+.sync-advanced {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+}
+
+.sync-advanced summary {
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    outline: none;
+}
+
+.sync-advanced summary:hover {
+    color: #fff;
+}
+
+.sync-firebase-config {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.sync-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(124, 140, 255, 0.25);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    font-family: "Courier New", monospace;
+    resize: vertical;
+    outline: none;
+    box-sizing: border-box;
+}
+
+.sync-textarea:focus {
+    border-color: rgba(124, 140, 255, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 600px) {
+    .sync-panel {
+        padding: 18px;
+        margin: 16px;
+    }
+    .sync-label {
+        min-width: 100%;
+        margin-bottom: 4px;
+    }
+    .sync-input-group {
+        width: 100%;
+    }
+    .sync-action-btn {
+        min-width: calc(50% - 5px);
+    }
+}
