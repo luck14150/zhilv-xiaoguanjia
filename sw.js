@@ -4,14 +4,16 @@
  *   2. 推送通知（后台 push 消息）
  *   3. 后台闹钟检查（尽可能在 SW 存活期间响铃）
  *   4. 跨标签页消息同步
+ *   5. 自动版本检测与缓存清理
  */
 
-const CACHE_NAME = 'zhilv-cache-v2';
+const CACHE_VERSION = '2026062011';
+const CACHE_NAME = 'zhilv-cache-' + CACHE_VERSION;
 const urlsToCache = [
     './',
-    './index.html',
-    './style.css',
-    './script.js',
+    './index.html?v=' + CACHE_VERSION,
+    './style.css?v=' + CACHE_VERSION,
+    './script.js?v=' + CACHE_VERSION,
     './manifest.json'
 ];
 
@@ -21,33 +23,86 @@ let lastTriggered = {};  // 避免同一分钟重复触发
 
 // ============ 安装：缓存静态资源 ============
 self.addEventListener('install', event => {
+    console.log('[SW] 安装新版本:', CACHE_VERSION);
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(urlsToCache))
-            .then(() => self.skipWaiting())
+            .then(cache => {
+                console.log('[SW] 缓存资源:', urlsToCache);
+                return cache.addAll(urlsToCache);
+            })
+            .then(() => {
+                console.log('[SW] 跳过等待，立即激活');
+                return self.skipWaiting();
+            })
+            .catch(err => {
+                console.error('[SW] 缓存失败:', err);
+            })
     );
 });
 
-// ============ 激活：清理旧缓存 ============
+// ============ 激活：清理所有旧缓存 ============
 self.addEventListener('activate', event => {
+    console.log('[SW] 激活新版本:', CACHE_VERSION);
     event.waitUntil(
         caches.keys().then(cacheNames => {
+            console.log('[SW] 清理旧缓存:', cacheNames);
             return Promise.all(
-                cacheNames.filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
+                cacheNames.map(name => {
+                    if (name.startsWith('zhilv-cache-') && name !== CACHE_NAME) {
+                        console.log('[SW] 删除旧缓存:', name);
+                        return caches.delete(name);
+                    }
+                }).filter(Boolean)
             );
-        }).then(() => self.clients.claim())
+        }).then(() => {
+            console.log('[SW] 声明控制所有页面');
+            return self.clients.claim();
+        })
     );
 });
 
-// ============ 拦截请求：离线优先策略 ============
+// ============ 拦截请求：网络优先，失败时使用缓存 ============
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
+    
+    // 对于 HTML，始终从网络获取最新版本
+    if (event.request.url.includes('index.html')) {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    // 成功获取后，更新缓存
+                    const clone = response.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+    
+    // 对于 CSS/JS，使用版本参数强制获取最新
+    if (event.request.url.match(/\.(css|js)$/)) {
+        event.respondWith(
+            fetch(event.request.url + '?v=' + CACHE_VERSION + '&t=' + Date.now(), {
+                cache: 'no-store'
+            })
+                .then(response => {
+                    if (response && response.status === 200) {
+                        const clone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+    
+    // 其他资源：缓存优先
     event.respondWith(
         caches.match(event.request).then(cached => {
             if (cached) return cached;
             return fetch(event.request).then(response => {
-                // 动态缓存同源 GET 请求
                 if (response && response.status === 200 && event.request.url.startsWith(self.location.origin)) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
@@ -60,15 +115,20 @@ self.addEventListener('fetch', event => {
 
 // ============ 消息接收：主线程同步闹钟 / 同步命令 ============
 self.addEventListener('message', event => {
-    const { type, alarms } = event.data || {};
+    const { type, alarms, forceUpdate } = event.data || {};
 
     if (type === 'SYNC_ALARMS' && Array.isArray(alarms)) {
         alarmList = alarms.filter(a => a && a.time && a.enabled !== false);
         console.log('[SW] 已同步闹钟:', alarmList);
     }
-
-    if (type === 'CHECK_NOW') {
-        checkAlarms();
+    
+    // 强制更新所有客户端
+    if (type === 'FORCE_UPDATE') {
+        self.clients.matchAll({ type: 'window' }).then(clients => {
+            clients.forEach(client => {
+                client.postMessage({ type: 'RELOAD_PAGE' });
+            });
+        });
     }
 });
 
