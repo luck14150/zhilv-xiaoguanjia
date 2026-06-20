@@ -1183,64 +1183,94 @@ body {
     color: rgba(255, 255, 255, 0.3);
 }
 
-/* 铃声列表 */
+/* 铃声列表（上下滚动容器，节省空间） */
 .ringtone-list {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
+    max-height: 180px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.15);
+    /* 滚动条美化 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(124, 140, 255, 0.4) transparent;
+}
+
+.ringtone-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.ringtone-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ringtone-list::-webkit-scrollbar-thumb {
+    background: rgba(124, 140, 255, 0.3);
+    border-radius: 3px;
+}
+
+.ringtone-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(124, 140, 255, 0.5);
 }
 
 .ringtone-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 12px 8px;
+    justify-content: center;
+    gap: 3px;
+    padding: 10px 6px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.3s;
+    min-height: 58px;
 }
 
 .ringtone-item:hover {
     border-color: rgba(124, 140, 255, 0.4);
     background: rgba(124, 140, 255, 0.08);
+    transform: translateY(-1px);
 }
 
 .ringtone-item.selected {
-    background: rgba(124, 140, 255, 0.15);
-    border-color: rgba(124, 140, 255, 0.6);
-    box-shadow: 0 0 12px rgba(124, 140, 255, 0.2);
+    background: rgba(124, 140, 255, 0.18);
+    border-color: rgba(124, 140, 255, 0.7);
+    box-shadow: 0 0 10px rgba(124, 140, 255, 0.25);
 }
 
 .ringtone-item-custom {
-    position: relative;
     background: rgba(201, 124, 255, 0.06);
-    border-color: rgba(201, 124, 255, 0.2);
+    border-color: rgba(201, 124, 255, 0.25);
 }
 
 .ringtone-item-custom:hover {
-    background: rgba(201, 124, 255, 0.12);
-    border-color: rgba(201, 124, 255, 0.5);
+    background: rgba(201, 124, 255, 0.14);
+    border-color: rgba(201, 124, 255, 0.55);
 }
 
 .ringtone-item-custom.selected {
-    background: rgba(201, 124, 255, 0.18);
+    background: rgba(201, 124, 255, 0.22);
     border-color: rgba(201, 124, 255, 0.7);
-    box-shadow: 0 0 14px rgba(201, 124, 255, 0.25);
+    box-shadow: 0 0 14px rgba(201, 124, 255, 0.3);
 }
 
 .ringtone-replace-btn {
-    margin-top: 4px;
-    padding: 3px 10px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    margin-top: 2px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 5px;
     color: rgba(255, 255, 255, 0.75);
-    font-size: 10px;
+    font-size: 9px;
     cursor: pointer;
     transition: all 0.2s;
+    letter-spacing: 0.3px;
 }
 
 .ringtone-replace-btn:hover {
@@ -1252,16 +1282,25 @@ body {
 .ringtone-hint {
     font-size: 9px;
     color: rgba(255, 255, 255, 0.35);
-    margin-top: 2px;
+    margin-top: 1px;
+    text-align: center;
+    line-height: 1.2;
 }
 
 .ringtone-icon {
-    font-size: 22px;
+    font-size: 20px;
+    line-height: 1;
 }
 
 .ringtone-name {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.72);
+    text-align: center;
+    line-height: 1.2;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* 重复选项 */
