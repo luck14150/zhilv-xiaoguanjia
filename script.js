@@ -4,8 +4,61 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062009';
+const APP_VERSION = '2026062010';
 const STORAGE_VERSION_KEY = 'zhilv_version';
+const FORCE_REFRESH_KEY = 'zhilv_force_refresh';
+
+/* ============ 微信/浏览器缓存清理 ============ */
+(function checkAndForceRefresh() {
+    try {
+        const savedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
+        const needRefresh = localStorage.getItem(FORCE_REFRESH_KEY);
+        
+        if (needRefresh === '1') {
+            // 上次要求刷新，现在清理完成标记
+            localStorage.removeItem(FORCE_REFRESH_KEY);
+        }
+        
+        // 检测到版本变化，强制清理旧数据并刷新
+        if (savedVersion !== APP_VERSION) {
+            console.log('[智律小管家] 检测到版本变化:', savedVersion, '->', APP_VERSION);
+            
+            // 清理所有旧的zhilv相关缓存
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.indexOf('zhilv') > -1) {
+                    keysToRemove.push(k);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            
+            // 保存新版本号
+            localStorage.setItem(STORAGE_VERSION_KEY, APP_VERSION);
+            
+            // 微信浏览器特殊处理 - 强制刷新
+            if (needRefresh !== '1') {
+                localStorage.setItem(FORCE_REFRESH_KEY, '1');
+                
+                // 使用时间戳参数强制刷新
+                const currentUrl = window.location.href.split('?')[0].split('#')[0];
+                const refreshUrl = currentUrl + '?v=' + APP_VERSION + '&_t=' + Date.now();
+                
+                console.log('[智律小管家] 正在强制刷新到新版本...');
+                
+                // 尝试多种刷新方式
+                try {
+                    window.location.replace(refreshUrl);
+                } catch (e) {
+                    window.location.href = refreshUrl;
+                }
+                return;
+            }
+        }
+    } catch (e) {
+        console.error('[智律小管家] 版本检查出错:', e);
+    }
+})();
 
 /* ============ Agnes AI API 配置 ============ */
 const AGNES_CONFIG = {
@@ -30,7 +83,6 @@ function migrateData(data) {
     // 迁移闹钟数据格式
     if (data.alarms && data.alarms.length > 0) {
         data.alarms = data.alarms.map(alarm => {
-            // 确保每个闹钟有所有必要字段
             return {
                 id: alarm.id || 'alarm_' + Date.now() + Math.random().toString(36).slice(2, 6),
                 time: alarm.time || '08:00:00',
@@ -58,31 +110,23 @@ function migrateData(data) {
 }
 
 function loadData() {
-    const storedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
-    
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
             let data = JSON.parse(raw);
-            
-            // 检查版本并迁移
-            if (storedVersion !== APP_VERSION) {
-                const { data: migratedData, migrated } = migrateData(data);
-                if (migrated) {
-                    data = migratedData;
-                    console.log('[智律小管家] 数据已迁移到新版本:', APP_VERSION);
-                }
-                localStorage.setItem(STORAGE_VERSION_KEY, APP_VERSION);
+            const { data: migratedData, migrated } = migrateData(data);
+            if (migrated) {
+                data = migratedData;
+                console.log('[智律小管家] 数据已迁移');
                 saveData(data);
             }
-            
             return data;
         }
     } catch (e) {
         console.error('[智律小管家] 数据加载失败:', e);
     }
     
-    // 首次访问：预置 3 个示例闹钟
+    // 首次访问
     const defaults = {
         alarms: [
             buildAlarmData('07:00:00', '工作日', true),
@@ -110,7 +154,6 @@ function saveData(data) {
         console.error('[智律小管家] 数据保存失败:', e);
     }
     
-    // 如有云同步配置，顺带上传时间戳
     if (cloudSyncKey && firebaseDb) {
         try {
             const toUpload = JSON.parse(JSON.stringify(data));
