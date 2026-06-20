@@ -6,78 +6,13 @@
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
 const APP_VERSION = '2026062012';
 const STORAGE_VERSION_KEY = 'zhilv_version';
-const FORCE_REFRESH_KEY = 'zhilv_force_refresh';
 
-/* ============ 微信/浏览器缓存清理 ============ */
-(function checkAndForceRefresh() {
-    try {
-        const savedVersion = localStorage.getItem(STORAGE_VERSION_KEY);
-        const needRefresh = localStorage.getItem(FORCE_REFRESH_KEY);
-        
-        if (needRefresh === '1') {
-            localStorage.removeItem(FORCE_REFRESH_KEY);
-        }
-        
-        // 检测到版本变化
-        if (savedVersion !== APP_VERSION) {
-            console.log('[智律小管家] 检测到版本变化:', savedVersion, '->', APP_VERSION);
-            
-            // 清理所有旧的zhilv相关缓存
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const k = localStorage.key(i);
-                if (k && k.indexOf('zhilv') > -1) {
-                    keysToRemove.push(k);
-                }
-            }
-            keysToRemove.forEach(k => localStorage.removeItem(k));
-            
-            // 保存新版本号
-            localStorage.setItem(STORAGE_VERSION_KEY, APP_VERSION);
-            
-            // 强制刷新
-            if (needRefresh !== '1') {
-                localStorage.setItem(FORCE_REFRESH_KEY, '1');
-                
-                const currentUrl = window.location.href.split('?')[0].split('#')[0];
-                const refreshUrl = currentUrl + '?v=' + APP_VERSION + '&_t=' + Date.now();
-                
-                console.log('[智律小管家] 正在强制刷新到新版本...');
-                
-                try {
-                    window.location.replace(refreshUrl);
-                } catch (e) {
-                    window.location.href = refreshUrl;
-                }
-                return;
-            }
-        }
-    } catch (e) {
-        console.error('[智律小管家] 版本检查出错:', e);
-    }
-})();
-
-/* ============ 强制更新Service Worker ============ */
+/* ============ Service Worker 注册 ============ */
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js?v=' + APP_VERSION + '&t=' + Date.now())
+        navigator.serviceWorker.register('./sw.js')
             .then(function(registration) {
                 console.log('[SW] 注册成功:', registration.scope);
-                
-                // 检测到新版本Service Worker，立即更新
-                registration.addEventListener('updatefound', function() {
-                    console.log('[SW] 发现新版本，正在更新...');
-                    const newWorker = registration.installing;
-                    newWorker.addEventListener('statechange', function() {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            console.log('[SW] 新版本已安装，刷新页面应用更新');
-                            window.location.reload();
-                        }
-                    });
-                });
-                
-                // 检查更新
-                registration.update();
             })
             .catch(function(error) {
                 console.log('[SW] 注册失败:', error);

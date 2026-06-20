@@ -1469,7 +1469,7 @@ body {
 .calendar-container {
     background: #fff;
     border-radius: 16px;
-    padding: 20px;
+    padding: 12px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
@@ -1477,8 +1477,8 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 18px;
-    padding-bottom: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
     border-bottom: 1px solid #e8e8e8;
 }
 
@@ -1548,7 +1548,7 @@ body {
 }
 
 .calendar-grid {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .calendar-header {
@@ -1560,12 +1560,12 @@ body {
 
 .calendar-day-name {
     text-align: center;
-    padding: 10px 4px;
-    font-size: 15px;
+    padding: 6px 4px;
+    font-size: 13px;
     font-weight: 600;
     color: #333;
     background: #fafafa;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .calendar-days {
@@ -1575,13 +1575,13 @@ body {
 }
 
 .calendar-day {
-    min-height: 96px;
+    min-height: 72px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    padding: 8px 10px;
-    border-radius: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
@@ -1626,22 +1626,22 @@ body {
 .day-top-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     width: 100%;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
 
 .day-date {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     color: #333;
     line-height: 1;
 }
 
 .day-lunar {
-    font-size: 11px;
+    font-size: 10px;
     color: #999;
-    margin-top: 2px;
+    margin-top: 1px;
     text-align: left;
 }
 
