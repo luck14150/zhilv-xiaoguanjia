@@ -1750,9 +1750,17 @@ function renderCalendar() {
 
     let html = '';
 
-    // 空白格子（上月位置）
+    // 上月日期
+    const prevMonthLastDay = new Date(currentYear, currentMonth, 0).getDate();
+    const prevMonthDays = new Date(currentYear, currentMonth - 1, 0).getDate();
     for (let i = startDay - 1; i >= 0; i--) {
-        html += '<div class="calendar-day empty"></div>';
+        const d = prevMonthLastDay - i;
+        const date = new Date(currentYear, currentMonth - 1, d);
+        if (d <= prevMonthDays) {
+            html += renderDay(date, true);
+        } else {
+            html += '<div class="calendar-day empty"></div>';
+        }
     }
 
     // 当月日期
@@ -1761,10 +1769,16 @@ function renderCalendar() {
         html += renderDay(date, false);
     }
 
-    // 空白格子（下月位置）
+    // 下月日期
     const remaining = 42 - (startDay + totalDays);
+    const nextMonthDays = new Date(currentYear, currentMonth + 2, 0).getDate();
     for (let d = 1; d <= remaining; d++) {
-        html += '<div class="calendar-day empty"></div>';
+        if (d <= nextMonthDays) {
+            const date = new Date(currentYear, currentMonth + 1, d);
+            html += renderDay(date, true);
+        } else {
+            html += '<div class="calendar-day empty"></div>';
+        }
     }
 
     container.innerHTML = html;
