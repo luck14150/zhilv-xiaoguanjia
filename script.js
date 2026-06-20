@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062104';
+const APP_VERSION = '2026062105';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 注册 ============ */
@@ -2472,13 +2472,13 @@ function renderDay(date, isOtherMonth) {
 
     let html = `<div class="${classes.join(' ')}" data-date="${dateStr}" ${onclick}>`;
     
-    // 休标签（左上角）
+    // 日期行：日期数字 + 休标签（同一行，日期数字在左，休字在右）
+    html += `<div class="day-date-row">`;
+    html += `<span class="day-date" style="${dateColor}">${date.getDate()}</span>`;
     if (isHol && !isOtherMonth) {
         html += '<span class="day-rest-tag">休</span>';
     }
-    
-    // 日期数字
-    html += `<span class="day-date" style="${dateColor}">${date.getDate()}</span>`;
+    html += `</div>`;
     
     // 农历 + 节日名称（日期下方）- 保持原图简洁样式
     if (!isOtherMonth) {
