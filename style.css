@@ -1872,6 +1872,41 @@ body {
     font-size: 20px;
 }
 
+.stat-item-clickable .stat-icon {
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.stat-item-clickable .stat-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.day-schedule-score-input {
+    width: 55px;
+    font-size: 13px;
+    color: #ffd166;
+    background: rgba(255, 209, 102, 0.08);
+    border: 1px solid rgba(255, 209, 102, 0.2);
+    border-radius: 6px;
+    padding: 4px 6px;
+    text-align: center;
+    outline: none;
+    flex-shrink: 0;
+}
+
+.day-schedule-score-input:focus {
+    border-color: #ffd166;
+    background: rgba(255, 209, 102, 0.15);
+}
+
+.day-schedule-score-input::-webkit-inner-spin-button,
+.day-schedule-score-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 .day-date-text {
     font-size: 18px;
     font-weight: 700;
@@ -2045,6 +2080,212 @@ body {
     content: '✓';
     font-size: 12px;
     color: #fff;
+}
+
+/* ============ 图表弹框样式 ============ */
+.chart-options-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-options-modal.active {
+    display: flex;
+}
+
+.chart-options-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 14px;
+    padding: 20px;
+    min-width: 260px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.chart-options-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.chart-option-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 15px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.chart-option-btn:last-child {
+    margin-bottom: 0;
+}
+
+.chart-option-btn:hover {
+    background: rgba(90, 168, 224, 0.2);
+}
+
+.chart-option-icon {
+    font-size: 22px;
+}
+
+.chart-option-text {
+    flex: 1;
+    text-align: left;
+}
+
+.stats-chart-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.stats-chart-modal.active {
+    display: flex;
+}
+
+.stats-chart-content {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 14px;
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.stats-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stats-chart-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #fff;
+}
+
+.stats-chart-close {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.stats-chart-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stats-chart-body {
+    min-height: 250px;
+}
+
+.chart-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.chart-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 16px;
+}
+
+.pie-chart-wrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin-bottom: 20px;
+}
+
+.pie-chart-svg {
+    width: 100%;
+    height: 100%;
+}
+
+.pie-chart-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.pie-center-num {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.pie-center-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+}
+
+.line-chart-svg {
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+}
+
+.chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
 
 .calendar-tasks {

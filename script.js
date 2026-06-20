@@ -1885,17 +1885,24 @@ function getScheduleData(dateStr) {
     const saved = localStorage.getItem(`schedule_data_${dateStr}`);
     if (saved) {
         try {
-            return JSON.parse(saved);
+            const data = JSON.parse(saved);
+            // 确保每条数据有score字段
+            return data.map(item => ({
+                time: item.time,
+                label: item.label,
+                checked: item.checked,
+                score: item.score || 0
+            }));
         } catch (e) {}
     }
     // 默认数据
     return [
-        { time: '07:00', label: '起床·晨间活动', checked: false },
-        { time: '09:00', label: '工作/学习', checked: false },
-        { time: '12:30', label: '午餐·午休', checked: false },
-        { time: '14:00', label: '下午专注工作', checked: false },
-        { time: '18:00', label: '晚餐·运动', checked: false },
-        { time: '22:30', label: '准备入睡', checked: false }
+        { time: '07:00', label: '起床·晨间活动', checked: false, score: 0 },
+        { time: '09:00', label: '工作/学习', checked: false, score: 0 },
+        { time: '12:30', label: '午餐·午休', checked: false, score: 0 },
+        { time: '14:00', label: '下午专注工作', checked: false, score: 0 },
+        { time: '18:00', label: '晚餐·运动', checked: false, score: 0 },
+        { time: '22:30', label: '准备入睡', checked: false, score: 0 }
     ];
 }
 
@@ -1916,6 +1923,7 @@ function renderScheduleList() {
         const hour = parseInt(item.time.split(':')[0]);
         const period = getPeriod(hour);
         const checkedClass = item.checked ? 'checked' : '';
+        const itemScore = item.score || 0;
         
         html += `
             <div class="day-schedule-item" data-idx="${idx}">
@@ -1926,6 +1934,11 @@ function renderScheduleList() {
                 <input type="text" class="day-schedule-label-input" value="${item.label}"
                     placeholder="输入作息内容..."
                     onchange="updateScheduleLabel(${idx}, this.value)"
+                    onclick="event.stopPropagation()">
+                <input type="number" class="day-schedule-score-input" value="${itemScore}"
+                    min="0" max="100" step="1"
+                    placeholder="得分"
+                    onchange="updateScheduleScore(${idx}, this.value)"
                     onclick="event.stopPropagation()">
                 <button class="day-schedule-delete-btn" onclick="deleteScheduleItem(${idx}); event.stopPropagation();">
                     ×
@@ -1956,15 +1969,14 @@ function updateScheduleStats(items) {
     // 完成件数
     document.getElementById('statCount').textContent = completed + '/' + total;
     
-    // 打分情况（简单计算：完成率对应分数）
-    let score = '-';
+    // 打分情况：得分 = 所有件数得分之和 / 总件数
     if (total > 0) {
-        if (completionRate >= 90) score = '优秀';
-        else if (completionRate >= 70) score = '良好';
-        else if (completionRate >= 50) score = '一般';
-        else if (completionRate > 0) score = '需努力';
+        const totalScore = items.reduce((sum, item) => sum + (parseInt(item.score) || 0), 0);
+        const avgScore = Math.round(totalScore / total);
+        document.getElementById('statScore').textContent = avgScore + '分';
+    } else {
+        document.getElementById('statScore').textContent = '-';
     }
-    document.getElementById('statScore').textContent = score;
 }
 
 function updateScheduleTime(idx, newTime) {
@@ -1981,6 +1993,18 @@ function updateScheduleLabel(idx, newLabel) {
     if (items[idx]) {
         items[idx].label = newLabel.trim() || '未命名';
         saveScheduleData(currentScheduleDate, items);
+    }
+}
+
+function updateScheduleScore(idx, newScore) {
+    const items = getScheduleData(currentScheduleDate);
+    if (items[idx]) {
+        let score = parseInt(newScore);
+        if (isNaN(score) || score < 0) score = 0;
+        if (score > 100) score = 100;
+        items[idx].score = score;
+        saveScheduleData(currentScheduleDate, items);
+        updateScheduleStats(items);
     }
 }
 
@@ -2003,7 +2027,7 @@ function deleteScheduleItem(idx) {
 
 function addScheduleItem() {
     const items = getScheduleData(currentScheduleDate);
-    items.push({ time: '12:00', label: '新作息', checked: false });
+    items.push({ time: '12:00', label: '新作息', checked: false, score: 0 });
     saveScheduleData(currentScheduleDate, items);
     renderScheduleList();
 }
@@ -2011,4 +2035,161 @@ function addScheduleItem() {
 function showCalendarPage() {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-schedule').classList.add('active');
+}
+
+function showStatsChart(type) {
+    const modal = document.getElementById('statsChartModal');
+    const titleEl = document.getElementById('chartModalTitle');
+    const contentEl = document.getElementById('chartModalContent');
+    
+    if (type === 'pie') {
+        titleEl.textContent = '饼形图 - 完成情况分析';
+        contentEl.innerHTML = renderPieChart();
+    } else if (type === 'line') {
+        titleEl.textContent = '折线图 - 得分趋势';
+        contentEl.innerHTML = renderLineChart();
+    }
+    
+    modal.classList.add('active');
+}
+
+function closeStatsChart() {
+    document.getElementById('statsChartModal').classList.remove('active');
+}
+
+function renderPieChart() {
+    const items = getScheduleData(currentScheduleDate);
+    const total = items.length;
+    const completed = items.filter(item => item.checked).length;
+    const uncompleted = total - completed;
+    
+    if (total === 0) {
+        return '<div class="chart-empty">暂无数据</div>';
+    }
+    
+    // 计算饼图角度
+    const completedAngle = (completed / total) * 360;
+    const uncompletedAngle = (uncompleted / total) * 360;
+    
+    const radius = 80;
+    const circumference = 2 * Math.PI * radius;
+    const completedOffset = circumference * (1 - completedAngle / 360);
+    const uncompletedOffset = circumference * (1 - uncompletedAngle / 360);
+    
+    return `
+        <div class="chart-container">
+            <div class="pie-chart-wrapper">
+                <svg viewBox="0 0 200 200" class="pie-chart-svg">
+                    <circle cx="100" cy="100" r="${radius}" fill="#5aa8e0" stroke="none"/>
+                    <circle cx="100" cy="100" r="${radius}" fill="#ffd166" stroke="none"
+                        stroke-dasharray="${circumference}"
+                        stroke-dashoffset="${completedOffset}"
+                        transform="rotate(-90 100 100)"
+                        style="opacity: ${uncompleted > 0 ? 1 : 0}"/>
+                </svg>
+                <div class="pie-chart-center">
+                    <div class="pie-center-num">${Math.round((completed / total) * 100)}%</div>
+                    <div class="pie-center-label">完成率</div>
+                </div>
+            </div>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#5aa8e0"></span>
+                    <span class="legend-label">已完成 ${completed} 件</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#ffd166"></span>
+                    <span class="legend-label">未完成 ${uncompleted} 件</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderLineChart() {
+    const items = getScheduleData(currentScheduleDate);
+    
+    if (items.length === 0) {
+        return '<div class="chart-empty">暂无数据</div>';
+    }
+    
+    // 获取最近7天数据
+    const days = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = formatDate(d);
+        const dayData = getScheduleData(dateStr);
+        let avgScore = 0;
+        if (dayData && dayData.length > 0) {
+            const totalScore = dayData.reduce((sum, item) => sum + (parseInt(item.score) || 0), 0);
+            avgScore = Math.round(totalScore / dayData.length);
+        }
+        days.push({
+            label: `${d.getMonth() + 1}/${d.getDate()}`,
+            score: avgScore
+        });
+    }
+    
+    // SVG 折线图
+    const width = 400;
+    const height = 200;
+    const padding = 40;
+    const chartWidth = width - padding * 2;
+    const chartHeight = height - padding * 2;
+    
+    const points = days.map((day, i) => {
+        const x = padding + (chartWidth / (days.length - 1)) * i;
+        const y = height - padding - (day.score / 100) * chartHeight;
+        return { x, y, ...day };
+    });
+    
+    let pathD = '';
+    points.forEach((p, i) => {
+        pathD += (i === 0 ? 'M' : 'L') + p.x + ',' + p.y + ' ';
+    });
+    
+    let pointsHtml = '';
+    points.forEach(p => {
+        pointsHtml += `<circle cx="${p.x}" cy="${p.y}" r="5" fill="#5aa8e0"/>`;
+        pointsHtml += `<text x="${p.x}" y="${p.y - 10}" text-anchor="middle" fill="#5aa8e0" font-size="12">${p.score}</text>`;
+    });
+    
+    let xAxisLabels = '';
+    points.forEach(p => {
+        xAxisLabels += `<text x="${p.x}" y="${height - 10}" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="11">${p.label}</text>`;
+    });
+    
+    return `
+        <div class="chart-container">
+            <svg viewBox="0 0 ${width} ${height}" class="line-chart-svg">
+                <line x1="${padding}" y1="${height - padding}" x2="${width - padding}" y2="${height - padding}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${height - padding}" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+                <line x1="${padding}" y1="${padding}" x2="${width - padding}" y2="${padding}" stroke="rgba(255,255,255,0.1)" stroke-width="1" stroke-dasharray="4"/>
+                <path d="${pathD}" fill="none" stroke="#5aa8e0" stroke-width="3"/>
+                ${pointsHtml}
+                ${xAxisLabels}
+                <text x="5" y="${padding + 5}" fill="rgba(255,255,255,0.6)" font-size="11">100分</text>
+                <text x="5" y="${height - padding}" fill="rgba(255,255,255,0.6)" font-size="11">0分</text>
+            </svg>
+            <div class="chart-legend">
+                <div class="legend-item">
+                    <span class="legend-dot" style="background:#5aa8e0"></span>
+                    <span class="legend-label">最近7天平均得分趋势</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showStatsChartOptions(event) {
+    event.stopPropagation();
+    document.getElementById('chartOptionsModal').classList.add('active');
+}
+
+function closeChartOptions(event) {
+    if (!event || event.target.id === 'chartOptionsModal') {
+        document.getElementById('chartOptionsModal').classList.remove('active');
+    }
 }

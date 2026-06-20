@@ -458,9 +458,35 @@
                             <span class="stat-label">打分情况</span>
                             <span class="stat-value" id="statScore">-</span>
                         </div>
-                        <div class="stat-item">
+                        <div class="stat-item stat-item-clickable">
                             <span class="stat-label">统计</span>
-                            <span class="stat-value stat-icon">📊</span>
+                            <span class="stat-value stat-icon" onclick="showStatsChartOptions(event)">📊</span>
+                        </div>
+                    </div>
+
+                    <!-- 图表选择弹框 -->
+                    <div class="chart-options-modal" id="chartOptionsModal" onclick="closeChartOptions(event)">
+                        <div class="chart-options-content" onclick="event.stopPropagation()">
+                            <div class="chart-options-title">选择图表类型</div>
+                            <button class="chart-option-btn" onclick="showStatsChart('pie'); closeChartOptions();">
+                                <span class="chart-option-icon">🥧</span>
+                                <span class="chart-option-text">饼形图</span>
+                            </button>
+                            <button class="chart-option-btn" onclick="showStatsChart('line'); closeChartOptions();">
+                                <span class="chart-option-icon">📈</span>
+                                <span class="chart-option-text">折线图</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 图表展示弹框 -->
+                    <div class="stats-chart-modal" id="statsChartModal" onclick="closeStatsChart(event)">
+                        <div class="stats-chart-content" onclick="event.stopPropagation()">
+                            <div class="stats-chart-header">
+                                <span class="stats-chart-title" id="chartModalTitle">图表</span>
+                                <button class="stats-chart-close" onclick="closeStatsChart()">×</button>
+                            </div>
+                            <div class="stats-chart-body" id="chartModalContent"></div>
                         </div>
                     </div>
 
