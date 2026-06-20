@@ -680,7 +680,7 @@ body {
 }
 
 /* ============ 闹钟页面 ============ */
-.alarm-clock-display {
+.alarm-header {
     text-align: center;
     padding: 32px 16px 24px;
     background: linear-gradient(180deg, rgba(124, 140, 255, 0.15) 0%, rgba(201, 124, 255, 0.08) 100%);
@@ -688,7 +688,7 @@ body {
     margin-bottom: 16px;
 }
 
-.clock-time {
+.alarm-header-time {
     font-size: 56px;
     font-weight: 200;
     color: #fff;
@@ -697,117 +697,119 @@ body {
     margin-bottom: 8px;
 }
 
-.clock-date {
+.alarm-header-date {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.6);
 }
 
-.alarm-panel {
+.alarm-list {
     padding: 0 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.alarm-item {
+.alarm-card {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 24px 28px;
+    padding: 28px 32px;
     background: #2a2a35;
     border-radius: 20px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background 0.2s;
 }
 
-.alarm-item:hover {
-    background: #32323d;
+.alarm-card:hover {
+    background: #353544;
 }
 
-.alarm-left {
+.alarm-card-left {
     display: flex;
     flex-direction: column;
     gap: 6px;
 }
 
-.alarm-time-line {
+.alarm-card-time {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 10px;
 }
 
-.alarm-period {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.7);
+.alarm-card-period {
+    font-size: 20px;
     font-weight: 500;
-}
-
-.alarm-time {
-    font-size: 44px;
-    font-weight: 300;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.85);
     letter-spacing: 0;
+}
+
+.alarm-card-time-main {
+    font-size: 52px;
+    font-weight: 300;
+    color: #ffffff;
     font-variant-numeric: tabular-nums;
+    letter-spacing: -1px;
+    line-height: 1;
 }
 
-.alarm-desc {
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.5);
+.alarm-card-label {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 400;
 }
 
-.alarm-right {
+.alarm-card-right {
     display: flex;
     align-items: center;
 }
 
-/* iOS 风格开关 */
-.alarm-toggle {
-    width: 58px;
-    height: 32px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 16px;
+.alarm-card-switch {
+    width: 62px;
+    height: 34px;
+    background: rgba(255, 255, 255, 0.22);
+    border-radius: 17px;
     position: relative;
     cursor: pointer;
     transition: background 0.3s;
 }
 
-.alarm-toggle.on {
+.alarm-card-switch.on {
     background: #34c759;
 }
 
-.alarm-toggle-thumb {
+.alarm-card-switch-thumb {
     position: absolute;
     top: 2px;
     left: 2px;
-    width: 28px;
-    height: 28px;
-    background: #fff;
+    width: 30px;
+    height: 30px;
+    background: #ffffff;
     border-radius: 50%;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
     transition: left 0.3s;
 }
 
-.alarm-toggle.on .alarm-toggle-thumb {
-    left: 28px;
+.alarm-card-switch.on .alarm-card-switch-thumb {
+    left: 30px;
 }
 
-.add-alarm-btn {
+.alarm-add-btn {
     margin: 24px 16px 30px;
     padding: 18px;
     background: transparent;
-    border: 2px dashed rgba(124, 140, 255, 0.4);
+    border: 2px dashed rgba(124, 140, 255, 0.45);
     border-radius: 18px;
-    color: rgba(124, 140, 255, 0.8);
+    color: rgba(124, 140, 255, 0.9);
     font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
 }
 
-.add-alarm-btn:hover {
-    background: rgba(124, 140, 255, 0.08);
-    border-color: rgba(124, 140, 255, 0.7);
-    color: #fff;
+.alarm-add-btn:hover {
+    background: rgba(124, 140, 255, 0.1);
+    border-color: rgba(124, 140, 255, 0.75);
+    color: #ffffff;
 }
 
 /* ============ 闹钟详情弹窗 ============ */

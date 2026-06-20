@@ -1,4 +1,7 @@
-/* ============ 智律小管家 ============ */
+/* ============ 智律小管家 - 核心脚本 ============
+ * 说明：以 localStorage 作为闹钟数据的单一数据源。
+ * DOM 只做渲染，不反向读取数据。任何改动先写回 localStorage，再重新渲染。
+ */
 
 /* ============ Agnes AI API 配置 ============ */
 const AGNES_CONFIG = {
@@ -7,289 +10,340 @@ const AGNES_CONFIG = {
     model: 'agnes-2.0-flash'
 };
 
-/* ============ 多设备同步（localStorage + 云端）============ */
+/* ============ 本地存储（闹钟 / 作息 / 记忆 / 统计） ============ */
 const STORAGE_KEY = 'zhilv_data_v1';
 
 function loadData() {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : { alarms: [], schedule: [], memory: [], stats: {} };
-    } catch (e) {
-        return { alarms: [], schedule: [], memory: [], stats: {} };
-    }
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+    // 首次访问：预置 3 个示例闹钟，避免页面空白
+    const defaults = {
+        alarms: [
+            buildAlarmData('07:00:00', '工作日', true),
+            buildAlarmData('12:30:00', '每日', true),
+            buildAlarmData('22:30:00', '每日', false)
+        ],
+        schedule: [],
+        memory: [],
+        stats: {}
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults)); } catch (e) {}
+    return defaults;
 }
 
 function saveData(data) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    // 如有云同步配置，顺带上传时间戳
+    if (cloudSyncKey && firebaseDb) {
+        try {
+            const toUpload = JSON.parse(JSON.stringify(data));
+            toUpload._syncTime = Date.now();
+            const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
+            firebaseDb.ref(path).set(toUpload).catch(() => {});
+        } catch (e) {}
+    }
 }
 
-/* ============ 实时时钟 & 闹钟功能 ============ */
+/* ============ 工具：构造 / 解析闹钟对象 ============ */
+function buildAlarmData(timeStr, label, enabled) {
+    return {
+        id: 'alarm_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36),
+        time: timeStr || '00:00:00',        // HH:MM:SS
+        name: label || '新闹钟',
+        enabled: enabled !== false,
+        repeat: 'daily',                      // daily | workday | weekend | once | custom
+        customDays: [],                       // 0=周日 ... 6=周六
+        vibrate: false,
+        tone: 'classic'
+    };
+}
+
+// 把 HH:MM:SS 切出 [小时, 分钟, 秒]
+function parseTime(timeStr) {
+    const parts = String(timeStr || '00:00:00').split(':').map(s => parseInt(s, 10) || 0);
+    return { h: parts[0] || 0, m: parts[1] || 0, s: parts[2] || 0 };
+}
+
+// 把 0~23 小时转成"上午/中午/下午/晚上"描述（纯 UI 用）
+function periodOfHour(hour) {
+    if (hour < 6) return '凌晨';
+    if (hour < 12) return '上午';
+    if (hour < 14) return '中午';
+    if (hour < 18) return '下午';
+    return '晚上';
+}
+
+// repeat → 展示文本
+function repeatLabel(alarm) {
+    switch (alarm.repeat) {
+        case 'daily':   return '每日';
+        case 'workday': return '工作日';
+        case 'weekend': return '周末';
+        case 'once':    return '只响一次';
+        case 'custom':
+            if (!alarm.customDays || alarm.customDays.length === 0) return '自定义';
+            const zh = ['日', '一', '二', '三', '四', '五', '六'];
+            return '周' + alarm.customDays.slice().sort().map(d => zh[d]).join('、');
+        default: return alarm.name || '闹钟';
+    }
+}
+
+// 判断闹钟今天是否需要响
+function shouldRingToday(alarm, now) {
+    if (!alarm || alarm.enabled === false) return false;
+    const day = now.getDay(); // 0 Sun ... 6 Sat
+    const isWorkday = day >= 1 && day <= 5;
+    switch (alarm.repeat) {
+        case 'daily':   return true;
+        case 'workday': return isWorkday;
+        case 'weekend': return !isWorkday;
+        case 'once':    return true;     // 由触发侧决定删除
+        case 'custom':
+            return (alarm.customDays || []).includes(day);
+        default: return true;
+    }
+}
+
+/* ============ 顶部实时时钟 ============ */
 function updateClockDisplay() {
     const now = new Date();
-    const h = String(now.getHours()).padStart(2, '0');
-    const m = String(now.getMinutes()).padStart(2, '0');
-    const s = String(now.getSeconds()).padStart(2, '0');
-    const clockEl = document.getElementById('clockTime');
-    if (clockEl) {
-        clockEl.textContent = `${h}:${m}:${s}`;
+    const timeEl = document.getElementById('alarmHeaderTime');
+    const dateEl = document.getElementById('alarmHeaderDate');
+    if (timeEl) {
+        timeEl.textContent =
+            String(now.getHours()).padStart(2, '0') + ':' +
+            String(now.getMinutes()).padStart(2, '0') + ':' +
+            String(now.getSeconds()).padStart(2, '0');
     }
-
-    const year = now.getFullYear();
-    const month = now.getMonth() + 1;
-    const day = now.getDate();
-    const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-    const weekday = weekdays[now.getDay()];
-    const dateEl = document.getElementById('clockDate');
     if (dateEl) {
-        dateEl.textContent = `${year}年${month}月${day}日 ${weekday}`;
+        const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        dateEl.textContent = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日 ' + weekdays[now.getDay()];
     }
 }
 
+/* ============ 闹钟检查（每秒一次，在 HH:MM:00 精确触发） ============ */
 function checkAlarms() {
     const now = new Date();
-    const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    const ss = String(now.getSeconds()).padStart(2, '0');
 
-    document.querySelectorAll('.alarm-item').forEach(item => {
-        const timeLine = item.querySelector('.alarm-time-line');
-        const time = timeLine?.querySelector('.alarm-time')?.textContent;
-        const period = timeLine?.querySelector('.alarm-period')?.textContent;
-        const toggle = item.querySelector('.alarm-toggle');
-        
-        if (!time || !toggle || !toggle.classList.contains('on')) return;
+    // 只在整秒（==00）或秒数匹配闹钟时间才判断触发
+    const data = loadData();
+    if (!data.alarms || data.alarms.length === 0) return;
 
-        let alarmHour = parseInt(time.split(':')[0], 10);
-        if (period === '下午' && alarmHour < 12) alarmHour += 12;
-        if (period === '上午' && alarmHour === 12) alarmHour = 0;
-        
-        const alarmTime = `${String(alarmHour).padStart(2, '0')}:${time.split(':')[1]}:00`;
-        
-        if (alarmTime === currentTime) {
-            triggerAlarm(item);
+    let changed = false;
+    data.alarms.forEach(alarm => {
+        if (!alarm || !alarm.enabled) return;
+        const t = parseTime(alarm.time);
+        const alarmHh = String(t.h).padStart(2, '0');
+        const alarmMm = String(t.m).padStart(2, '0');
+        const alarmSs = String(t.s).padStart(2, '0');
+
+        // 时间精确匹配（时分秒）并且今天应该响
+        if (alarmHh === hh && alarmMm === mm && alarmSs === ss && shouldRingToday(alarm, now)) {
+            triggerAlarm(alarm);
+            // "只响一次" → 自动关闭
+            if (alarm.repeat === 'once') {
+                alarm.enabled = false;
+                changed = true;
+            }
         }
     });
-}
 
-function triggerAlarm(item) {
-    if ('Notification' in window && Notification.permission === 'granted') {
-        const time = item.querySelector('.alarm-time')?.textContent;
-        new Notification('⏰ 智律小管家', {
-            body: `${time} - 闹钟响了！`,
-            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>'
-        });
+    if (changed) {
+        saveData(data);
+        renderSavedAlarms();
     }
 }
 
-// 请求通知权限
+function triggerAlarm(alarm) {
+    const t = parseTime(alarm.time);
+    const showTime = String(t.h).padStart(2, '0') + ':' + String(t.m).padStart(2, '0');
+
+    // 系统通知
+    if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+            new Notification('⏰ 智律小管家', {
+                body: (alarm.name || '闹钟') + ' - ' + showTime + ' 时间到了！',
+                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⏰</text></svg>'
+            });
+        } catch (e) {}
+    }
+
+    // 震动
+    if (alarm.vibrate && navigator.vibrate) {
+        try { navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {}
+    }
+
+    // 播放简易提示音（Web Audio，无依赖）
+    playAlarmSound(alarm.tone);
+}
+
+function playAlarmSound(tone) {
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+
+        const freqs = {
+            classic: [880, 660, 880, 660],
+            birds:   [1200, 1800, 1200, 1800],
+            digital: [440, 880, 440, 880],
+            nature:  [330, 220, 330, 220],
+            chime:   [1320, 1320, 1320, 1320],
+            rooster: [700, 900, 700, 1100]
+        };
+        const seq = freqs[tone] || freqs.classic;
+        let t = ctx.currentTime;
+        o.type = 'sine';
+        g.gain.setValueAtTime(0.0001, t);
+        seq.forEach((f, i) => {
+            o.frequency.setValueAtTime(f, t + i * 0.2);
+            g.gain.exponentialRampToValueAtTime(0.3, t + i * 0.2 + 0.02);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.2 + 0.18);
+        });
+        o.start();
+        o.stop(t + seq.length * 0.2 + 0.1);
+        setTimeout(() => { try { ctx.close(); } catch (e) {} }, seq.length * 250);
+    } catch (e) {}
+}
+
 function requestNotificationPermission() {
     if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
+        Notification.requestPermission().catch(() => {});
     }
 }
 
-/* ============ Agnes AI 对话功能 ============ */
-async function sendToAI(userMessage) {
-    const chatArea = document.getElementById('chatArea');
-    if (!chatArea) return;
-
-    // 添加用户消息
-    const userMsg = document.createElement('div');
-    userMsg.className = 'ai-msg ai-user';
-    userMsg.innerHTML = `
-        <div class="ai-bubble">
-            <p>${userMessage}</p>
-        </div>
-        <div class="ai-avatar">👤</div>
-    `;
-    chatArea.appendChild(userMsg);
-    chatArea.scrollTop = chatArea.scrollHeight;
-
-    // 添加加载动画
-    const loadingMsg = document.createElement('div');
-    loadingMsg.className = 'ai-msg ai-bot';
-    loadingMsg.id = 'aiLoading';
-    loadingMsg.innerHTML = `
-        <div class="ai-avatar">🤖</div>
-        <div class="ai-bubble">
-            <div class="ai-typing"><span></span><span></span><span></span></div>
-        </div>
-    `;
-    chatArea.appendChild(loadingMsg);
-    chatArea.scrollTop = chatArea.scrollHeight;
-
-    try {
-        const response = await fetch(`${AGNES_CONFIG.baseUrl}/chat/completions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${AGNES_CONFIG.apiKey}`
-            },
-            body: JSON.stringify({
-                model: AGNES_CONFIG.model,
-                messages: [
-                    { role: 'system', content: '你是智律小管家的AI助手，帮助用户管理时间、养成习惯、规划作息。回答要简洁友好，用中文。' },
-                    { role: 'user', content: userMessage }
-                ],
-                temperature: 0.7
-            })
-        });
-
-        loadingMsg.remove();
-
-        if (!response.ok) {
-            throw new Error(`API 错误: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const aiResponse = data.choices?.[0]?.message?.content || '抱歉，我暂时无法回答。';
-
-        // 添加 AI 回复
-        const botMsg = document.createElement('div');
-        botMsg.className = 'ai-msg ai-bot';
-        botMsg.innerHTML = `
-            <div class="ai-avatar">🤖</div>
-            <div class="ai-bubble">
-                <p>${aiResponse.replace(/\n/g, '<br>')}</p>
-            </div>
-        `;
-        chatArea.appendChild(botMsg);
-        chatArea.scrollTop = chatArea.scrollHeight;
-
-        // 保存对话到本地存储（跨设备同步
-        const savedData = loadData();
-        savedData.memory.push({
-            role: 'user',
-            content: userMessage,
-            time: new Date().toISOString()
-        });
-        savedData.memory.push({
-            role: 'ai',
-            content: aiResponse,
-            time: new Date().toISOString()
-        });
-        saveData(savedData);
-
-    } catch (error) {
-        loadingMsg.remove();
-        const errorMsg = document.createElement('div');
-        errorMsg.className = 'ai-msg ai-bot';
-        errorMsg.innerHTML = `
-            <div class="ai-avatar">⚠️</div>
-            <div class="ai-bubble">
-                <p style="color: #ff6b6b;">连接失败: ${error.message}</p>
-            </div>
-        `;
-        chatArea.appendChild(errorMsg);
-    }
-}
-
-/* ============ PWA 安装提示 ============ */
-let deferredPrompt;
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installBtn');
-    if (installBtn) {
-        installBtn.style.display = 'inline-block';
-        installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-                installBtn.style.display = 'none';
-            }
-            deferredPrompt = null;
-        });
-    }
-});
-
-/* ============ 跨标签页/设备同步（storage 事件）============ */
-window.addEventListener('storage', (e) => {
-    if (e.key === STORAGE_KEY) {
-        console.log('检测到其他标签页的数据变化');
-    }
-});
-
-/* ============ Service Worker 注册（关闭网页也能响铃）============ */
-async function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        try {
-            const registration = await navigator.serviceWorker.register('sw.js');
-            console.log('Service Worker 注册成功:', registration);
-
-            // 启动后将闹钟信息传给 Service Worker，实现"关闭网页也能响铃"
-            syncAlarmsToServiceWorker();
-        } catch (err) {
-            console.log('Service Worker 注册失败:', err);
-        }
-    }
-}
-
-// 将闹钟同步到 Service Worker（支持关闭网页后触发通知）
-function syncAlarmsToServiceWorker() {
-    if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return;
-
-    // 先把 DOM 中的闹钟更新到 localStorage
-    const items = document.querySelectorAll('.alarm-item');
-    const alarmList = [];
-    items.forEach(item => {
-        const timeLine = item.querySelector('.alarm-time-line');
-        const time = timeLine?.querySelector('.alarm-time')?.textContent;
-        const period = timeLine?.querySelector('.alarm-period')?.textContent;
-        const toggle = item.querySelector('.alarm-toggle');
-        if (!time || !toggle) return;
-        
-        let hour = parseInt(time.split(':')[0], 10);
-        if (period === '下午' && hour < 12) hour += 12;
-        if (period === '上午' && hour === 12) hour = 0;
-        
-        alarmList.push({ 
-            time: `${String(hour).padStart(2, '0')}:${time.split(':')[1]}:00`, 
-            name: `${period} ${time}`,
-            enabled: toggle.classList.contains('on') 
-        });
-    });
+/* ============ 渲染闹钟列表（单一数据源：localStorage） ============ */
+function renderSavedAlarms() {
+    const listEl = document.getElementById('alarmList');
+    if (!listEl) return;
 
     const data = loadData();
-    data.alarms = alarmList;
-    saveData(data);
+    const alarms = data.alarms || [];
 
-    // 发送到 Service Worker 消息通道
-    navigator.serviceWorker.ready.then(reg => {
-        if (reg.active) {
-            reg.active.postMessage({
-                type: 'SYNC_ALARMS',
-                alarms: alarmList
-            });
-        }
-    });
+    if (alarms.length === 0) {
+        listEl.innerHTML =
+            '<div style="text-align:center;padding:40px 20px;color:rgba(255,255,255,0.4);font-size:14px;">' +
+            '暂无闹钟，点击下方"+新闹钟"添加一个吧</div>';
+        return;
+    }
+
+    // 按时间升序排列
+    const sorted = alarms.slice().sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+
+    listEl.innerHTML = sorted.map(alarm => {
+        const t = parseTime(alarm.time);
+        const period = periodOfHour(t.h);
+        const hh12 = t.h % 12 === 0 ? 12 : (t.h % 12);
+        const timeShow = String(hh12).padStart(2, '0') + ':' + String(t.m).padStart(2, '0');
+        const label = repeatLabel(alarm);
+        const enabledClass = alarm.enabled ? 'on' : '';
+        const dimStyle = alarm.enabled ? '' : 'opacity:0.55;';
+        return (
+            '<div class="alarm-card" data-id="' + alarm.id + '" style="' + dimStyle + '">' +
+            '  <div class="alarm-card-left">' +
+            '    <div class="alarm-card-time">' +
+            '      <span class="alarm-card-period">' + period + '</span>' +
+            '      <span class="alarm-card-time-main">' + timeShow + '</span>' +
+            '    </div>' +
+            '    <div class="alarm-card-label">' + label + '</div>' +
+            '  </div>' +
+            '  <div class="alarm-card-right">' +
+            '    <div class="alarm-card-switch ' + enabledClass + '" data-action="toggle" data-id="' + alarm.id + '">' +
+            '      <div class="alarm-card-switch-thumb"></div>' +
+            '    </div>' +
+            '  </div>' +
+            '</div>'
+        );
+    }).join('');
 }
 
-/* ============ 页面切换 ============ */
+/* ============ 事件委托：开关 / 点击卡片编辑 / "+新闹钟" ============ */
+function initAlarmListEventDelegation() {
+    const listEl = document.getElementById('alarmList');
+    if (listEl) {
+        listEl.addEventListener('click', function (e) {
+            // 开关
+            const sw = e.target.closest('.alarm-card-switch');
+            if (sw && sw.dataset.action === 'toggle') {
+                e.stopPropagation();
+                toggleAlarmEnabled(sw.dataset.id);
+                return;
+            }
+            // 整张卡片 → 编辑
+            const card = e.target.closest('.alarm-card');
+            if (card && card.dataset.id) {
+                openAlarmModal(card.dataset.id);
+            }
+        });
+    }
+
+    const addBtn = document.getElementById('alarmAddBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => openAlarmModal(null));
+    }
+}
+
+function toggleAlarmEnabled(id) {
+    const data = loadData();
+    const alarm = (data.alarms || []).find(a => a.id === id);
+    if (!alarm) return;
+    alarm.enabled = !alarm.enabled;
+    saveData(data);
+    renderSavedAlarms();
+    syncAlarmsToServiceWorker();
+}
+
+/* ============ Service Worker 同步 ============ */
+async function registerServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+        await navigator.serviceWorker.register('sw.js');
+        syncAlarmsToServiceWorker();
+    } catch (e) { /* ignore */ }
+}
+
+function syncAlarmsToServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+    const data = loadData();
+    const list = (data.alarms || []).filter(a => a && a.enabled).map(a => ({
+        time: (a.time || '00:00:00').split(':').slice(0, 2).join(':'),
+        name: a.name || '闹钟',
+        enabled: true
+    }));
+    navigator.serviceWorker.ready.then(reg => {
+        if (reg && reg.active) {
+            try { reg.active.postMessage({ type: 'SYNC_ALARMS', alarms: list }); } catch (e) {}
+        }
+    }).catch(() => {});
+}
+
+/* ============ 页面切换（底部导航） ============ */
 function updateDateDisplay() {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
     const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-    const weekday = weekdays[now.getDay()];
-
     const dateEl = document.getElementById('currentDate');
     const weekdayEl = document.getElementById('weekday');
-    if (dateEl) dateEl.textContent = `${year}年${month}月${day}日`;
-    if (weekdayEl) weekdayEl.textContent = weekday;
+    if (dateEl) {
+        dateEl.textContent = now.getFullYear() + '年' + String(now.getMonth() + 1).padStart(2, '0') + '月' + String(now.getDate()).padStart(2, '0') + '日';
+    }
+    if (weekdayEl) weekdayEl.textContent = weekdays[now.getDay()];
 }
 
 function switchPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    const target = document.getElementById(`page-${pageId}`);
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById('page-' + pageId);
     if (target) target.classList.add('active');
-
     document.querySelectorAll('.nav-btn').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.page === pageId) item.classList.add('active');
+        item.classList.toggle('active', item.dataset.page === pageId);
     });
-
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -297,7 +351,6 @@ function switchPage(pageId) {
 function initIntro() {
     const intro = document.getElementById('introScreen');
     if (!intro) return;
-
     const messages = ['正在启动...', '加载资源...', '即将完成...', '欢迎使用!'];
     let idx = 0;
     const timer = setInterval(() => {
@@ -305,388 +358,381 @@ function initIntro() {
         const textEl = document.getElementById('introText');
         if (textEl && idx < messages.length) textEl.textContent = messages[idx];
     }, 900);
-
     const hide = () => {
         clearInterval(timer);
         intro.classList.add('hide');
         setTimeout(() => { intro.style.display = 'none'; }, 900);
     };
-
     setTimeout(hide, 5200);
-
     const skipBtn = document.getElementById('skipBtn');
     if (skipBtn) skipBtn.addEventListener('click', hide);
 }
 
-/* ============ 事件监听 ============ */
-function initEventListeners() {
-    document.querySelectorAll('.nav-btn').forEach(item => {
-        item.addEventListener('click', () => switchPage(item.dataset.page));
-    });
+/* ============ 弹窗：添加 / 编辑闹钟 ============ */
+let editingAlarmId = null;
+let modalState = {
+    hour: 8, minute: 0, second: 0,
+    name: '',
+    tone: 'classic',
+    repeat: 'daily',
+    vibrate: false,
+    customDays: []
+};
 
-    // 闹钟开关事件
-    document.querySelectorAll('.alarm-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function() {
-            this.classList.toggle('on');
-        });
-    });
+const RINGTONE_OPTIONS = [
+    { id: 'classic', icon: '🔔', name: '经典' },
+    { id: 'birds',   icon: '🐦', name: '鸟鸣' },
+    { id: 'digital', icon: '📡', name: '电子音' },
+    { id: 'nature',  icon: '🌿', name: '自然音' },
+    { id: 'chime',   icon: '🎐', name: '风铃' },
+    { id: 'rooster', icon: '🐓', name: '公鸡' }
+];
 
-    // 闹钟项目点击事件（打开编辑弹窗）
-    document.querySelectorAll('.alarm-item').forEach(item => {
-        item.addEventListener('click', function(e) {
-            if (e.target.classList.contains('alarm-toggle') || e.target.classList.contains('alarm-toggle-thumb')) {
-                return;
-            }
-            openAlarmModal(null);
-        });
-    });
-
-    document.querySelectorAll('.mode-card').forEach(card => {
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
-            card.classList.add('active');
-        });
-    });
-
-    document.getElementById('currentDate')?.addEventListener('click', updateDateDisplay);
-
-    // AI 对话功能
-    const sendBtn = document.getElementById('sendBtn');
-    const aiInput = document.getElementById('aiInput');
-
-    sendBtn?.addEventListener('click', () => {
-        const msg = aiInput?.value.trim();
-        if (msg) {
-            sendToAI(msg);
-            aiInput.value = '';
-        }
-    });
-
-    aiInput?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const msg = aiInput.value.trim();
-            if (msg) {
-                sendToAI(msg);
-                aiInput.value = '';
-            }
-        }
-    });
-
-    // 快捷按钮
-    document.querySelectorAll('.quick-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const prompt = btn.dataset.prompt;
-            if (prompt) sendToAI(prompt);
-        });
-    });
-
-    // 添加闹钟按钮 → 打开弹窗
-    const addAlarmBtn = document.getElementById('addAlarmBtn');
-    addAlarmBtn?.addEventListener('click', () => openAlarmModal(null));
-}
-
-/* ============ 闹钟详情弹窗 ============ */
-let currentEditingId = null;
-let alarmCustomDays = [];
-let alarmVibrateEnabled = false;
-let alarmRepeatSelected = 'daily';
-let alarmToneSelected = 'classic';
-let selectedHour = 0;
-let selectedMin = 0;
-let selectedSec = 0;
+const REPEAT_OPTIONS = [
+    { id: 'daily',   label: '每日' },
+    { id: 'workday', label: '工作日' },
+    { id: 'weekend', label: '周末' },
+    { id: 'once',    label: '只响一次' },
+    { id: 'custom',  label: '自定义' }
+];
 
 function openAlarmModal(id) {
-    currentEditingId = id;
+    editingAlarmId = id;
     const overlay = document.getElementById('alarmModalOverlay');
     const modal = document.getElementById('alarmModal');
-    const title = document.getElementById('modalTitle');
-    const deleteBtn = document.getElementById('modalDeleteBtn');
+    if (!overlay || !modal) return;
+
+    const titleEl = document.getElementById('modalTitle');
+    const delBtn = document.getElementById('modalDeleteBtn');
     const nameInput = document.getElementById('modalAlarmName');
 
-    // 重置所有选项
-    alarmRepeatSelected = 'daily';
-    alarmCustomDays = [];
-    alarmVibrateEnabled = false;
-    alarmToneSelected = 'classic';
-    alarmCustomDays = [];
-
-    if (id === null) {
-        // 新增模式
-        title.textContent = '添加闹钟';
-        deleteBtn.style.display = 'none';
-        const now = new Date();
-        selectedHour = now.getHours();
-        selectedMin = now.getMinutes() + 1;
-        selectedSec = 0;
-        nameInput.value = '';
-    } else {
-        // 编辑模式
-        title.textContent = '编辑闹钟';
-        deleteBtn.style.display = 'block';
-
-        const data = loadData();
-        const alarm = data.alarms.find(a => (a._id || a.id) === id);
+    if (id) {
+        const alarm = (loadData().alarms || []).find(a => a.id === id);
         if (alarm) {
-            const [h, m, s] = (alarm.time || '00:00:00').split(':');
-            selectedHour = parseInt(h, 10);
-            selectedMin = parseInt(m, 10);
-            selectedSec = parseInt(s || '0', 10);
-            nameInput.value = alarm.name || '';
-            alarmRepeatSelected = alarm.repeat || 'daily';
-            alarmVibrateEnabled = alarm.vibrate || false;
-            alarmToneSelected = alarm.tone || 'classic';
-            alarmCustomDays = alarm.customDays || [];
-        } else {
-            selectedHour = 0; selectedMin = 0; selectedSec = 0;
-            nameInput.value = '';
+            const t = parseTime(alarm.time);
+            modalState.hour = t.h;
+            modalState.minute = t.m;
+            modalState.second = t.s;
+            modalState.name = alarm.name || '';
+            modalState.tone = alarm.tone || 'classic';
+            modalState.repeat = alarm.repeat || 'daily';
+            modalState.vibrate = !!alarm.vibrate;
+            modalState.customDays = (alarm.customDays || []).slice();
+            if (titleEl) titleEl.textContent = '编辑闹钟';
+            if (delBtn) delBtn.style.display = 'flex';
         }
+    } else {
+        const now = new Date();
+        modalState.hour = now.getHours();
+        modalState.minute = (now.getMinutes() + 1) % 60;
+        modalState.second = 0;
+        modalState.name = '';
+        modalState.tone = 'classic';
+        modalState.repeat = 'daily';
+        modalState.vibrate = false;
+        modalState.customDays = [];
+        if (titleEl) titleEl.textContent = '添加闹钟';
+        if (delBtn) delBtn.style.display = 'none';
     }
 
-    // 更新时间滚轮
-    updateTimePickerDisplay();
-    // 更新选项状态
-    updateRepeatUI();
-    updateVibrateUI();
-    updateToneUI();
-
-    // 显示弹窗
+    if (nameInput) nameInput.value = modalState.name;
+    renderModalControls();
     overlay.style.display = 'flex';
-    setTimeout(() => {
-        overlay.classList.add('active');
-        modal.classList.add('active');
-    }, 10);
+    // 强制触发过渡
+    void overlay.offsetWidth;
+    overlay.classList.add('active');
+    modal.classList.add('active');
 }
 
 function closeAlarmModal() {
     const overlay = document.getElementById('alarmModalOverlay');
     const modal = document.getElementById('alarmModal');
+    if (!overlay || !modal) return;
     overlay.classList.remove('active');
     modal.classList.remove('active');
-    setTimeout(() => {
-        overlay.style.display = 'none';
-    }, 300);
-    currentEditingId = null;
+    setTimeout(() => { overlay.style.display = 'none'; }, 300);
+    editingAlarmId = null;
 }
 
-function updateTimePickerDisplay() {
-    // 更新时间显示
-    const hourEl = document.getElementById('hourScroll');
-    const minEl = document.getElementById('minScroll');
-    const secEl = document.getElementById('secScroll');
-    if (hourEl) hourEl.querySelector('.time-scroll-inner').textContent = String(selectedHour).padStart(2, '0');
-    if (minEl) minEl.querySelector('.time-scroll-inner').textContent = String(selectedMin).padStart(2, '0');
-    if (secEl) secEl.querySelector('.time-scroll-inner').textContent = String(selectedSec).padStart(2, '0');
+function renderModalControls() {
+    // 时间显示
+    setTimeText('hourScroll', modalState.hour);
+    setTimeText('minScroll', modalState.minute);
+    setTimeText('secScroll', modalState.second);
+
+    // 铃声
+    const toneEl = document.getElementById('ringtoneList');
+    if (toneEl) {
+        toneEl.innerHTML = RINGTONE_OPTIONS.map(o =>
+            '<div class="ringtone-item' + (o.id === modalState.tone ? ' selected' : '') + '" data-tone="' + o.id + '">' +
+            '  <span class="ringtone-icon">' + o.icon + '</span>' +
+            '  <span class="ringtone-name">' + o.name + '</span>' +
+            '</div>'
+        ).join('');
+    }
+
+    // 重复
+    const repEl = document.getElementById('repeatOptions');
+    if (repEl) {
+        repEl.innerHTML = REPEAT_OPTIONS.map(o =>
+            '<div class="repeat-chip' + (o.id === modalState.repeat ? ' selected' : '') + '" data-repeat="' + o.id + '">' + o.label + '</div>'
+        ).join('');
+    }
+
+    // 自定义星期
+    const customEl = document.getElementById('customDays');
+    if (customEl) {
+        if (modalState.repeat === 'custom') {
+            customEl.style.display = 'flex';
+            const zh = ['日', '一', '二', '三', '四', '五', '六'];
+            customEl.innerHTML = zh.map((name, idx) =>
+                '<div class="day-chip' + (modalState.customDays.includes(idx) ? ' selected' : '') + '" data-day="' + idx + '">' + name + '</div>'
+            ).join('');
+        } else {
+            customEl.style.display = 'none';
+        }
+    }
+
+    // 震动
+    const vThumb = document.getElementById('vibrateThumb');
+    const vStatus = document.getElementById('vibrateStatus');
+    if (vThumb) vThumb.style.left = modalState.vibrate ? '26px' : '2px';
+    if (vStatus) vStatus.textContent = modalState.vibrate ? '开启' : '关闭';
 }
 
-function updateRepeatUI() {
-    document.querySelectorAll('.repeat-chip').forEach(chip => {
-        chip.classList.toggle('selected', chip.dataset.repeat === alarmRepeatSelected);
+function setTimeText(containerId, value) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const inner = container.querySelector('.time-scroll-inner');
+    if (inner) inner.textContent = String(value).padStart(2, '0');
+}
+
+function initAlarmModalListeners() {
+    // 关闭 / 删除 / 保存
+    document.getElementById('modalCloseBtn')?.addEventListener('click', closeAlarmModal);
+    document.getElementById('modalDeleteBtn')?.addEventListener('click', deleteAlarm);
+    document.getElementById('modalSaveBtn')?.addEventListener('click', saveAlarm);
+    document.getElementById('alarmModalOverlay')?.addEventListener('click', function (e) {
+        if (e.target === this) closeAlarmModal();
     });
-    const customDaysEl = document.getElementById('customDays');
-    if (customDaysEl) {
-        customDaysEl.style.display = alarmRepeatSelected === 'custom' ? 'flex' : 'none';
-    }
-    if (alarmRepeatSelected === 'custom') {
-        document.querySelectorAll('.day-chip').forEach(chip => {
-            chip.classList.toggle('selected', alarmCustomDays.includes(parseInt(chip.dataset.day, 10)));
-        });
-    }
+
+    // 时间滚轮（▲ / ▼ 按钮）
+    bindTimeScroll('hourScroll', 24, v => { modalState.hour = v; });
+    bindTimeScroll('minScroll', 60, v => { modalState.minute = v; });
+    bindTimeScroll('secScroll', 60, v => { modalState.second = v; });
+
+    // 名称输入
+    document.getElementById('modalAlarmName')?.addEventListener('input', function () {
+        modalState.name = this.value;
+    });
+
+    // 铃声
+    document.getElementById('ringtoneList')?.addEventListener('click', function (e) {
+        const item = e.target.closest('.ringtone-item');
+        if (!item) return;
+        modalState.tone = item.dataset.tone;
+        renderModalControls();
+        playAlarmSound(modalState.tone);
+    });
+
+    // 重复
+    document.getElementById('repeatOptions')?.addEventListener('click', function (e) {
+        const chip = e.target.closest('.repeat-chip');
+        if (!chip) return;
+        modalState.repeat = chip.dataset.repeat;
+        if (modalState.repeat !== 'custom') modalState.customDays = [];
+        renderModalControls();
+    });
+
+    // 自定义星期
+    document.getElementById('customDays')?.addEventListener('click', function (e) {
+        const chip = e.target.closest('.day-chip');
+        if (!chip) return;
+        const d = parseInt(chip.dataset.day, 10);
+        const idx = modalState.customDays.indexOf(d);
+        if (idx >= 0) modalState.customDays.splice(idx, 1);
+        else modalState.customDays.push(d);
+        renderModalControls();
+    });
+
+    // 震动开关
+    document.getElementById('vibrateToggle')?.addEventListener('click', function () {
+        modalState.vibrate = !modalState.vibrate;
+        renderModalControls();
+        if (modalState.vibrate && navigator.vibrate) {
+            try { navigator.vibrate(100); } catch (e) {}
+        }
+    });
 }
 
-function updateVibrateUI() {
-    const thumb = document.getElementById('vibrateThumb');
-    const status = document.getElementById('vibrateStatus');
-    if (thumb) thumb.style.left = alarmVibrateEnabled ? '28px' : '2px';
-    if (status) status.textContent = alarmVibrateEnabled ? '开启' : '关闭';
-}
+function bindTimeScroll(containerId, max, onSet) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
 
-function updateToneUI() {
-    document.querySelectorAll('.ringtone-item').forEach(item => {
-        item.classList.toggle('selected', item.dataset.tone === alarmToneSelected);
+    // 确保容器内有 ▲ / ▼ 按钮
+    let upBtn = container.querySelector('.scroll-up');
+    let downBtn = container.querySelector('.scroll-down');
+    if (!upBtn) {
+        upBtn = document.createElement('button');
+        upBtn.className = 'scroll-btn scroll-up';
+        upBtn.textContent = '▲';
+        container.appendChild(upBtn);
+    }
+    if (!downBtn) {
+        downBtn = document.createElement('button');
+        downBtn.className = 'scroll-btn scroll-down';
+        downBtn.textContent = '▼';
+        container.appendChild(downBtn);
+    }
+
+    upBtn.addEventListener('click', () => {
+        const current = parseInt(container.querySelector('.time-scroll-inner')?.textContent || '0', 10);
+        onSet((current + 1) % max);
+        setTimeText(containerId, (current + 1) % max);
+    });
+    downBtn.addEventListener('click', () => {
+        const current = parseInt(container.querySelector('.time-scroll-inner')?.textContent || '0', 10);
+        const next = (current - 1 + max) % max;
+        onSet(next);
+        setTimeText(containerId, next);
     });
 }
 
 function saveAlarm() {
-    const nameInput = document.getElementById('modalAlarmName');
-    const name = nameInput?.value.trim() || '新闹钟';
-    const time = `${String(selectedHour).padStart(2, '0')}:${String(selectedMin).padStart(2, '0')}:${String(selectedSec).padStart(2, '0')}`;
-
-    const alarmObj = {
-        _id: currentEditingId || ('id_' + Date.now()),
-        id: currentEditingId || ('id_' + Date.now()),
-        time,
-        name,
-        repeat: alarmRepeatSelected,
-        vibrate: alarmVibrateEnabled,
-        tone: alarmToneSelected,
-        enabled: true,
-        customDays: alarmRepeatSelected === 'custom' ? [...alarmCustomDays] : []
-    };
-
     const data = loadData();
-    if (currentEditingId) {
-        const idx = data.alarms.findIndex(a => (a._id || a.id) === currentEditingId);
-        if (idx >= 0) {
-            data.alarms[idx] = alarmObj;
-        } else {
-            data.alarms.push(alarmObj);
+    data.alarms = data.alarms || [];
+
+    const timeStr =
+        String(modalState.hour).padStart(2, '0') + ':' +
+        String(modalState.minute).padStart(2, '0') + ':' +
+        String(modalState.second).padStart(2, '0');
+
+    // 展示标签：优先用户输入的名称，否则显示重复描述
+    const repeatText = (() => {
+        const zh = ['日', '一', '二', '三', '四', '五', '六'];
+        switch (modalState.repeat) {
+            case 'daily': return '每日';
+            case 'workday': return '工作日';
+            case 'weekend': return '周末';
+            case 'once': return '只响一次';
+            case 'custom':
+                return modalState.customDays.length
+                    ? '周' + modalState.customDays.slice().sort().map(d => zh[d]).join('、')
+                    : '自定义';
+            default: return '闹钟';
+        }
+    })();
+    const name = modalState.name && modalState.name.trim() ? modalState.name.trim() : repeatText;
+
+    if (editingAlarmId) {
+        const existing = data.alarms.find(a => a.id === editingAlarmId);
+        if (existing) {
+            existing.time = timeStr;
+            existing.name = name;
+            existing.tone = modalState.tone;
+            existing.repeat = modalState.repeat;
+            existing.vibrate = modalState.vibrate;
+            existing.customDays = modalState.customDays.slice();
         }
     } else {
-        data.alarms.push(alarmObj);
+        const newAlarm = buildAlarmData(timeStr, name, true);
+        newAlarm.tone = modalState.tone;
+        newAlarm.repeat = modalState.repeat;
+        newAlarm.vibrate = modalState.vibrate;
+        newAlarm.customDays = modalState.customDays.slice();
+        data.alarms.push(newAlarm);
     }
-    saveData(data);
 
+    saveData(data);
     closeAlarmModal();
-    // 刷新列表
     renderSavedAlarms();
-    // 同步到 Service Worker
     syncAlarmsToServiceWorker();
 }
 
 function deleteAlarm() {
-    if (!currentEditingId) return;
+    if (!editingAlarmId) return;
     if (!confirm('确定要删除这个闹钟吗？')) return;
     const data = loadData();
-    data.alarms = data.alarms.filter(a => (a._id || a.id) !== currentEditingId);
+    data.alarms = (data.alarms || []).filter(a => a.id !== editingAlarmId);
     saveData(data);
     closeAlarmModal();
     renderSavedAlarms();
     syncAlarmsToServiceWorker();
 }
 
-function initAlarmModal() {
-    // 构建时间滚轮
-    buildTimeScroll('hourScroll', 24, 0, v => { selectedHour = v; });
-    buildTimeScroll('minScroll', 60, 0, v => { selectedMin = v; });
-    buildTimeScroll('secScroll', 60, 0, v => { selectedSec = v; });
+/* ============ Agnes AI 对话 ============ */
+async function sendToAI(userMessage) {
+    const chatArea = document.getElementById('chatArea');
+    if (!chatArea) return;
 
-    // 点击遮罩关闭
-    document.getElementById('alarmModalOverlay')?.addEventListener('click', function(e) {
-        if (e.target === this) closeAlarmModal();
-    });
+    const userMsg = document.createElement('div');
+    userMsg.className = 'ai-msg ai-user';
+    userMsg.innerHTML =
+        '<div class="ai-bubble"><p>' + escapeHtml(userMessage) + '</p></div>';
+    chatArea.appendChild(userMsg);
+    chatArea.scrollTop = chatArea.scrollHeight;
 
-    // 关闭按钮
-    document.getElementById('modalCloseBtn')?.addEventListener('click', closeAlarmModal);
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'ai-msg ai-bot';
+    loadingMsg.innerHTML =
+        '<div class="ai-avatar">🤖</div>' +
+        '<div class="ai-bubble"><div class="ai-typing"><span></span><span></span><span></span></div></div>';
+    chatArea.appendChild(loadingMsg);
+    chatArea.scrollTop = chatArea.scrollHeight;
 
-    // 删除按钮
-    document.getElementById('modalDeleteBtn')?.addEventListener('click', deleteAlarm);
-
-    // 保存按钮
-    document.getElementById('modalSaveBtn')?.addEventListener('click', saveAlarm);
-
-    // 重复选项
-    document.querySelectorAll('.repeat-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            alarmRepeatSelected = chip.dataset.repeat;
-            if (alarmRepeatSelected !== 'custom') alarmCustomDays = [];
-            updateRepeatUI();
+    try {
+        const resp = await fetch(AGNES_CONFIG.baseUrl + '/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer ' + AGNES_CONFIG.apiKey
+            },
+            body: JSON.stringify({
+                model: AGNES_CONFIG.model,
+                messages: [
+                    { role: 'system', content: '你是"智律小管家"的智能助手，帮助用户管理时间、养成习惯、规划作息。回答简洁友好，用中文。' },
+                    { role: 'user', content: userMessage }
+                ],
+                temperature: 0.7
+            })
         });
-    });
+        loadingMsg.remove();
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const json = await resp.json();
+        const reply = json.choices?.[0]?.message?.content || '抱歉，暂时无法回答。';
 
-    // 自定义星期
-    document.querySelectorAll('.day-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const day = parseInt(chip.dataset.day, 10);
-            if (alarmCustomDays.includes(day)) {
-                alarmCustomDays = alarmCustomDays.filter(d => d !== day);
-            } else {
-                alarmCustomDays.push(day);
-                alarmCustomDays.sort();
-            }
-            updateRepeatUI();
-        });
-    });
+        const botMsg = document.createElement('div');
+        botMsg.className = 'ai-msg ai-bot';
+        botMsg.innerHTML =
+            '<div class="ai-avatar">🤖</div>' +
+            '<div class="ai-bubble"><p>' + escapeHtml(reply).replace(/\n/g, '<br>') + '</p></div>';
+        chatArea.appendChild(botMsg);
+        chatArea.scrollTop = chatArea.scrollHeight;
 
-    // 震动开关
-    document.getElementById('vibrateToggle')?.addEventListener('click', () => {
-        alarmVibrateEnabled = !alarmVibrateEnabled;
-        updateVibrateUI();
-        if (alarmVibrateEnabled && navigator.vibrate) {
-            navigator.vibrate(100);
-        }
-    });
-
-    // 铃声选项
-    document.querySelectorAll('.ringtone-item').forEach(item => {
-        item.addEventListener('click', () => {
-            alarmToneSelected = item.dataset.tone;
-            updateToneUI();
-            playAlarmSound(alarmToneSelected);
-        });
-    });
-
-    // 滚轮上下按钮（每列时间滚轮）
-    setupTimeScrollButtons('hourScroll', 24, v => { selectedHour = v; });
-    setupTimeScrollButtons('minScroll', 60, v => { selectedMin = v; });
-    setupTimeScrollButtons('secScroll', 60, v => { selectedSec = v; });
+        // 保存对话记录到本地
+        const saved = loadData();
+        saved.memory = saved.memory || [];
+        saved.memory.push({ role: 'user', content: userMessage, time: new Date().toISOString() });
+        saved.memory.push({ role: 'ai', content: reply, time: new Date().toISOString() });
+        saveData(saved);
+    } catch (err) {
+        loadingMsg.remove();
+        const errMsg = document.createElement('div');
+        errMsg.className = 'ai-msg ai-bot';
+        errMsg.innerHTML =
+            '<div class="ai-avatar">⚠️</div>' +
+            '<div class="ai-bubble"><p style="color:#ff6b6b;">AI 连接失败：' + escapeHtml(String(err.message || err)) + '</p></div>';
+        chatArea.appendChild(errMsg);
+    }
 }
 
-function buildTimeScroll(id, max, initial, onChange) {
-    const el = document.getElementById(id);
-    if (!el) return;
-
-    // 上下箭头按钮
-    const upBtn = document.createElement('button');
-    upBtn.className = 'scroll-btn scroll-up';
-    upBtn.textContent = '▲';
-    upBtn.addEventListener('click', () => {
-        if (id === 'hourScroll') { selectedHour = (selectedHour + 1) % 24; onChange(selectedHour); }
-        else if (id === 'minScroll') { selectedMin = (selectedMin + 1) % 60; onChange(selectedMin); }
-        else { selectedSec = (selectedSec + 1) % 60; onChange(selectedSec); }
-        updateTimePickerDisplay();
-    });
-
-    const downBtn = document.createElement('button');
-    downBtn.className = 'scroll-btn scroll-down';
-    downBtn.textContent = '▼';
-    downBtn.addEventListener('click', () => {
-        if (id === 'hourScroll') { selectedHour = (selectedHour - 1 + 24) % 24; onChange(selectedHour); }
-        else if (id === 'minScroll') { selectedMin = (selectedMin - 1 + 60) % 60; onChange(selectedMin); }
-        else { selectedSec = (selectedSec - 1 + 60) % 60; onChange(selectedSec); }
-        updateTimePickerDisplay();
-    });
-
-    el.appendChild(upBtn);
-    el.appendChild(downBtn);
-
-    // 中间显示
-    const inner = el.querySelector('.time-scroll-inner') || (() => {
-        const d = document.createElement('div');
-        d.className = 'time-scroll-inner';
-        el.insertBefore(d, upBtn);
-        return d;
-    })();
-    inner.textContent = String(initial).padStart(2, '0');
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, ch => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[ch]));
 }
 
-function setupTimeScrollButtons(id, max, onChange) {
-    // 已在 buildTimeScroll 中处理
-}
-
-/* ============ 初始化 ============ */
-document.addEventListener('DOMContentLoaded', () => {
-    initIntro();
-    initEventListeners();
-    initCloudSyncEventListeners();
-    initAlarmModal();
-    updateDateDisplay();
-    updateClockDisplay();
-    requestNotificationPermission();
-    renderSavedAlarms();
-    registerServiceWorker();
-    initCloudSync();
-
-    // 每秒更新时间显示
-    setInterval(updateClockDisplay, 1000);
-    // 每秒检查闹钟
-    setInterval(checkAlarms, 1000);
-    // 每 5 分钟同步一次闹钟到 Service Worker
-    setInterval(syncAlarmsToServiceWorker, 5 * 60 * 1000);
-});
-
-/* ============ 云同步模块（跨设备同步闹钟与数据） ============ */
-
-// 默认 Firebase 配置（演示用，推荐你自己的替换为你自己的 Firebase 项目
+/* ============ 云同步（Firebase） ============ */
 const DEFAULT_FIREBASE_CONFIG = {
     apiKey: "AIzaSyD4kF_5154321567897654321",
     authDomain: "zhilv-demo.firebaseapp.com",
@@ -696,15 +742,10 @@ const DEFAULT_FIREBASE_CONFIG = {
     messagingSenderId: "417770321",
     appId: "1:417770321:web:demo1234567890"
 };
-
-// 云同步状态
 let cloudSyncKey = null;
 let firebaseApp = null;
 let firebaseDb = null;
-let lastLocalUpdate = 0;
-let syncingFromCloud = false;
 
-// 加载用户的 Firebase 配置（如果没有则使用默认配置）
 function getFirebaseConfig() {
     try {
         const saved = localStorage.getItem('zhilv_firebase_config');
@@ -712,330 +753,218 @@ function getFirebaseConfig() {
     } catch (e) {}
     return DEFAULT_FIREBASE_CONFIG;
 }
-
-// 保存用户自定义 Firebase 配置
-function saveFirebaseConfig(config) {
-    localStorage.setItem('zhilv_firebase_config', JSON.stringify(config));
+function saveFirebaseConfig(cfg) {
+    localStorage.setItem('zhilv_firebase_config', JSON.stringify(cfg));
 }
-
-// 初始化 Firebase
 function initFirebase() {
     if (firebaseApp) return firebaseApp;
-    if (typeof firebase === 'undefined') {
-        console.log('⚠️ Firebase SDK 未加载');
-        setSyncStatus('⚠️ Firebase 加载失败，请检查网络');
-        return null;
-    }
+    if (typeof firebase === 'undefined') return null;
     try {
-        const config = getFirebaseConfig();
-        if (!config || !config.apiKey || config.apiKey.indexOf('demo') > -1 || !config.databaseURL) {
-            console.log('⚠️ Firebase: 未配置有效的 Firebase 配置');
-            setSyncStatus('⚠️ 未配置 Firebase，仅本地模式');
+        const cfg = getFirebaseConfig();
+        if (!cfg || !cfg.databaseURL || (cfg.apiKey || '').includes('demo')) {
             return null;
         }
-        if (firebase.apps.length > 0) {
-            firebaseApp = firebase.apps[0];
-        } else {
-            firebaseApp = firebase.initializeApp(config);
-        }
+        firebaseApp = firebase.apps.length > 0 ? firebase.apps[0] : firebase.initializeApp(cfg);
         firebaseDb = firebaseApp.database();
-        console.log('✅ Firebase 初始化成功');
         return firebaseApp;
-    } catch (e) {
-        console.log('❌ Firebase 初始化失败', e);
-        setSyncStatus('❌ Firebase 连接失败: ' + (e.message || e));
-        return null;
-    }
+    } catch (e) { return null; }
 }
-
-// 更新同步状态显示
 function setSyncStatus(text) {
-    const statusEl = document.getElementById('cloudSyncStatus');
-    if (statusEl) statusEl.textContent = text;
+    const el = document.getElementById('cloudSyncStatus');
+    if (el) el.textContent = text;
 }
-
-// 获取同步密钥
-function getSyncKey() {
-    return localStorage.getItem('zhilv_sync_key') || '';
-}
-
-// 设置同步密钥
+function getSyncKey() { return localStorage.getItem('zhilv_sync_key') || ''; }
 function setSyncKey(key) {
-    if (!key || key.trim() === '') {
-        alert('请输入同步密钥（任意字符串，如：你的名字+幸运数字');
-        return;
-    }
+    if (!key || !key.trim()) { alert('请输入同步密钥'); return; }
     localStorage.setItem('zhilv_sync_key', key.trim());
     cloudSyncKey = key.trim();
-    console.log('🔑 同步密钥已设置: ' + cloudSyncKey);
-    alert('✅ 同步密钥已设置！现在可以上传/下载数据了。\n\n在其他设备上输入相同的密钥即可同步。');
-    setSyncStatus('🔑 已设置密钥: ' + cloudSyncKey);
-
-    // 自动从云端拉取一次
+    setSyncStatus('🔑 已设置密钥：' + cloudSyncKey);
+    alert('✅ 同步密钥已设置！\n在其他设备输入相同密钥即可同步数据。');
     downloadFromCloud();
 }
-
-// 导出数据（手动备份）
 function exportData() {
     const data = loadData();
     data._exportTime = new Date().toISOString();
-    const jsonStr = JSON.stringify(data, null, 2);
-    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = 'zhilv-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
     a.click();
     URL.revokeObjectURL(url);
-    alert('✅ 数据已导出到下载文件夹！');
+    alert('✅ 数据已导出到下载文件夹');
 }
-
-// 导入数据（从文件恢复）
 function importData(file) {
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         try {
             const data = JSON.parse(e.target.result);
-            if (!data || typeof data !== 'object') throw new Error('数据格式错误');
+            if (!data || typeof data !== 'object') throw new Error('格式错误');
             saveData(data);
             renderSavedAlarms();
-            alert('✅ 数据已成功导入！页面将刷新以应用新数据。');
+            alert('✅ 数据导入成功，即将刷新');
             setTimeout(() => location.reload(), 500);
-        } catch (err) {
-            alert('❌ 导入失败: ' + err.message);
-        }
+        } catch (err) { alert('❌ 导入失败：' + err.message); }
     };
     reader.readAsText(file);
 }
-
-// 上传数据到云端（Firebase Realtime Database）
 function uploadToCloud() {
-    if (!cloudSyncKey) {
-        alert('⚠️ 请先设置同步密钥！');
-        return;
-    }
-
+    if (!cloudSyncKey) { alert('⚠️ 请先设置同步密钥'); return; }
     initFirebase();
-    if (!firebaseDb) {
-        alert('❌ Firebase 未初始化');
-        return;
-    }
-
+    if (!firebaseDb) { alert('❌ Firebase 未连接，请先配置自定义 Firebase'); return; }
     const data = loadData();
     data._syncTime = Date.now();
-
     setSyncStatus('⬆️ 正在上传到云端...');
-
     try {
         const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
         firebaseDb.ref(path).set(data)
             .then(() => {
-                console.log('✅ 数据已上传到云端');
                 setSyncStatus('✅ 已同步到云端 · ' + new Date().toLocaleTimeString());
-                alert('✅ 数据已成功上传到云端！\n其他设备使用相同密钥即可同步此数据。');
-                lastLocalUpdate = Date.now();
+                alert('✅ 数据已上传到云端！');
             })
             .catch(err => {
-                console.error('❌ 上传失败', err);
-                setSyncStatus('❌ 上传失败: ' + (err.message || err));
-                alert('❌ 上传失败: ' + (err.message || err) + '\n\n建议：配置你自己的 Firebase 项目');
+                setSyncStatus('❌ 上传失败：' + (err.message || err));
+                alert('❌ 上传失败：' + (err.message || err));
             });
-    } catch (e) {
-        console.error('❌ 上传异常', e);
-        alert('❌ 上传异常: ' + (e.message || e));
-    }
+    } catch (e) { alert('❌ 上传异常：' + e.message); }
 }
-
-// 从云端下载数据
 function downloadFromCloud() {
-    if (!cloudSyncKey) {
-        alert('⚠️ 请先设置同步密钥！');
-        return;
-    }
-
+    if (!cloudSyncKey) { alert('⚠️ 请先设置同步密钥'); return; }
     initFirebase();
-    if (!firebaseDb) {
-        alert('❌ Firebase 未初始化，请先配置 Firebase');
-        return;
-    }
-
+    if (!firebaseDb) { alert('❌ Firebase 未连接'); return; }
     setSyncStatus('⬇️ 正在从云端下载...');
-
     try {
         const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
-        firebaseDb.ref(path).once('value')
-            .then(snapshot => {
-                const data = snapshot.val();
-                if (!data) {
-                    setSyncStatus('⚠️ 云端暂无数据（密钥: ' + cloudSyncKey);
-                    alert('⚠️ 云端暂无数据（密钥: ' + cloudSyncKey + ')\n请先在其他设备上上传数据。');
-                    return;
-                }
-
-                syncingFromCloud = true;
-                saveData(data);
-                renderSavedAlarms();
-                syncingFromCloud = false;
-                setSyncStatus('✅ 已从云端同步 · ' + new Date().toLocaleTimeString());
-                alert('✅ 数据已从云端下载成功！页面将刷新以应用新数据。');
-                setTimeout(() => location.reload(), 500);
-            })
-            .catch(err => {
-                console.error('❌ 下载失败', err);
-                setSyncStatus('❌ 下载失败: ' + (err.message || err));
-                alert('❌ 下载失败: ' + (err.message || err) + '\n\n建议：配置你自己的 Firebase 项目');
-            });
-    } catch (e) {
-        console.error('❌ 下载异常', e);
-        alert('❌ 下载异常: ' + (e.message || e));
-    }
-}
-
-// 实时监听云端数据变化（实时同步
-let cloudListenerCallback = null;
-let cloudListenerRef = null;
-function startCloudListener() {
-    if (!cloudSyncKey || !firebaseDb) return;
-
-    // 移除旧的监听器
-    if (cloudListenerRef && cloudListenerCallback) {
-        try { cloudListenerRef.off('value', cloudListenerCallback); } catch(e) {}
-    }
-
-    try {
-        const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
-        cloudListenerRef = firebaseDb.ref(path);
-        cloudListenerCallback = function(snapshot) {
-            const data = snapshot.val();
-            if (!data || !data._syncTime) return;
-
-            // 防止循环更新
-            if (syncingFromCloud) return;
-            if (data._syncTime <= lastLocalUpdate) return;
-
-            console.log('🔄 检测到云端数据更新，时间:', data._syncTime);
-            syncingFromCloud = true;
+        firebaseDb.ref(path).once('value').then(snap => {
+            const data = snap.val();
+            if (!data) {
+                setSyncStatus('⚠️ 云端暂无数据');
+                alert('⚠️ 云端暂无数据（密钥：' + cloudSyncKey + '）');
+                return;
+            }
             saveData(data);
             renderSavedAlarms();
-            syncingFromCloud = false;
-            setSyncStatus('🔄 实时同步中 · ' + new Date().toLocaleTimeString());
-        };
-        cloudListenerRef.on('value', cloudListenerCallback);
-    } catch (e) {
-        console.error('❌ 实时监听失败', e);
-    }
+            setSyncStatus('✅ 已从云端同步 · ' + new Date().toLocaleTimeString());
+            alert('✅ 云端数据已同步，即将刷新');
+            setTimeout(() => location.reload(), 500);
+        }).catch(err => {
+            setSyncStatus('❌ 下载失败：' + (err.message || err));
+            alert('❌ 下载失败：' + (err.message || err));
+        });
+    } catch (e) { alert('❌ 下载异常：' + e.message); }
 }
 
-// 初始化云同步功能（在页面加载时调用
 function initCloudSync() {
     const savedKey = getSyncKey();
     if (savedKey) {
         cloudSyncKey = savedKey;
-        setSyncStatus('🔑 已连接密钥: ' + cloudSyncKey);
+        setSyncStatus('🔑 已连接密钥：' + cloudSyncKey);
         initFirebase();
-        if (firebaseDb) {
-            startCloudListener();
-        }
     }
 }
-
-// 更新 saveData，增加云端自动上传
-const originalSaveData = saveData;
-saveData = function(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    lastLocalUpdate = Date.now();
-    // 如果有云同步密钥，自动上传到云端
-    if (cloudSyncKey && firebaseDb) {
-        try {
-            const toUpload = JSON.parse(JSON.stringify(data));
-            toUpload._syncTime = lastLocalUpdate;
-            const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
-            firebaseDb.ref(path).set(toUpload).catch(err => {
-                console.log('自动上传到云端失败', err);
-            });
-        } catch (e) {
-            console.log('自动上传到云端异常', e);
-        }
-    }
-};
-
-/* ============ 云同步按钮事件绑定 ============ */
 function initCloudSyncEventListeners() {
-    // 设置同步密钥
-    const setKeyBtn = document.getElementById('setSyncKeyBtn');
     const keyInput = document.getElementById('syncKeyInput');
-    setKeyBtn?.addEventListener('click', () => {
-        const val = keyInput?.value.trim();
-        setSyncKey(val);
-    });
-    keyInput?.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            setSyncKey(keyInput.value.trim());
-        }
-    });
-    // 如果已有密钥，显示在输入框
     if (keyInput) keyInput.value = getSyncKey();
+    document.getElementById('setSyncKeyBtn')?.addEventListener('click', () => {
+        setSyncKey(keyInput?.value?.trim());
+    });
+    keyInput?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') setSyncKey(e.target.value.trim());
+    });
 
-    // 导出数据
     document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
-
-    // 导入数据
-    const importBtn = document.getElementById('importDataBtn');
-    const importFile = document.getElementById('importFileInput');
-    importBtn?.addEventListener('click', () => importFile?.click());
-    importFile?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) importData(file);
+    const importFileInput = document.getElementById('importFileInput');
+    document.getElementById('importDataBtn')?.addEventListener('click', () => importFileInput?.click());
+    importFileInput?.addEventListener('change', e => {
+        const f = e.target.files?.[0];
+        if (f) importData(f);
         e.target.value = '';
     });
 
-    // 上传到云端
     document.getElementById('uploadCloudBtn')?.addEventListener('click', uploadToCloud);
-
-    // 从云端下载
     document.getElementById('downloadCloudBtn')?.addEventListener('click', downloadFromCloud);
 
-    // 保存 Firebase 配置
-    document.getElementById('saveFirebaseBtn')?.addEventListener('click', () => {
-        const input = document.getElementById('firebaseConfigInput');
-        if (!input) return;
-        try {
-            const config = JSON.parse(input.value.trim());
-            if (!config.apiKey || !config.databaseURL) {
-                alert('❌ Firebase 配置必须包含 apiKey 和 databaseURL');
-                return;
-            }
-            saveFirebaseConfig(config);
-            alert('✅ Firebase 配置已保存！页面将刷新以应用新配置。');
-            setTimeout(() => location.reload(), 500);
-        } catch (e) {
-            alert('❌ 配置格式错误，请粘贴完整的 JSON 配置');
-        }
-    });
-
-    // 如果已有 Firebase 配置，显示在输入框
     const fbInput = document.getElementById('firebaseConfigInput');
-    if (fbInput) {
-        const saved = getFirebaseConfig();
-        if (saved && saved.apiKey && saved.apiKey.indexOf('demo') === -1) {
-            fbInput.value = JSON.stringify(saved, null, 2);
-        }
-    }
+    document.getElementById('saveFirebaseBtn')?.addEventListener('click', () => {
+        if (!fbInput) return;
+        try {
+            const cfg = JSON.parse(fbInput.value.trim());
+            if (!cfg.apiKey || !cfg.databaseURL) throw new Error('缺少 apiKey 或 databaseURL');
+            saveFirebaseConfig(cfg);
+            alert('✅ Firebase 配置已保存，即将刷新');
+            setTimeout(() => location.reload(), 500);
+        } catch (e) { alert('❌ 配置格式错误：' + e.message); }
+    });
 }
 
-/* ============ 初始化 ============ */
-document.addEventListener('DOMContentLoaded', () => {
+/* ============ PWA 安装提示 ============ */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    const installBtn = document.getElementById('installBtn');
+    if (installBtn) {
+        installBtn.style.display = 'inline-block';
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            await deferredPrompt.userChoice;
+            installBtn.style.display = 'none';
+            deferredPrompt = null;
+        });
+    }
+});
+
+/* ============ 导航与 AI 事件 ============ */
+function initGlobalEventListeners() {
+    document.querySelectorAll('.nav-btn').forEach(item => {
+        item.addEventListener('click', () => switchPage(item.dataset.page));
+    });
+
+    document.getElementById('currentDate')?.addEventListener('click', updateDateDisplay);
+
+    // AI 发送
+    const sendBtn = document.getElementById('sendBtn');
+    const aiInput = document.getElementById('aiInput');
+    sendBtn?.addEventListener('click', () => {
+        const msg = aiInput?.value?.trim();
+        if (msg) { sendToAI(msg); aiInput.value = ''; }
+    });
+    aiInput?.addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+            const msg = e.target.value.trim();
+            if (msg) { sendToAI(msg); e.target.value = ''; }
+        }
+    });
+    document.querySelectorAll('.quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const prompt = btn.dataset.prompt;
+            if (prompt) sendToAI(prompt);
+        });
+    });
+}
+
+/* ============ 唯一的启动入口 ============ */
+document.addEventListener('DOMContentLoaded', function () {
+    // 1. UI 初始化
     initIntro();
-    initEventListeners();
-    initCloudSyncEventListeners();
     updateDateDisplay();
-    requestNotificationPermission();
+    updateClockDisplay();
+
+    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 云同步）
+    initGlobalEventListeners();
+    initAlarmListEventDelegation();
+    initAlarmModalListeners();
+    initCloudSyncEventListeners();
+
+    // 3. 数据 / 权限 / SW
     renderSavedAlarms();
+    requestNotificationPermission();
     registerServiceWorker();
     initCloudSync();
 
-    // 每分钟检查闹钟
-    setInterval(checkAlarms, 60000);
-    // 每 5 分钟同步一次闹钟到 Service Worker
-    setInterval(syncAlarmsToServiceWorker, 5 * 60 * 1000);
+    // 4. 定时任务
+    setInterval(updateClockDisplay, 1000);   // 每秒刷新顶部时钟
+    setInterval(checkAlarms, 1000);          // 每秒检查闹钟
+    setInterval(syncAlarmsToServiceWorker, 5 * 60 * 1000); // 每 5 分钟同步到 SW
 });
