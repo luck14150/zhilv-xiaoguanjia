@@ -3331,6 +3331,35 @@ function initMemory3dCarousel() {
     if (!container) return;
     carousel3dInitialized = true;
 
+    // 给每个碎片设置独立的初始旋转角度（CSS变量）
+    const shards = document.querySelectorAll('.memory-book-shard');
+    shards.forEach((shard, i) => {
+        const baseAngle = (i * 47 + Math.floor(Math.random() * 60)) % 360;
+        shard.style.setProperty('--r', `${baseAngle}deg`);
+        // 给每个碎片设置随机大小（覆盖CSS中已设置的）
+        const w = 6 + Math.floor(Math.random() * 16);
+        const h = 8 + Math.floor(Math.random() * 18);
+        shard.style.width = `${w}px`;
+        shard.style.height = `${h}px`;
+    });
+
+    // 给每页书做一点内容变化（每页的文字线条位置和颜色略不同）
+    const pages = document.querySelectorAll('.memory-book-page');
+    const pageColors = [
+        'rgba(139, 90, 43, 0.18)',   // 棕
+        'rgba(80, 100, 150, 0.16)',  // 蓝棕
+        'rgba(150, 80, 60, 0.17)',   // 红棕
+        'rgba(60, 90, 60, 0.15)',    // 绿棕
+    ];
+    pages.forEach((page, i) => {
+        const pseudo = page.querySelector('.page-text');
+        // 通过内联样式影响 ::before 的颜色（用 background-color 覆盖）
+        page.style.setProperty('--line-color', pageColors[i % pageColors.length]);
+        // 为每一页添加一点内容差异：随机的"标题条"效果
+        const topOffset = 20 + Math.floor(Math.random() * 40);
+        page.style.setProperty('--top-offset', `${topOffset}px`);
+    });
+
     // 鼠标移动 => 驱动整个圆环在3D空间旋转
     container.addEventListener('mousemove', (e) => {
         const rect = container.getBoundingClientRect();

@@ -4633,6 +4633,240 @@ body {
 .memory-3d-item:nth-child(5) { transform: rotateY(240deg) translateZ(320px); }
 .memory-3d-item:nth-child(6) { transform: rotateY(300deg) translateZ(320px); }
 
+/* ============ 圆环中心：魔法书 + 局部环境渲染 ============ */
+.memory-book-wrap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 380px;
+    height: 320px;
+    transform: translate(-50%, -50%);
+    perspective: 1400px;
+    pointer-events: none;
+}
+
+/* 中心局部环境光晕（不扩散到圆环外） */
+.memory-book-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 280px;
+    height: 220px;
+    transform: translate(-50%, -50%);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.45) 0%, rgba(59, 130, 246, 0.25) 40%, transparent 70%),
+        radial-gradient(ellipse at 30% 40%, rgba(244, 114, 182, 0.3) 0%, transparent 55%),
+        radial-gradient(ellipse at 70% 60%, rgba(251, 191, 36, 0.25) 0%, transparent 55%);
+    border-radius: 50%;
+    filter: blur(20px);
+    animation: book-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes book-glow-pulse {
+    0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+    50%      { opacity: 1.0; transform: translate(-50%, -50%) scale(1.08); }
+}
+
+/* 彩色碎片（围绕书本飞散） */
+.memory-book-shard {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    opacity: 0.85;
+    box-shadow: 0 0 12px currentColor;
+    animation: shard-float 6s ease-in-out infinite;
+}
+
+.shard-1  { top: 5%;  left: 35%; background: #f472b6; color: #f472b6; transform: rotate(20deg);  animation-delay: 0.0s; width: 10px; height: 16px; }
+.shard-2  { top: 10%; left: 58%; background: #60a5fa; color: #60a5fa; transform: rotate(-15deg); animation-delay: 0.4s; width: 16px; height: 10px; }
+.shard-3  { top: 20%; left: 22%; background: #fbbf24; color: #fbbf24; transform: rotate(45deg);  animation-delay: 0.8s; }
+.shard-4  { top: 25%; left: 72%; background: #a78bfa; color: #a78bfa; transform: rotate(-30deg); animation-delay: 1.2s; width: 8px;  height: 20px; }
+.shard-5  { top: 40%; left: 12%; background: #34d399; color: #34d399; transform: rotate(10deg);  animation-delay: 1.6s; width: 18px; height: 8px;  }
+.shard-6  { top: 45%; left: 82%; background: #fb7185; color: #fb7185; transform: rotate(-45deg); animation-delay: 2.0s; }
+.shard-7  { top: 55%; left: 15%; background: #fcd34d; color: #fcd34d; transform: rotate(60deg);  animation-delay: 2.4s; width: 12px; height: 14px; }
+.shard-8  { top: 60%; left: 80%; background: #c084fc; color: #c084fc; transform: rotate(-20deg); animation-delay: 2.8s; width: 14px; height: 12px; }
+.shard-9  { top: 72%; left: 28%; background: #38bdf8; color: #38bdf8; transform: rotate(30deg);  animation-delay: 3.2s; }
+.shard-10 { top: 78%; left: 62%; background: #fb923c; color: #fb923c; transform: rotate(-10deg); animation-delay: 3.6s; width: 16px; height: 12px; }
+.shard-11 { top: 15%; left: 48%; background: #f9a8d4; color: #f9a8d4; transform: rotate(25deg);  animation-delay: 4.0s; width: 8px;  height: 18px; }
+.shard-12 { top: 85%; left: 45%; background: #fde047; color: #fde047; transform: rotate(-50deg); animation-delay: 4.4s; width: 12px; height: 10px; }
+
+@keyframes shard-float {
+    0%, 100% { transform: translate(0, 0) rotate(var(--r, 0deg)) scale(1);  opacity: 0.7; }
+    25%      { transform: translate(15px, -20px) rotate(calc(var(--r, 0deg) + 45deg)) scale(1.1); opacity: 1.0; }
+    50%      { transform: translate(-10px, -35px) rotate(calc(var(--r, 0deg) - 30deg)) scale(0.9); opacity: 0.8; }
+    75%      { transform: translate(10px, -15px) rotate(calc(var(--r, 0deg) + 15deg)) scale(1.05); opacity: 0.9; }
+}
+
+/* 书本主容器 */
+.memory-book {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 320px;
+    height: 220px;
+    transform: translate(-50%, -50%) rotateX(12deg);
+    transform-style: preserve-3d;
+}
+
+/* 书底/底座（投影） */
+.memory-book-base {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    width: 340px;
+    height: 40px;
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, rgba(15, 12, 40, 0.7) 0%, transparent 100%);
+    border-radius: 50%;
+    filter: blur(12px);
+}
+
+/* 书页基础样式 */
+.memory-book-page {
+    position: absolute;
+    top: 0;
+    width: 160px;
+    height: 220px;
+    background:
+        linear-gradient(90deg,
+            rgba(255, 248, 235, 0.98) 0%,
+            rgba(253, 240, 220, 0.98) 50%,
+            rgba(250, 232, 210, 0.98) 100%);
+    box-shadow:
+        inset 0 0 20px rgba(139, 90, 43, 0.08),
+        0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(139, 90, 43, 0.15);
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+/* 书页上的文字线条（用伪元素做） */
+.memory-book-page::before {
+    content: '';
+    position: absolute;
+    top: var(--top-offset, 25px);
+    left: 18px;
+    right: 18px;
+    bottom: 20px;
+    background-image:
+        repeating-linear-gradient(
+            180deg,
+            transparent 0px,
+            transparent 13px,
+            var(--line-color, rgba(139, 90, 43, 0.18)) 13px,
+            var(--line-color, rgba(139, 90, 43, 0.18)) 14px
+        );
+}
+
+/* 模拟每页顶部的"标题"效果：一条略粗的线 */
+.memory-book-page::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    width: 25px;
+    height: 100%;
+    background: linear-gradient(90deg, rgba(139, 90, 43, 0.22), transparent);
+}
+
+/* 左侧页：位于书的左半边，以右边缘为轴翻页 */
+.page-l {
+    left: 0;
+    transform-origin: right center;
+    border-radius: 4px 0 0 4px;
+}
+
+.page-l::after { right: 0; background: linear-gradient(-90deg, rgba(139, 90, 43, 0.2), transparent); }
+
+/* 右侧页：位于书的右半边，以左边缘为轴翻页 */
+.page-r {
+    left: 160px;
+    transform-origin: left center;
+    border-radius: 0 4px 4px 0;
+}
+
+.page-r::after { left: 0; }
+
+/* ===== 翻页核心动画 ===== */
+/* 左页：从后向左展开，再从左翻向右（跨过书脊），循环 */
+@keyframes page-flip-left {
+    0%    { transform: rotateY(-175deg); opacity: 0.6; }
+    8%    { transform: rotateY(-30deg);  opacity: 0.95; }
+    40%   { transform: rotateY(0deg);    opacity: 1.0; }   /* 停在左侧平展位置 */
+    75%   { transform: rotateY(80deg);   opacity: 0.9; }   /* 开始向右翻 */
+    100%  { transform: rotateY(175deg);  opacity: 0.5; }   /* 翻到右侧消失 */
+}
+
+/* 右页：从后向右展开，再从右翻向左 */
+@keyframes page-flip-right {
+    0%    { transform: rotateY(175deg);  opacity: 0.6; }
+    8%    { transform: rotateY(30deg);   opacity: 0.95; }
+    40%   { transform: rotateY(0deg);    opacity: 1.0; }   /* 停在右侧平展位置 */
+    75%   { transform: rotateY(-80deg);  opacity: 0.9; }   /* 开始向左翻 */
+    100%  { transform: rotateY(-175deg); opacity: 0.5; }   /* 翻到左侧消失 */
+}
+
+/* 左页每页不同的延迟，形成"连续翻页"CG */
+.page-l-1 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) 0.0s infinite; }
+.page-l-2 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -1.0s infinite; opacity: 0.92; }
+.page-l-3 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -2.0s infinite; opacity: 0.88; }
+.page-l-4 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -3.0s infinite; opacity: 0.84; }
+.page-l-5 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -4.0s infinite; opacity: 0.80; }
+
+/* 右页每页不同的延迟，与左页交替翻页 */
+.page-r-1 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -0.5s infinite; }
+.page-r-2 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -1.5s infinite; opacity: 0.92; }
+.page-r-3 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -2.5s infinite; opacity: 0.88; }
+.page-r-4 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -3.5s infinite; opacity: 0.84; }
+.page-r-5 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -4.5s infinite; opacity: 0.80; }
+
+/* 封面/书脊装饰 */
+.memory-book-cover {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 330px;
+    height: 230px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.memory-book-cover::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    width: 8px;
+    height: 230px;
+    transform: translateX(-50%);
+    background:
+        linear-gradient(180deg,
+            rgba(60, 35, 100, 0.95) 0%,
+            rgba(40, 20, 80, 0.95) 50%,
+            rgba(60, 35, 100, 0.95) 100%);
+    box-shadow:
+        inset 1px 0 2px rgba(255, 215, 100, 0.2),
+        inset -1px 0 2px rgba(0, 0, 0, 0.3);
+    border-radius: 1px;
+}
+
+.memory-book-cover::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: 50%;
+    width: 340px;
+    height: 10px;
+    transform: translateX(-50%);
+    background:
+        linear-gradient(180deg,
+            rgba(60, 35, 100, 0.9) 0%,
+            rgba(40, 20, 80, 0.85) 100%);
+    border-radius: 2px 2px 0 0;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
+}
+
 /* 内容层在3D背景之上 */
 .memory-topbar,
 .memory-grid,
