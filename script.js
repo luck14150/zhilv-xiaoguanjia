@@ -3443,9 +3443,52 @@ function deleteCurrentMemoryDetail() {
     closeMemoryDetail();
 }
 
-// 分享记忆（模拟）
+// 分享记忆（完整实现）
 function shareMemoryDetail() {
-    alert('分享功能已触发（实际项目中可调用分享API）');
+    if (!currentViewingMemoryId) return;
+    
+    const memory = memoryData.find(m => m.id === currentViewingMemoryId);
+    if (!memory) return;
+    
+    const title = memory.title;
+    const content = memory.content;
+    const text = `${title}\n\n${content}`;
+    
+    // 优先使用原生分享API
+    if (navigator.share) {
+        navigator.share({
+            title: title,
+            text: text
+        }).then(() => {
+            console.log('分享成功');
+        }).catch((err) => {
+            console.log('分享取消或失败:', err);
+        });
+    } else if (navigator.clipboard) {
+        // 降级到剪贴板
+        navigator.clipboard.writeText(text).then(() => {
+            alert('内容已复制到剪贴板，您可以粘贴分享给好友');
+        }).catch((err) => {
+            console.error('复制失败:', err);
+            // 再降级到手动选择
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                alert('内容已复制到剪贴板');
+            } catch (e) {
+                alert('分享功能暂不可用，您可以手动复制内容');
+            }
+            document.body.removeChild(textarea);
+        });
+    } else {
+        // 最后的降级方案
+        alert('分享功能暂不可用，您可以手动复制内容');
+    }
 }
 
 function isToday(timestamp) {

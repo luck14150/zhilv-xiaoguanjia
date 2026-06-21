@@ -5122,12 +5122,16 @@ body {
     opacity: 0.5;
 }
 
-/* 添加记忆页面：个性/思维导图按钮图标优化 */
+/* 记忆详情页图标样式 */
 .memory-detail-icon-btn .memory-detail-icon {
     line-height: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
 }
 
 .save-btn {
