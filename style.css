@@ -4818,31 +4818,196 @@ body {
     margin: 0;
 }
 
-/* ========= 记忆：添加/详情页面（笔记本风格） ========= */
-.notepad-container {
+.memory-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+}
+
+.memory-modal.show {
+    display: flex;
+}
+
+.memory-modal-content {
+    background: linear-gradient(135deg, #1e1e3e 0%, #181832 100%);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.memory-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.memory-form-group {
+    margin-bottom: 18px;
+}
+
+.memory-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.memory-form-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.memory-form-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 184, 107, 0.4);
+    box-shadow: 0 0 0 3px rgba(255, 184, 107, 0.1);
+}
+
+.memory-form-textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.6;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.memory-form-textarea:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 184, 107, 0.4);
+    box-shadow: 0 0 0 3px rgba(255, 184, 107, 0.1);
+}
+
+.memory-form-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.category-select {
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.category-select:hover {
+    background: rgba(255, 184, 107, 0.1);
+    border-color: rgba(255, 184, 107, 0.3);
+}
+
+.category-select.active {
+    background: linear-gradient(135deg, rgba(255, 184, 107, 0.2), rgba(255, 159, 67, 0.15));
+    border-color: rgba(255, 184, 107, 0.5);
+    color: #ffb86b;
+}
+
+.memory-modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.memory-modal-btn {
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.memory-modal-btn.cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.memory-modal-btn.confirm {
+    background: linear-gradient(135deg, #ffb86b, #ff9f43);
+    border: none;
+    color: #fff;
+}
+
+.memory-modal-btn.confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 184, 107, 0.3);
+}
+
+/* 记忆详情页样式 */
+.memory-detail-container {
     padding: 16px;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    background: #0d1b2a;
 }
 
-.notepad-toolbar {
+.memory-detail-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.notepad-icon-btn {
+.memory-detail-icon-btn {
     background: transparent;
     border: none;
     color: #fff;
     font-size: 20px;
     cursor: pointer;
-    width: 42px;
-    height: 42px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4850,26 +5015,26 @@ body {
     font-family: inherit;
 }
 
-.notepad-icon-btn:hover {
-    background: rgba(255, 255, 255, 0.12);
+.memory-detail-icon-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.notepad-toolbar-right {
+.memory-detail-toolbar-right {
     display: flex;
-    gap: 8px;
+    gap: 10px;
 }
 
-.notepad-paper {
-    background: #f3e9d2;
-    border-radius: 12px;
+.memory-detail-paper {
+    background: linear-gradient(135deg, #f5efe6 0%, #ede3c8 100%);
+    border-radius: 16px;
     padding: 30px 24px;
     flex: 1;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: auto;
 }
 
-.notepad-paper::before {
+.memory-detail-paper::before {
     content: '';
     position: absolute;
     top: 0;
@@ -4879,140 +5044,617 @@ body {
     background-image:
         repeating-linear-gradient(
             transparent,
-            transparent 30px,
-            rgba(139, 90, 43, 0.12) 30px,
-            rgba(139, 90, 43, 0.12) 31px
+            transparent 28px,
+            rgba(139, 90, 43, 0.03) 28px,
+            rgba(139, 90, 43, 0.03) 29px
         );
     pointer-events: none;
-    z-index: 0;
 }
 
-/* 标题：棕色边框 + 白色背景 */
-.notepad-title {
-    position: relative;
-    z-index: 1;
-    font-size: 24px;
-    font-weight: 700;
-    color: #4a3c28;
-    margin: 0 0 8px 0;
-    padding: 12px 16px;
-    background: #fff8ec;
-    border: 2px solid #a0896a;
-    border-radius: 6px;
+.memory-detail-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #7a5d3d;
+    margin: 0 0 16px 0;
     font-family: '楷体', 'KaiTi', serif;
+    letter-spacing: 2px;
+    position: relative;
 }
 
-.notepad-title-input {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    font-size: 24px;
-    font-weight: 700;
-    color: #4a3c28;
-    margin: 0 0 8px 0;
-    padding: 12px 16px;
-    background: #fff8ec;
-    border: 2px solid #a0896a;
-    border-radius: 6px;
+.memory-detail-meta {
+    font-size: 14px;
+    color: #9a7b5c;
+    margin: 0 0 30px 0;
     font-family: '楷体', 'KaiTi', serif;
-    outline: none;
-    box-sizing: border-box;
-}
-
-.notepad-title-input::placeholder {
-    color: #b0a080;
-    font-weight: 400;
-}
-
-.notepad-title-input:focus {
-    border-color: #7a5d3d;
-    box-shadow: 0 0 0 3px rgba(122, 93, 61, 0.15);
-}
-
-/* 日期 */
-.notepad-meta {
+    opacity: 0.8;
     position: relative;
-    z-index: 1;
-    font-size: 13px;
-    color: #8a7050;
-    margin: 0 0 20px 0;
-    font-family: '楷体', 'KaiTi', serif;
-    padding-left: 4px;
 }
 
-/* 内容：棕色边框 + 白色背景 */
-.notepad-content {
-    position: relative;
-    z-index: 1;
+.memory-detail-content {
     font-size: 16px;
-    color: #4a3c28;
+    color: #6b5344;
     line-height: 2;
     font-family: '楷体', 'KaiTi', serif;
     white-space: pre-wrap;
-    padding: 16px;
-    background: #fff8ec;
-    border: 2px solid #a0896a;
-    border-radius: 6px;
-    min-height: 100px;
-}
-
-.notepad-content-input {
     position: relative;
     z-index: 1;
+}
+
+/* 添加记忆页面样式 */
+.memory-add-title {
+    width: 100%;
+    font-size: 28px;
+    font-weight: 600;
+    color: #7a5d3d;
+    margin: 0 0 16px 0;
+    font-family: '楷体', 'KaiTi', serif;
+    letter-spacing: 2px;
+    position: relative;
+    z-index: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+.memory-add-title::placeholder {
+    color: #9a7b5c;
+    opacity: 0.6;
+}
+
+.memory-add-content {
     width: 100%;
     font-size: 16px;
-    color: #4a3c28;
+    color: #6b5344;
     line-height: 2;
     font-family: '楷体', 'KaiTi', serif;
-    background: #fff8ec;
-    border: 2px solid #a0896a;
-    border-radius: 6px;
-    padding: 16px;
+    background: transparent;
+    border: none;
     outline: none;
     resize: none;
     min-height: 200px;
-    box-sizing: border-box;
-}
-
-.notepad-content-input::placeholder {
-    color: #b0a080;
-}
-
-.notepad-content-input:focus {
-    border-color: #7a5d3d;
-    box-shadow: 0 0 0 3px rgba(122, 93, 61, 0.15);
-}
-
-/* 分类选择 */
-.notepad-category {
     position: relative;
     z-index: 1;
+    margin: 16px 0;
+}
+
+.memory-add-content::placeholder {
+    color: #9a7b5c;
+    opacity: 0.5;
+}
+
+.memory-add-category {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 24px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 1;
 }
 
-.notepad-cat-tag {
+.memory-add-category .category-select {
     padding: 6px 14px;
-    background: rgba(139, 90, 43, 0.1);
-    border: 1.5px solid rgba(139, 90, 43, 0.25);
+    background: rgba(139, 90, 43, 0.08);
+    border: 1px solid rgba(139, 90, 43, 0.2);
     border-radius: 16px;
     font-size: 13px;
     color: #7a5d3d;
     cursor: pointer;
     transition: all 0.2s;
-    font-family: '楷体', 'KaiTi', serif;
 }
 
-.notepad-cat-tag:hover {
-    background: rgba(122, 93, 61, 0.2);
-    border-color: rgba(122, 93, 61, 0.4);
+.memory-add-category .category-select:hover {
+    background: rgba(255, 184, 107, 0.2);
+    border-color: rgba(255, 184, 107, 0.4);
 }
 
-.notepad-cat-tag.active {
-    background: linear-gradient(135deg, rgba(122, 93, 61, 0.3), rgba(100, 75, 50, 0.25));
-    border-color: rgba(122, 93, 61, 0.5);
-    color: #4a3c28;
-    font-weight: 600;
+.memory-add-category .category-select.active {
+    background: linear-gradient(135deg, rgba(255, 184, 107, 0.3), rgba(255, 159, 67, 0.2));
+    border-color: rgba(255, 184, 107, 0.5);
+}
+
+.save-btn {
+    color: #4caf50;
+}
+
+.save-btn:hover {
+    background: rgba(76, 175, 80, 0.15);
+}
+
+/* ======== 3D 书架与翻开的书 ======== */
+.memory-scene-3d {
+    perspective: 1800px;
+    margin-top: 40px;
+    padding: 50px 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 80px;
+    min-height: 400px;
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+/* ---- 书架 ---- */
+.bookshelf {
+    position: relative;
+    width: 560px;
+    max-width: 90%;
+    padding: 20px 30px 0 30px;
+    transform-style: preserve-3d;
+    transform: rotateX(5deg) rotateY(-8deg);
+}
+
+.bookshelf::before {
+    content: '';
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    height: 20px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.35), transparent 70%);
+    filter: blur(8px);
+}
+
+.shelf-row {
+    position: relative;
+    height: 130px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 2px;
+    padding: 0 10px;
+    transform-style: preserve-3d;
+}
+
+.shelf-row:not(:last-child) {
+    margin-bottom: 0;
+}
+
+.shelf-board {
+    height: 14px;
+    background: linear-gradient(180deg, #8b6f47 0%, #6b4423 50%, #3d2817 100%);
+    border-radius: 2px;
+    margin: 0 0 25px 0;
+    box-shadow:
+        0 2px 8px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.1),
+        inset 0 -1px 0 rgba(0,0,0,0.3);
+    position: relative;
+    transform-style: preserve-3d;
+    transform: translateZ(3px);
+}
+
+.shelf-board::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 5%;
+    right: 5%;
+    height: 15px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.2), transparent);
+    filter: blur(3px);
+}
+
+/* 单本书（竖立） */
+.book {
+    width: var(--bw, 16px);
+    height: var(--bh, 100px);
+    background: var(--bc, #c9a87c);
+    margin: 0 1px;
+    border-radius: 2px 2px 0 0;
+    box-shadow:
+        inset 2px 0 0 rgba(255,255,255,0.15),
+        inset -1px 0 0 rgba(0,0,0,0.2),
+        inset 0 6px 0 rgba(0,0,0,0.12),
+        inset 0 -6px 0 rgba(0,0,0,0.12),
+        1px 2px 4px rgba(0,0,0,0.35);
+    position: relative;
+    transition: transform 0.3s ease;
+    transform-style: preserve-3d;
+}
+
+.book::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    left: 2px;
+    right: 2px;
+    height: 3px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 1px;
+}
+
+.book::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 2px;
+    right: 2px;
+    height: 3px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 1px;
+}
+
+.book:hover {
+    transform: translateY(-8px) translateZ(10px);
+}
+
+/* 倾斜的书（书签/斜放） */
+.book-bookmark {
+    width: var(--bw, 10px);
+    height: var(--bh, 90px);
+    background: var(--bc, #b8956b);
+    transform: rotateZ(var(--book-rotate, 20deg));
+    transform-origin: bottom center;
+    margin: 0 3px;
+    box-shadow:
+        inset 2px 0 0 rgba(255,255,255,0.15),
+        inset -1px 0 0 rgba(0,0,0,0.2),
+        2px 3px 6px rgba(0,0,0,0.4);
+    border-radius: 2px 2px 0 0;
+}
+
+/* 书堆（平放堆叠） */
+.book-stack {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-end;
+    margin-left: 15px;
+    gap: 3px;
+}
+
+.book-stack::before,
+.book-stack::after {
+    content: '';
+}
+
+.book-stack > *,
+.book-stack::before,
+.book-stack::after {
+    width: 85px;
+    height: 14px;
+    background: linear-gradient(180deg, #d4b896 0%, #a67c52 50%, #6b4423 100%);
+    border-radius: 2px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.3),
+        1px 2px 4px rgba(0,0,0,0.3);
+}
+
+.book-stack::before {
+    background: linear-gradient(180deg, #e8d5b0 0%, #c9a87c 50%, #8b6f47 100%);
+    width: 90px;
+}
+
+.book-stack::after {
+    background: linear-gradient(180deg, #c9a87c 0%, #8b6f47 50%, #4a3420 100%);
+    width: 80px;
+}
+
+/* 另一种书堆 */
+.book-stack-2 {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-end;
+    margin-left: 12px;
+    gap: 3px;
+}
+
+.book-stack-2::before,
+.book-stack-2::after {
+    content: '';
+}
+
+.book-stack-2::before {
+    width: 100px;
+    height: 14px;
+    background: linear-gradient(180deg, #d4b896 0%, #a67c52 50%, #6b4423 100%);
+    border-radius: 2px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.3),
+        1px 2px 4px rgba(0,0,0,0.3);
+}
+
+.book-stack-2::after {
+    width: 95px;
+    height: 14px;
+    background: linear-gradient(180deg, #e8d5b0 0%, #c9a87c 50%, #8b6f47 100%);
+    border-radius: 2px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.3),
+        1px 2px 4px rgba(0,0,0,0.3);
+    margin-left: -10px;
+}
+
+/* 第三种书堆 */
+.book-stack-3 {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-end;
+    margin-left: 15px;
+    gap: 3px;
+}
+
+.book-stack-3::before,
+.book-stack-3::after {
+    content: '';
+}
+
+.book-stack-3::before {
+    width: 95px;
+    height: 14px;
+    background: linear-gradient(180deg, #b8956b 0%, #8b5a3c 50%, #4a3420 100%);
+    border-radius: 2px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.3),
+        1px 2px 4px rgba(0,0,0,0.3);
+}
+
+.book-stack-3::after {
+    width: 88px;
+    height: 14px;
+    margin-left: -8px;
+    background: linear-gradient(180deg, #d4b896 0%, #a67c52 50%, #6b4423 100%);
+    border-radius: 2px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -1px 0 rgba(0,0,0,0.3),
+        1px 2px 4px rgba(0,0,0,0.3);
+}
+
+/* ---- 翻开的书 ---- */
+.open-book {
+    position: relative;
+    width: 380px;
+    max-width: 90%;
+    height: 260px;
+    transform-style: preserve-3d;
+    transform: rotateX(15deg) rotateY(-5deg);
+    margin-top: 30px;
+}
+
+.open-book::before {
+    content: '';
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
+    height: 25px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0.4), transparent 75%);
+    filter: blur(6px);
+}
+
+/* 书脊 */
+.book-spine {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) translateZ(8px);
+    width: 14px;
+    height: 200px;
+    background: linear-gradient(180deg, #4a90a4 0%, #2c6b7d 50%, #1a4a5c 100%);
+    border-radius: 2px;
+    box-shadow:
+        inset 2px 0 0 rgba(255,255,255,0.2),
+        inset -2px 0 0 rgba(0,0,0,0.3),
+        2px 4px 10px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+
+/* 左封面 */
+.book-cover-left {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 180px;
+    height: 200px;
+    background: linear-gradient(135deg, #5ba3b8 0%, #4a90a4 50%, #2c6b7d 100%);
+    border-radius: 3px 12px 12px 3px;
+    transform-origin: right center;
+    transform: translate(-100%, -50%) rotateY(-30deg) translateZ(5px);
+    box-shadow:
+        inset 3px 0 0 rgba(255,255,255,0.15),
+        inset -3px 0 0 rgba(0,0,0,0.25),
+        -5px 8px 20px rgba(0,0,0,0.35);
+    transition: transform 0.8s ease;
+}
+
+.book-cover-left::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 1px;
+    box-shadow:
+        0 40px 0 rgba(255,255,255,0.2),
+        0 80px 0 rgba(255,255,255,0.15),
+        0 120px 0 rgba(255,255,255,0.1);
+}
+
+/* 右封面 */
+.book-cover-right {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 180px;
+    height: 200px;
+    background: linear-gradient(-135deg, #5ba3b8 0%, #4a90a4 50%, #2c6b7d 100%);
+    border-radius: 12px 3px 3px 12px;
+    transform-origin: left center;
+    transform: translate(0, -50%) rotateY(30deg) translateZ(5px);
+    box-shadow:
+        inset -3px 0 0 rgba(255,255,255,0.15),
+        inset 3px 0 0 rgba(0,0,0,0.25),
+        5px 8px 20px rgba(0,0,0,0.35);
+    transition: transform 0.8s ease;
+}
+
+.book-cover-right::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    left: 15%;
+    right: 15%;
+    height: 2px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 1px;
+    box-shadow:
+        0 40px 0 rgba(255,255,255,0.2),
+        0 80px 0 rgba(255,255,255,0.15),
+        0 120px 0 rgba(255,255,255,0.1);
+}
+
+/* 书页（左侧多层） */
+.book-page {
+    position: absolute;
+    top: 50%;
+    width: 170px;
+    height: 190px;
+    background: linear-gradient(180deg, #fefefe 0%, #f8f4e8 100%);
+    border-radius: 2px 8px 8px 2px;
+    box-shadow:
+        inset 2px 0 0 rgba(0,0,0,0.08),
+        inset 0 2px 0 rgba(0,0,0,0.04),
+        inset 0 -2px 0 rgba(0,0,0,0.04),
+        2px 3px 8px rgba(0,0,0,0.15);
+    transition: transform 0.8s ease;
+}
+
+.book-page::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    background-image: repeating-linear-gradient(
+        transparent 0,
+        transparent 14px,
+        rgba(139,90,43,0.08) 14px,
+        rgba(139,90,43,0.08) 15px
+    );
+}
+
+/* 左页 1（最外面） */
+.book-page-left {
+    left: 50%;
+    transform-origin: right center;
+    transform: translate(-100%, -50%) rotateY(-45deg) translateZ(3px);
+}
+
+/* 左页 2 */
+.book-page-left-2 {
+    left: 50%;
+    transform-origin: right center;
+    transform: translate(-100%, -50%) rotateY(-42deg) translateZ(1px);
+    background: linear-gradient(180deg, #fefefe 0%, #f5efe0 100%);
+}
+
+/* 左页 3 */
+.book-page-left-3 {
+    left: 50%;
+    transform-origin: right center;
+    transform: translate(-100%, -50%) rotateY(-39deg) translateZ(-1px);
+    background: linear-gradient(180deg, #fefefe 0%, #f2ebe0 100%);
+}
+
+/* 右页 1 */
+.book-page-right {
+    left: 50%;
+    transform-origin: left center;
+    transform: translate(0, -50%) rotateY(45deg) translateZ(3px);
+}
+
+/* 右页 2 */
+.book-page-right-2 {
+    left: 50%;
+    transform-origin: left center;
+    transform: translate(0, -50%) rotateY(42deg) translateZ(1px);
+    background: linear-gradient(180deg, #fefefe 0%, #f5efe0 100%);
+}
+
+/* 右页 3 */
+.book-page-right-3 {
+    left: 50%;
+    transform-origin: left center;
+    transform: translate(0, -50%) rotateY(39deg) translateZ(-1px);
+    background: linear-gradient(180deg, #fefefe 0%, #f2ebe0 100%);
+}
+
+/* 悬停动效 */
+.open-book:hover .book-cover-left {
+    transform: translate(-100%, -50%) rotateY(-50deg) translateZ(5px);
+}
+
+.open-book:hover .book-cover-right {
+    transform: translate(0, -50%) rotateY(50deg) translateZ(5px);
+}
+
+.open-book:hover .book-page-left {
+    transform: translate(-100%, -50%) rotateY(-60deg) translateZ(3px);
+}
+
+.open-book:hover .book-page-right {
+    transform: translate(0, -50%) rotateY(60deg) translateZ(3px);
+}
+
+.open-book:hover .book-page-left-2 {
+    transform: translate(-100%, -50%) rotateY(-55deg) translateZ(1px);
+}
+
+.open-book:hover .book-page-right-2 {
+    transform: translate(0, -50%) rotateY(55deg) translateZ(1px);
+}
+
+.open-book:hover .book-page-left-3 {
+    transform: translate(-100%, -50%) rotateY(-50deg) translateZ(-1px);
+}
+
+.open-book:hover .book-page-right-3 {
+    transform: translate(0, -50%) rotateY(50deg) translateZ(-1px);
+}
+
+/* 小屏幕响应 */
+@media (max-width: 700px) {
+    .bookshelf {
+        width: 380px;
+    }
+    .shelf-row {
+        height: 100px;
+    }
+    .book {
+        transform: scale(0.8);
+    }
+    .book-stack::before,
+    .book-stack::after,
+    .book-stack-2::before,
+    .book-stack-2::after,
+    .book-stack-3::before,
+    .book-stack-3::after {
+        width: 60px !important;
+    }
+    .open-book {
+        width: 280px;
+        height: 200px;
+    }
+    .book-cover-left,
+    .book-cover-right {
+        width: 130px;
+        height: 160px;
+    }
+    .book-page {
+        width: 122px;
+        height: 152px;
+    }
+    .book-spine {
+        height: 160px;
+    }
 }
