@@ -6675,12 +6675,6 @@ body {
     right: 0;
 }
 
-/* 圆环旋转动画：Y 轴 0 → 360 度循环，让卡片沿圆环滚动 */
-@keyframes rotateRing {
-    from { transform: rotateY(0deg); }
-    to { transform: rotateY(360deg); }
-}
-
 /* 小型圆环（四象限内的圆环） — 根据象限宽度动态设置，让圆环占满象限 */
 .memory-ring-small {
     width: 88%;
@@ -6730,19 +6724,6 @@ body {
     border: 1px solid rgba(139, 90, 43, 0.3);
     border-radius: 6px;
     pointer-events: none;
-}
-
-/* 卡片编号：右上角小数字标识 */
-.memory-ring-small .memory-item .memory-item-index {
-    position: absolute;
-    top: 2px;
-    right: 3px;
-    font-size: 8px;
-    font-weight: 600;
-    color: rgba(0, 0, 0, 0.35);
-    line-height: 1;
-    font-family: 'Georgia', serif;
-    opacity: 0.6;
 }
 
 .memory-ring-small .memory-item h4 {

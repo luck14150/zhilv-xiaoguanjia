@@ -4,41 +4,19 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062123';
+const APP_VERSION = '2026062108';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
-/* ============ Service Worker 安全注册 ============
- * 策略：
- *   1. 先注销所有旧 SW，避免历史残留版本控制请求
- *   2. 等待 1.5 秒后再注册新 SW（确保内联刷新逻辑有足够时间执行）
- *   3. 新 SW 使用 network-first 策略，不会永久缓存 index.html
- * ===================================================== */
-function safeRegisterSW() {
-    if (!('serviceWorker' in navigator)) return;
-    navigator.serviceWorker.getRegistrations().then(function (registrations) {
-        var tasks = registrations.map(function (reg) {
-            try { return reg.unregister(); } catch (e) { return Promise.resolve(); }
-        });
-        if ('caches' in window) {
-            try {
-                window.caches.keys().then(function (names) {
-                    names.forEach(function (n) {
-                        if (n.indexOf('zhilv') !== -1) {
-                            try { window.caches.delete(n); } catch (e) {}
-                        }
-                    });
-                });
-            } catch (e) {}
-        }
-        Promise.all(tasks).then(function () {
-            setTimeout(function () {
-                navigator.serviceWorker.register('./sw.js').then(function (registration) {
-                    console.log('[SW] 注册成功:', registration.scope);
-                }).catch(function (error) {
-                    console.log('[SW] 注册失败:', error);
-                });
-            }, 1500);
-        });
+/* ============ Service Worker 注册 ============ */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js')
+            .then(function(registration) {
+                console.log('[SW] 注册成功:', registration.scope);
+            })
+            .catch(function(error) {
+                console.log('[SW] 注册失败:', error);
+            });
     });
 }
 
@@ -1684,68 +1662,27 @@ function setSyncKey(key) {
     downloadFromCloud();
 }
 function exportData() {
-    // 导出所有数据：主数据 + 记忆数据 + 文件夹列表
-    const mainData = loadData();
-    mainData._exportTime = new Date().toISOString();
-    
-    // 获取记忆数据
-    const memoryRaw = localStorage.getItem('zhilv_memory_data');
-    const memoryList = memoryRaw ? JSON.parse(memoryRaw) : [];
-    
-    // 获取文件夹列表
-    const folderRaw = localStorage.getItem('zhilv_memory_folders');
-    const folderList = folderRaw ? JSON.parse(folderRaw) : [];
-    
-    // 合并所有数据
-    const exportData = {
-        _appVersion: APP_VERSION,
-        _exportTime: new Date().toISOString(),
-        _type: 'zhilv-full-backup',
-        main: mainData,
-        memory: memoryList,
-        folders: folderList
-    };
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const data = loadData();
+    data._exportTime = new Date().toISOString();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'zhilv-full-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    a.download = 'zhilv-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
     a.click();
     URL.revokeObjectURL(url);
-    alert('✅ 全部数据已导出（包含闹钟、作息、记忆、文件夹）');
+    alert('✅ 数据已导出到下载文件夹');
 }
 function importData(file) {
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
-            const allData = JSON.parse(e.target.result);
-            if (!allData || typeof allData !== 'object') throw new Error('格式错误');
-            
-            // 区分新旧格式
-            if (allData._type === 'zhilv-full-backup') {
-                // 新格式：包含主数据、记忆、文件夹
-                if (allData.main) {
-                    saveData(allData.main);
-                }
-                if (allData.memory) {
-                    localStorage.setItem('zhilv_memory_data', JSON.stringify(allData.memory));
-                    memoryData = allData.memory;
-                }
-                if (allData.folders) {
-                    localStorage.setItem('zhilv_memory_folders', JSON.stringify(allData.folders));
-                    FOLDER_CATEGORIES = allData.folders.map(f => f.name);
-                }
-                renderSavedAlarms();
-                renderMemoryList();
-                alert('✅ 全部数据导入成功（闹钟、作息、记忆、文件夹），即将刷新');
-            } else {
-                // 旧格式：只有主数据
-                saveData(allData);
-                renderSavedAlarms();
-                alert('✅ 主数据导入成功，即将刷新');
-            }
-            setTimeout(() => location.reload(), 800);
+            const data = JSON.parse(e.target.result);
+            if (!data || typeof data !== 'object') throw new Error('格式错误');
+            saveData(data);
+            renderSavedAlarms();
+            alert('✅ 数据导入成功，即将刷新');
+            setTimeout(() => location.reload(), 500);
         } catch (err) { alert('❌ 导入失败：' + err.message); }
     };
     reader.readAsText(file);
@@ -2195,21 +2132,6 @@ function initAlarmSubnav() {
 
 /* ============ 唯一的启动入口 ============ */
 document.addEventListener('DOMContentLoaded', function () {
-    // 0. 开场 CG 动画前的强制刷新3次逻辑已在 HTML <head> 内联脚本执行
-    //    此处仅做兜底：清掉可能残留的旧计数器，避免不必要的刷新
-    try {
-        const OLD_KEYS = ['__cg_cache_v2__', '__cg_cache_v3__', '__cg_cache_v4__', '__cg_cache_v5__', '__cg_cache_clear_count__'];
-        for (let ki = 0; ki < OLD_KEYS.length; ki++) {
-            const k = OLD_KEYS[ki];
-            let v = parseInt(localStorage.getItem(k) || '0', 10);
-            if (v >= 3) localStorage.removeItem(k);
-            if (typeof sessionStorage !== 'undefined') {
-                v = parseInt(sessionStorage.getItem(k) || '0', 10);
-                if (v >= 3) sessionStorage.removeItem(k);
-            }
-        }
-    } catch (e) {}
-
     // 1. UI 初始化
     initIntro();
     updateDateDisplay();
@@ -2235,8 +2157,7 @@ document.addEventListener('DOMContentLoaded', function () {
     renderSavedAlarms();
     renderTimerHistory();
     requestNotificationPermission();
-    safeRegisterSW();   // 先注销旧 SW -> 清理缓存 -> 延迟注册新 SW
-    syncAlarmsToServiceWorker();
+    registerServiceWorker();
     initCloudSync();
     
     // 4. 音频初始化（预热 AudioContext，确保自定义铃声可播放）
@@ -4010,8 +3931,7 @@ function renderMemoryList() {
             div.style.setProperty('--rotate', `${angle}deg`);
             div.style.setProperty('--tz', `${radius}px`);
             div.innerHTML =
-                `<span class="memory-item-index">${item.id}</span>
-                 <h4>${escapeHtml(item.title)}</h4>
+                `<h4>${escapeHtml(item.title)}</h4>
                  <p>${escapeHtml(item.content)}</p>
                  <span class="memory-item-date">${formatDateMemory(item.createdAt)}</span>`;
             ringEl.appendChild(div);
