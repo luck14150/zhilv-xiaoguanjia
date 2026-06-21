@@ -5,7 +5,7 @@
  *   3. 后台闹钟检查（尽可能在 SW 存活期间响铃）
  */
 
-const CACHE_VERSION = '2026062112';
+const CACHE_VERSION = '2026062115';
 const CACHE_NAME = 'zhilv-cache-' + CACHE_VERSION;
 const urlsToCache = [
     './',
@@ -14,6 +14,8 @@ const urlsToCache = [
     './script.js',
     './manifest.json'
 ];
+// 关键：index.html 永远不做 cache-first，避免部署新代码后旧页面被永久缓存
+const NEVER_CACHE_FIRST = ['index.html', '/'];
 
 // 闹钟数据（从主线程同步）
 let alarmList = [];
@@ -44,23 +46,43 @@ self.addEventListener('activate', event => {
     );
 });
 
-// ============ 拦截请求：缓存优先，网络更新 ============
+// ============ 拦截请求：网络优先，仅在网络失败时回退到缓存 ============
+// 关键修复：旧版使用 cache-first，导致 index.html 被永久缓存，新代码永远无法生效。
+// 新版：优先从网络获取最新资源，获取成功后写入缓存；网络失败时回退到缓存副本。
 self.addEventListener('fetch', event => {
     if (event.request.method !== 'GET') return;
-    
+
+    const url = new URL(event.request.url);
+    const path = url.pathname.endsWith('/') ? '/' : url.pathname.split('/').pop() || '';
+    const isHtmlNavigation =
+        event.request.mode === 'navigate' ||
+        NEVER_CACHE_FIRST.indexOf(path) !== -1 ||
+        path === '' ||
+        path.endsWith('.html');
+
     event.respondWith(
-        caches.match(event.request).then(cached => {
-            const fetchPromise = fetch(event.request).then(networkResponse => {
+        fetch(event.request)
+            .then(networkResponse => {
+                // 成功获取：写入缓存（非 HTML 资源缓存更久），然后返回
                 if (networkResponse && networkResponse.status === 200) {
+                    const clone = networkResponse.clone();
                     caches.open(CACHE_NAME).then(cache => {
-                        cache.put(event.request, networkResponse.clone());
+                        cache.put(event.request, clone);
                     });
                 }
                 return networkResponse;
-            }).catch(() => cached);
-            
-            return cached ? cached : fetchPromise;
-        })
+            })
+            .catch(() => {
+                // 网络失败：从缓存回退
+                return caches.match(event.request).then(cached => {
+                    if (cached) return cached;
+                    // 导航请求最终兜底到缓存的 index.html
+                    if (isHtmlNavigation) {
+                        return caches.match('./index.html');
+                    }
+                    return Response.error();
+                });
+            })
     );
 });
 

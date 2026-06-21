@@ -4,19 +4,41 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062108';
+const APP_VERSION = '2026062115';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
-/* ============ Service Worker 注册 ============ */
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js')
-            .then(function(registration) {
-                console.log('[SW] 注册成功:', registration.scope);
-            })
-            .catch(function(error) {
-                console.log('[SW] 注册失败:', error);
-            });
+/* ============ Service Worker 安全注册 ============
+ * 策略：
+ *   1. 先注销所有旧 SW，避免历史残留版本控制请求
+ *   2. 等待 1.5 秒后再注册新 SW（确保内联刷新逻辑有足够时间执行）
+ *   3. 新 SW 使用 network-first 策略，不会永久缓存 index.html
+ * ===================================================== */
+function safeRegisterSW() {
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        var tasks = registrations.map(function (reg) {
+            try { return reg.unregister(); } catch (e) { return Promise.resolve(); }
+        });
+        if ('caches' in window) {
+            try {
+                window.caches.keys().then(function (names) {
+                    names.forEach(function (n) {
+                        if (n.indexOf('zhilv') !== -1) {
+                            try { window.caches.delete(n); } catch (e) {}
+                        }
+                    });
+                });
+            } catch (e) {}
+        }
+        Promise.all(tasks).then(function () {
+            setTimeout(function () {
+                navigator.serviceWorker.register('./sw.js').then(function (registration) {
+                    console.log('[SW] 注册成功:', registration.scope);
+                }).catch(function (error) {
+                    console.log('[SW] 注册失败:', error);
+                });
+            }, 1500);
+        });
     });
 }
 
@@ -2172,7 +2194,8 @@ document.addEventListener('DOMContentLoaded', function () {
     renderSavedAlarms();
     renderTimerHistory();
     requestNotificationPermission();
-    registerServiceWorker();
+    safeRegisterSW();   // 先注销旧 SW -> 清理缓存 -> 延迟注册新 SW
+    syncAlarmsToServiceWorker();
     initCloudSync();
     
     // 4. 音频初始化（预热 AudioContext，确保自定义铃声可播放）
