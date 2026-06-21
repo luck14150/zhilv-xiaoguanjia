@@ -4658,26 +4658,50 @@ body {
     flex: 3;
 }
 
-/* 两列卡片网格（米纸手写风格） */
+/* 圆环布局容器 */
 .memory-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 600px;
+    perspective: 1000px;
+    position: relative;
 }
 
+/* 圆环轨道 */
+.memory-ring {
+    width: 400px;
+    height: 400px;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: rotateRing 20s linear infinite;
+}
+
+.memory-ring:hover {
+    animation-play-state: paused;
+}
+
+@keyframes rotateRing {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+}
+
+/* 圆环上的卡片 */
 .memory-item {
+    position: absolute;
+    width: 120px;
+    height: 150px;
     background: #faf6ee;
-    border-radius: 4px;
-    padding: 18px 16px;
+    border-radius: 8px;
+    padding: 12px;
     cursor: pointer;
-    transition: all 0.25s;
-    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px rgba(0, 0, 0, 0.06);
-    min-height: 140px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     color: #2a2a2a;
-    position: relative;
     overflow: hidden;
+    backface-visibility: visible;
 }
 
 .memory-item::before {
@@ -4687,62 +4711,40 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    border: 2px solid #2a2a2a;
-    border-radius: 3px;
-    box-shadow: inset 1px 1px 0 rgba(0, 0, 0, 0.06);
-    pointer-events: none;
-    /* 手绘不规则效果：轻微波浪 */
-    clip-path: polygon(
-        0% 2%, 2% 0%, 50% 1%, 98% 0%, 100% 2%,
-        99% 50%, 100% 98%, 98% 100%, 50% 99%, 2% 100%,
-        0% 98%, 1% 50%
-    );
-}
-
-.memory-item::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image:
-        /* 纸张纹理点 */
-        radial-gradient(circle at 20% 30%, rgba(139, 90, 43, 0.04) 1px, transparent 2px),
-        radial-gradient(circle at 70% 60%, rgba(139, 90, 43, 0.04) 1px, transparent 2px),
-        radial-gradient(circle at 40% 80%, rgba(139, 90, 43, 0.03) 1px, transparent 2px);
+    border: 1px solid rgba(139, 90, 43, 0.3);
+    border-radius: 8px;
     pointer-events: none;
 }
 
 .memory-item:hover {
-    transform: translateY(-2px) rotate(-0.5deg);
-    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.1), 6px 6px 16px rgba(0, 0, 0, 0.08);
+    transform: scale(1.1) translateZ(50px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 10;
 }
 
 .memory-item-title {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: 600;
     color: #1a1a1a;
-    margin: 0 0 12px 0;
-    line-height: 1.4;
+    margin: 0 0 8px 0;
+    line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-family: '楷体', 'KaiTi', serif;
-    letter-spacing: 1px;
     position: relative;
     z-index: 1;
 }
 
 .memory-item-content {
-    font-size: 13px;
-    color: #333;
-    margin: 0 0 14px 0;
-    line-height: 1.7;
+    font-size: 11px;
+    color: #555;
+    margin: 0 0 8px 0;
+    line-height: 1.5;
     flex: 1;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-family: '楷体', 'KaiTi', serif;
@@ -4751,13 +4753,65 @@ body {
 }
 
 .memory-item-date {
-    font-size: 12px;
-    color: #555;
+    font-size: 10px;
+    color: #888;
     font-weight: 500;
-    opacity: 0.85;
     font-family: '楷体', 'KaiTi', serif;
     position: relative;
     z-index: 1;
+}
+
+/* 中心提示文字 */
+.memory-center {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: rgba(255, 184, 107, 0.2);
+    border: 2px dashed rgba(255, 184, 107, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: '楷体', 'KaiTi', serif;
+    color: #ffb86b;
+    font-size: 14px;
+    text-align: center;
+    pointer-events: none;
+}
+
+/* 圆环上的位置计算 */
+.memory-item:nth-child(1) { transform: rotateY(0deg) translateZ(180px); }
+.memory-item:nth-child(2) { transform: rotateY(60deg) translateZ(180px); }
+.memory-item:nth-child(3) { transform: rotateY(120deg) translateZ(180px); }
+.memory-item:nth-child(4) { transform: rotateY(180deg) translateZ(180px); }
+.memory-item:nth-child(5) { transform: rotateY(240deg) translateZ(180px); }
+.memory-item:nth-child(6) { transform: rotateY(300deg) translateZ(180px); }
+
+/* 当只有少量卡片时的备用布局 */
+.memory-grid.small {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    min-height: auto;
+    perspective: none;
+}
+
+.memory-grid.small .memory-item {
+    position: static;
+    width: auto;
+    height: auto;
+    min-height: 140px;
+    transform: none !important;
+    animation: none;
+}
+
+.memory-grid.small .memory-item:hover {
+    transform: translateY(-2px) !important;
+}
+
+.memory-grid.small .memory-ring,
+.memory-grid.small .memory-center {
+    display: none;
 }
 
 /* 悬浮 + 号按钮 */

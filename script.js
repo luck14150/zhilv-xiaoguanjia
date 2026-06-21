@@ -3373,6 +3373,10 @@ function renderMemoryList() {
 
     listEl.innerHTML = '';
 
+    // 根据卡片数量决定布局方式
+    const useRingLayout = filtered.length >= 3;
+    listEl.className = useRingLayout ? 'memory-grid' : 'memory-grid small';
+
     if (filtered.length === 0) {
         if (emptyEl) {
             emptyEl.style.display = 'block';
@@ -3385,16 +3389,44 @@ function renderMemoryList() {
         }
     } else {
         if (emptyEl) emptyEl.style.display = 'none';
-        filtered.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'memory-item';
-            div.setAttribute('onclick', `viewMemory(${item.id})`);
-            div.innerHTML =
-                `<h4 class="memory-item-title">${item.title}</h4>
-                <p class="memory-item-content">${item.content}</p>
-                <div class="memory-item-date">${formatDateMemory(item.createdAt)}</div>`;
-            listEl.appendChild(div);
-        });
+        
+        if (useRingLayout) {
+            // 圆环布局
+            const ringEl = document.createElement('div');
+            ringEl.className = 'memory-ring';
+            
+            // 添加中心提示
+            const centerEl = document.createElement('div');
+            centerEl.className = 'memory-center';
+            centerEl.textContent = '我的记忆';
+            listEl.appendChild(centerEl);
+            
+            // 添加卡片到圆环
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'memory-item';
+                div.setAttribute('onclick', `viewMemory(${item.id})`);
+                div.innerHTML =
+                    `<h4 class="memory-item-title">${item.title}</h4>
+                    <p class="memory-item-content">${item.content}</p>
+                    <div class="memory-item-date">${formatDateMemory(item.createdAt)}</div>`;
+                ringEl.appendChild(div);
+            });
+            
+            listEl.appendChild(ringEl);
+        } else {
+            // 普通网格布局
+            filtered.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'memory-item';
+                div.setAttribute('onclick', `viewMemory(${item.id})`);
+                div.innerHTML =
+                    `<h4 class="memory-item-title">${item.title}</h4>
+                    <p class="memory-item-content">${item.content}</p>
+                    <div class="memory-item-date">${formatDateMemory(item.createdAt)}</div>`;
+                listEl.appendChild(div);
+            });
+        }
     }
 }
 
