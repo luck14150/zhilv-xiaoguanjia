@@ -3719,6 +3719,22 @@ function renderMemoryList() {
             div.setAttribute('onclick', `event.stopPropagation && event.stopPropagation(); viewMemory(${item.id})`);
             div.style.setProperty('--rotate', `${angle}deg`);
             div.style.setProperty('--tz', `${radius}px`);
+
+            // 从记忆数据提取适量文字：标题优先（2-6 字），无标题则用内容首段
+            let cardText = '';
+            if (item.title && item.title.trim()) {
+                const title = item.title.trim();
+                cardText = title.length > 6 ? title.substring(0, 6) + '…' : title;
+            } else if (item.content && item.content.trim()) {
+                const content = item.content.trim();
+                cardText = content.length > 6 ? content.substring(0, 6) + '…' : content;
+            }
+
+            // 有文字时才显示文本区域（无文字时保持空白文档样式）
+            const textArea = cardText
+                ? `<div class="memory-item-text">${escapeHtml(cardText)}</div>`
+                : '<div class="memory-item-text"></div>';
+
             div.innerHTML =
                 `<div class="memory-item-stack">
                      <div class="memory-item-layer layer-back"></div>
@@ -3726,7 +3742,7 @@ function renderMemoryList() {
                      <div class="memory-item-layer layer-main">
                          <div class="memory-item-time">${formatDateMemory(item.createdAt)}</div>
                          <div class="memory-item-tag">${i + 1}</div>
-                         <div class="memory-item-body"></div>
+                         ${textArea}
                      </div>
                  </div>`;
             ringEl.appendChild(div);

@@ -6675,12 +6675,12 @@ body {
     right: 0;
 }
 
-/* 小型圆环（四象限内的圆环） — 根据象限宽度动态设置，让圆环占满象限 */
+/* 小型圆环（四象限内的圆环） — 缩小尺寸，与中央蓝圈保持合理的视觉间隔 */
 .memory-ring-small {
-    width: 92%;
-    height: 92%;
-    max-width: 220px;
-    max-height: 220px;
+    width: 78%;
+    height: 78%;
+    max-width: 180px;
+    max-height: 180px;
     position: relative;
     transform-style: preserve-3d;
     animation: rotateRing 18s linear infinite;
@@ -6778,24 +6778,41 @@ body {
     padding: 1px 4px;
 }
 
-/* 主卡片中间空白主体（模拟文档） */
-.memory-ring-small .memory-item-layer.layer-main .memory-item-body {
+/* 主卡片的文字区域：带横线文档背景 + 标题文字 */
+.memory-ring-small .memory-item-layer.layer-main .memory-item-text {
     flex: 1;
     width: 100%;
     margin-top: 4px;
+    padding: 4px 3px 4px 3px;
+    font-size: 9px;
+    line-height: 12px;
+    color: #3a2f1a;
+    font-family: '楷体', 'KaiTi', serif;
+    text-align: center;
+    font-weight: 500;
     background-image:
         linear-gradient(to bottom, rgba(139, 90, 43, 0.12) 1px, transparent 1px);
-    background-size: 100% 8px;
-    background-position: 0 0;
-    opacity: 0.5;
+    background-size: 100% 12px;
+    background-position: 0 2px;
     border-radius: 2px;
+    word-break: break-all;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    letter-spacing: 0.3px;
 }
 
-/* 中央控制圆圈（黄色外圈 + 蓝色内圆） — 点击切换粉光/白色，控制四圆环 */
+/* 文字内容为空时，保持横线文档效果 */
+.memory-ring-small .memory-item-layer.layer-main .memory-item-text:empty {
+    opacity: 0.6;
+}
+
+/* 中央控制圆圈（黄圈 + 间隔光环 + 蓝色内圆） — 点击切换粉光/白色，控制四圆环 */
 .memory-quad-control {
     position: absolute;
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
     top: 50%;
     left: 50%;
@@ -6803,21 +6820,28 @@ body {
     z-index: 25;
     border: none;
     cursor: pointer;
-    /* 外圈：黄色圆环；内圈：默认蓝色渐变 */
-    background: radial-gradient(circle at 50% 50%, #42a5f5 0%, #42a5f5 55%, #ffc107 58%, #ffc107 70%, transparent 72%);
+    /* 从内到外：蓝色核心 → 黄色圆环 → 间隔光环 → 透明外圈 */
+    background: radial-gradient(circle at 50% 50%,
+        #42a5f5 0%,
+        #42a5f5 44%,
+        #ffc107 47%,
+        #ffc107 55%,
+        rgba(255, 193, 7, 0.25) 58%,
+        rgba(255, 193, 7, 0.25) 63%,
+        transparent 66%);
     padding: 0;
     transition: box-shadow 0.35s ease;
     box-shadow: 0 4px 14px rgba(33, 150, 243, 0.5),
                 0 0 0 3px #ffc107 inset;
 }
 
-/* 内部蓝心（通过子元素实现，方便点击时切换为白色） */
+/* 内部蓝心（通过子元素实现，方便点击时切换为白色） — 尺寸随外圆放大 */
 .memory-quad-control-core {
     position: absolute;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
+    top: 22px;
+    left: 22px;
+    right: 22px;
+    bottom: 22px;
     border-radius: 50%;
     background: radial-gradient(circle at 50% 50%, #64b5f6 0%, #1565c0 100%);
     pointer-events: none;
