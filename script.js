@@ -3430,6 +3430,106 @@ function renderMemoryList() {
     }
 }
 
+// 当前浏览筛选类型
+let currentBrowseFilter = 'all';
+
+// 打开记忆浏览页面（搜索/全部/文件夹/未分类）
+function openMemoryBrowse(filterType) {
+    currentBrowseFilter = filterType;
+    const titleEl = document.getElementById('memoryBrowseTitle');
+    const searchInput = document.getElementById('memoryBrowseSearch');
+    
+    // 设置页面标题
+    if (titleEl) {
+        const titles = {
+            'search': '搜索记忆',
+            'all': '全部记忆',
+            'folder': '文件夹',
+            'uncategorized': '未分类'
+        };
+        titleEl.textContent = titles[filterType] || '全部记忆';
+    }
+    
+    // 如果是搜索模式，清空搜索框并聚焦
+    if (searchInput) {
+        if (filterType === 'search') {
+            searchInput.value = '';
+            searchInput.placeholder = '输入标题或日期搜索...';
+            setTimeout(() => searchInput.focus(), 100);
+        } else {
+            searchInput.value = '';
+            searchInput.placeholder = '搜索标题或日期...';
+        }
+    }
+    
+    // 渲染2D网格
+    renderMemoryBrowseResults();
+    
+    // 切换到浏览页面
+    switchPage('memory-browse');
+}
+
+// 关闭记忆浏览页面，返回记忆主页
+function closeMemoryBrowse() {
+    switchPage('memory');
+    currentBrowseFilter = 'all';
+}
+
+// 渲染2D网格搜索结果
+function renderMemoryBrowseResults() {
+    const listEl = document.getElementById('memoryBrowseList');
+    const emptyEl = document.getElementById('memoryBrowseEmpty');
+    const searchInput = document.getElementById('memoryBrowseSearch');
+    
+    if (!listEl) return;
+    
+    // 先按筛选类型过滤
+    let filtered = memoryData;
+    
+    if (currentBrowseFilter === 'folder') {
+        filtered = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category));
+    } else if (currentBrowseFilter === 'uncategorized') {
+        filtered = memoryData.filter(item => !item.category || !FOLDER_CATEGORIES.includes(item.category));
+    }
+    
+    // 搜索模式或有搜索关键词时，进一步按标题/日期过滤
+    if (currentBrowseFilter === 'search' || (searchInput && searchInput.value.trim())) {
+        if (searchInput && searchInput.value.trim()) {
+            const kw = searchInput.value.trim().toLowerCase();
+            filtered = filtered.filter(item => {
+                const titleMatch = item.title && item.title.toLowerCase().includes(kw);
+                const dateStr = formatDateMemory(item.createdAt);
+                const dateMatch = dateStr && dateStr.includes(kw);
+                return titleMatch || dateMatch;
+            });
+        }
+    }
+    
+    // 按创建时间排序（最新的在前）
+    filtered.sort((a, b) => b.createdAt - a.createdAt);
+    
+    // 清空列表
+    listEl.innerHTML = '';
+    
+    if (filtered.length === 0) {
+        if (emptyEl) emptyEl.style.display = 'block';
+    } else {
+        if (emptyEl) emptyEl.style.display = 'none';
+        
+        // 以2D网格展示
+        filtered.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'memory-browse-card';
+            div.setAttribute('onclick', `viewMemory(${item.id})`);
+            div.innerHTML =
+                `<h4 class="memory-browse-card-title">${item.title}</h4>
+                <p class="memory-browse-card-content">${item.content}</p>
+                <div class="memory-browse-card-date">${formatDateMemory(item.createdAt)}</div>`;
+            listEl.appendChild(div);
+        });
+    }
+}
+
 // 查看记忆详情
 function viewMemory(id) {
     const memory = memoryData.find(m => m.id === id);

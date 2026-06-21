@@ -424,22 +424,22 @@
                     <!-- 顶部工具栏：四个等大按钮（搜索框 + 三个筛选） -->
                     <div class="memory-topbar">
                         <!-- 简化搜索框 -->
-                        <div class="memory-filter-btn memory-search-btn">
+                        <div class="memory-filter-btn memory-search-btn" onclick="openMemoryBrowse('search')">
                             <span class="memory-search-icon">🔍</span>
-                            <input type="text" id="memorySearchInput" class="memory-search-input" placeholder="搜索" oninput="filterMemory(currentMemoryCategory)">
+                            <span class="memory-search-label">搜索</span>
                         </div>
 
                         <!-- 三个筛选按钮（已删除图标） -->
                         <div class="memory-filter" id="memoryFilter">
-                            <button class="memory-filter-btn active" data-filter="all" onclick="filterMemory('all', this)">
+                            <button class="memory-filter-btn" data-filter="all" onclick="openMemoryBrowse('all')">
                                 <span class="memory-filter-num" id="filterAllNum">0</span>
                                 <span class="memory-filter-label">全部</span>
                             </button>
-                            <button class="memory-filter-btn" data-filter="folder" onclick="filterMemory('folder', this)">
+                            <button class="memory-filter-btn" data-filter="folder" onclick="openMemoryBrowse('folder')">
                                 <span class="memory-filter-num" id="filterFolderNum">0</span>
                                 <span class="memory-filter-label">文件夹</span>
                             </button>
-                            <button class="memory-filter-btn" data-filter="uncategorized" onclick="filterMemory('uncategorized', this)">
+                            <button class="memory-filter-btn" data-filter="uncategorized" onclick="openMemoryBrowse('uncategorized')">
                                 <span class="memory-filter-num">
                                     <span id="filterUncategorizedNum">0</span>/<span id="filterTotalNum">0</span>
                                 </span>
@@ -448,7 +448,7 @@
                         </div>
                     </div>
 
-                    <!-- 两列卡片网格（米纸风格） -->
+                    <!-- 圆环布局展示 -->
                     <div class="memory-grid" id="memoryList">
                         <div class="memory-empty" id="memoryEmpty" style="display:none;">
                             <div class="memory-empty-icon">📭</div>
@@ -460,6 +460,32 @@
                     <button class="memory-fab" onclick="showAddMemoryModal()" aria-label="添加记忆">
                         <span class="memory-fab-text">+ 记忆</span>
                     </button>
+                </div>
+            </section>
+
+            <!-- 记忆搜索/浏览页面（独立页面，2D网格） -->
+            <section class="page" id="page-memory-browse">
+                <div class="memory-browse-container">
+                    <!-- 顶部工具栏：返回 + 标题/搜索框 -->
+                    <div class="memory-detail-toolbar">
+                        <button class="memory-detail-icon-btn" onclick="closeMemoryBrowse()" aria-label="返回">
+                            <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <h3 class="memory-browse-title" id="memoryBrowseTitle">全部记忆</h3>
+                        <div class="memory-detail-toolbar-right">
+                            <input type="text" id="memoryBrowseSearch" class="memory-browse-input" placeholder="搜索标题或日期..." oninput="renderMemoryBrowseResults()">
+                        </div>
+                    </div>
+
+                    <!-- 2D网格展示区 -->
+                    <div class="memory-browse-grid" id="memoryBrowseList">
+                        <div class="memory-empty" id="memoryBrowseEmpty" style="display:none;">
+                            <div class="memory-empty-icon">📭</div>
+                            <p>没有找到相关记忆</p>
+                        </div>
+                    </div>
                 </div>
             </section>
 
