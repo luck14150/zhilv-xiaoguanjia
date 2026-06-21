@@ -5070,6 +5070,15 @@ body {
     position: relative;
     z-index: 1;
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.memory-detail-lunar {
+    font-size: 14px;
+    color: #8b7355;
+    font-family: '楷体', 'KaiTi', serif;
 }
 
 .memory-detail-content {
