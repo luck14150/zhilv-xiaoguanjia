@@ -4578,67 +4578,32 @@ body {
     position: relative;
 }
 
-/* 顶部工具栏：搜索框 + 筛选按钮 同一行 */
+/* 顶部工具栏：四个等大按钮同一行 */
 .memory-topbar {
     display: flex;
-    align-items: center;
     gap: 10px;
 }
 
-/* 精简搜索框 */
-.memory-search {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.06);
-    border-radius: 20px;
-    padding: 8px 14px;
-    min-width: 110px;
-}
-
-.memory-search-icon {
-    font-size: 14px;
-    opacity: 0.65;
-    flex-shrink: 0;
-}
-
-.memory-search-input {
-    flex: 1;
-    min-width: 0;
-    background: transparent;
-    border: none;
-    outline: none;
-    color: #fff;
-    font-size: 13px;
-    font-family: inherit;
-}
-
-.memory-search-input::placeholder {
-    color: rgba(255, 255, 255, 0.4);
-}
-
-/* 三个筛选按钮（缩小版，垂直布局） */
-.memory-filter {
-    display: flex;
-    gap: 8px;
-    flex: 1;
-}
-
+/* 统一按钮样式（搜索框按钮 & 筛选按钮共用） */
+.memory-search-btn,
 .memory-filter-btn {
     flex: 1;
+    height: 62px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    padding: 8px 6px;
+    justify-content: center;
+    gap: 4px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
+    box-sizing: border-box;
 }
 
+.memory-search-btn:hover,
 .memory-filter-btn:hover {
     background: rgba(255, 184, 107, 0.08);
     border-color: rgba(255, 184, 107, 0.3);
@@ -4650,11 +4615,29 @@ body {
     border-color: rgba(255, 184, 107, 0.5);
 }
 
-.memory-filter-icon {
-    font-size: 16px;
+/* 搜索框：图标 + 小输入框，垂直排列 */
+.memory-search-icon {
+    font-size: 14px;
+    opacity: 0.75;
     line-height: 1;
 }
 
+.memory-search-input {
+    width: 48px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #fff;
+    font-size: 11px;
+    text-align: center;
+    font-family: inherit;
+}
+
+.memory-search-input::placeholder {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+/* 筛选按钮数字 + 文字 */
 .memory-filter-num {
     font-size: 14px;
     font-weight: 700;
@@ -4666,6 +4649,13 @@ body {
     font-size: 11px;
     color: rgba(255, 255, 255, 0.75);
     font-weight: 600;
+}
+
+/* 三个筛选按钮的容器 */
+.memory-filter {
+    display: flex;
+    gap: 10px;
+    flex: 3;
 }
 
 /* 两列卡片网格（米纸手写风格） */
