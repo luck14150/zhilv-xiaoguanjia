@@ -5,7 +5,7 @@
  *   3. 后台闹钟检查（尽可能在 SW 存活期间响铃）
  */
 
-const CACHE_VERSION = '2026062012';
+const CACHE_VERSION = '2026062110';
 const CACHE_NAME = 'zhilv-cache-' + CACHE_VERSION;
 const urlsToCache = [
     './',
