@@ -4988,15 +4988,18 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    height: 100vh;
+    box-sizing: border-box;
 }
 
 .memory-detail-toolbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding-bottom: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .memory-detail-icon-btn {
@@ -5027,11 +5030,13 @@ body {
 .memory-detail-paper {
     background: linear-gradient(135deg, #f5efe6 0%, #ede3c8 100%);
     border-radius: 16px;
-    padding: 30px 24px;
+    padding: 24px 20px;
     flex: 1;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .memory-detail-paper::before {
@@ -5059,15 +5064,18 @@ body {
     font-family: '楷体', 'KaiTi', serif;
     letter-spacing: 2px;
     position: relative;
+    z-index: 1;
 }
 
 .memory-detail-meta {
     font-size: 14px;
     color: #9a7b5c;
-    margin: 0 0 30px 0;
+    margin: 0 0 20px 0;
     font-family: '楷体', 'KaiTi', serif;
     opacity: 0.8;
     position: relative;
+    z-index: 1;
+    flex-shrink: 0;
 }
 
 .memory-detail-content {
@@ -5077,6 +5085,8 @@ body {
     font-family: '楷体', 'KaiTi', serif;
     white-space: pre-wrap;
     position: relative;
+    z-index: 1;
+    flex: 1;
 }
 
 /* 编辑模式输入框样式 */
@@ -5093,6 +5103,8 @@ body {
     outline: none;
     border-bottom: 2px solid rgba(139, 90, 43, 0.3);
     padding-bottom: 4px;
+    position: relative;
+    z-index: 1;
 }
 
 .memory-detail-title-input:focus {
@@ -5110,9 +5122,12 @@ body {
     border-radius: 8px;
     outline: none;
     resize: none;
-    min-height: 200px;
     padding: 12px;
     box-sizing: border-box;
+    flex: 1;
+    min-height: 100px;
+    position: relative;
+    z-index: 1;
 }
 
 .memory-detail-content-input:focus {
