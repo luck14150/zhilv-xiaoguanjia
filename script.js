@@ -2132,29 +2132,13 @@ function initAlarmSubnav() {
 
 /* ============ 唯一的启动入口 ============ */
 document.addEventListener('DOMContentLoaded', function () {
-    // 0. 开场 CG 动画前：强制刷新3次，清除所有残留缓存（localStorage/sessionStorage/ServiceWorker缓存）
-    const CACHE_CLEAR_KEY = '__cg_cache_clear_count__';
-    const clearCount = parseInt(localStorage.getItem(CACHE_CLEAR_KEY) || '0', 10);
-    if (clearCount < 3) {
-        // 清除所有应用缓存数据
-        localStorage.clear();
-        sessionStorage.clear();
-        if ('caches' in window) {
-            caches.keys().then(names => {
-                names.forEach(name => caches.delete(name));
-            });
-        }
-        // 记录刷新次数并重新加载
-        localStorage.setItem(CACHE_CLEAR_KEY, String(clearCount + 1));
-        // 强制刷新，清除地址栏缓存
-        const url = new URL(location.href);
-        url.searchParams.set('_t', Date.now());
-        location.replace(url.toString());
-        return; // 停止执行，后续由刷新后的页面接管
-    } else {
-        // 已完成3次刷新，清除计数器
-        localStorage.removeItem(CACHE_CLEAR_KEY);
-    }
+    // 0. 开场 CG 动画前的强制刷新3次逻辑已移至 HTML <head> 内联脚本（不受 SW 缓存影响）
+    //    此处仅做兜底：如果 sessionStorage 仍残留计数器，检查并清理
+    try {
+        const k = '__cg_cache_clear_count__';
+        const v = parseInt(sessionStorage.getItem(k) || '0', 10);
+        if (v >= 3) sessionStorage.removeItem(k);
+    } catch (e) {}
 
     // 1. UI 初始化
     initIntro();
