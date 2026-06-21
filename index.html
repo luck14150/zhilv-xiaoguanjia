@@ -463,103 +463,73 @@
                 </div>
             </section>
 
-            <!-- 记忆详情页（独立页面） -->
-            <section class="page" id="page-memory-detail">
-                <div class="memory-detail-container">
-                    <!-- 顶部工具栏：返回 + 分享 + 对话 + 更多 -->
-                    <div class="memory-detail-toolbar">
-                        <button class="memory-detail-icon-btn" onclick="closeMemoryDetail()" aria-label="返回">
-                            <span class="memory-detail-icon">←</span>
+            <!-- 添加/编辑记忆页面（笔记本风格） -->
+            <section class="page" id="page-memory-add">
+                <div class="notepad-container">
+                    <!-- 顶部工具栏 -->
+                    <div class="notepad-toolbar">
+                        <button class="notepad-icon-btn" onclick="closeMemoryAdd()" aria-label="返回">
+                            <span class="notepad-icon">←</span>
                         </button>
-                        <div class="memory-detail-toolbar-right">
-                            <button class="memory-detail-icon-btn" onclick="editCurrentMemoryDetail()" aria-label="编辑">
-                                <span class="memory-detail-icon">✎</span>
+                        <div class="notepad-toolbar-right">
+                            <button class="notepad-icon-btn" onclick="saveNewMemory()" aria-label="保存">
+                                <span class="notepad-icon">✎</span>
                             </button>
-                            <button class="memory-detail-icon-btn" onclick="shareMemoryDetail()" aria-label="分享">
-                                <span class="memory-detail-icon">⤴</span>
+                            <button class="notepad-icon-btn" onclick="shareMemoryDetail()" aria-label="分享">
+                                <span class="notepad-icon">↗</span>
                             </button>
-                            <button class="memory-detail-icon-btn" onclick="deleteCurrentMemoryDetail()" aria-label="删除">
-                                <span class="memory-detail-icon">🗑</span>
+                            <button class="notepad-icon-btn" id="notepad-delete-btn" onclick="deleteCurrentMemoryDetail()" aria-label="删除">
+                                <span class="notepad-icon">🗑</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- 米纸风格内容区域 -->
-                    <div class="memory-detail-paper">
-                        <h2 class="memory-detail-title" id="memoryDetailTitle">标题</h2>
-                        <div class="memory-detail-meta">
+                    <!-- 笔记本内容区 -->
+                    <div class="notepad-paper">
+                        <input type="text" id="memoryAddTitle" class="notepad-title-input" placeholder="标题">
+                        <div class="notepad-meta">
+                            <span id="memoryAddDate">今天</span>
+                        </div>
+                        <textarea id="memoryAddContent" class="notepad-content-input" placeholder="记录你的想法..."></textarea>
+                        <div class="notepad-category">
+                            <span class="notepad-cat-tag" onclick="selectAddMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
+                            <span class="notepad-cat-tag" onclick="selectAddMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
+                            <span class="notepad-cat-tag" onclick="selectAddMemoryCategory(this, '工作总结')">💼 工作总结</span>
+                            <span class="notepad-cat-tag" onclick="selectAddMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
+                            <span class="notepad-cat-tag" onclick="selectAddMemoryCategory(this, '其他')">📝 其他</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 记忆详情页（笔记本风格 - 查看模式） -->
+            <section class="page" id="page-memory-detail">
+                <div class="notepad-container">
+                    <!-- 顶部工具栏 -->
+                    <div class="notepad-toolbar">
+                        <button class="notepad-icon-btn" onclick="closeMemoryDetail()" aria-label="返回">
+                            <span class="notepad-icon">←</span>
+                        </button>
+                        <div class="notepad-toolbar-right">
+                            <button class="notepad-icon-btn" onclick="editCurrentMemoryDetail()" aria-label="编辑">
+                                <span class="notepad-icon">✎</span>
+                            </button>
+                            <button class="notepad-icon-btn" onclick="shareMemoryDetail()" aria-label="分享">
+                                <span class="notepad-icon">↗</span>
+                            </button>
+                            <button class="notepad-icon-btn" onclick="deleteCurrentMemoryDetail()" aria-label="删除">
+                                <span class="notepad-icon">🗑</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 笔记本内容区 -->
+                    <div class="notepad-paper">
+                        <div class="notepad-title" id="memoryDetailTitle">标题</div>
+                        <div class="notepad-meta">
                             <span id="memoryDetailDate">—</span>
                         </div>
-                        <div class="memory-detail-content" id="memoryDetailContent">内容</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 添加记忆页面（独立页面，与详情页风格一致） -->
-            <section class="page" id="page-memory-add">
-                <div class="memory-detail-container">
-                    <!-- 顶部工具栏：返回 + 保存 -->
-                    <div class="memory-detail-toolbar">
-                        <button class="memory-detail-icon-btn" onclick="closeMemoryAdd()" aria-label="返回">
-                            <span class="memory-detail-icon">←</span>
-                        </button>
-                        <div class="memory-detail-toolbar-right">
-                            <button class="memory-detail-icon-btn save-btn" onclick="saveNewMemory()" aria-label="保存">
-                                <span class="memory-detail-icon">✓</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 米纸风格编辑区域 -->
-                    <div class="memory-detail-paper">
-                        <input type="text" id="memoryAddTitle" class="memory-add-title" placeholder="给这条记忆起个标题...">
-                        <div class="memory-detail-meta">
-                            <span id="memoryAddDate">新记忆</span>
-                        </div>
-                        <textarea id="memoryAddContent" class="memory-add-content" placeholder="记录你的想法、心得、笔记..."></textarea>
-                        <div class="memory-add-category">
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '工作总结')">💼 工作总结</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '其他')">📝 其他</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 记忆库页面的添加/编辑弹窗 -->
-            <section class="page" id="page-memory-modal-section" style="display:none;">
-                <div class="memory-modal" id="memoryModal" onclick="closeMemoryModal(event)">
-                    <div class="memory-modal-content" onclick="event.stopPropagation()">
-                        <div class="memory-modal-title" id="memoryModalTitle">添加新记忆</div>
-
-                        <div class="memory-form-group">
-                            <label class="memory-form-label">标题</label>
-                            <input type="text" id="memoryTitleInput" class="memory-form-input" placeholder="给这条记忆起个标题...">
-                        </div>
-
-                        <div class="memory-form-group">
-                            <label class="memory-form-label">内容</label>
-                            <textarea id="memoryContentInput" class="memory-form-textarea" placeholder="记录你的想法、心得、笔记..."></textarea>
-                        </div>
-
-                        <div class="memory-form-group">
-                            <label class="memory-form-label">分类</label>
-                            <div class="memory-form-categories" id="memoryCategorySelect">
-                                <span class="category-select" onclick="selectMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
-                                <span class="category-select" onclick="selectMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
-                                <span class="category-select" onclick="selectMemoryCategory(this, '工作总结')">💼 工作总结</span>
-                                <span class="category-select" onclick="selectMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
-                                <span class="category-select" onclick="selectMemoryCategory(this, '其他')">📝 其他</span>
-                            </div>
-                        </div>
-
-                        <div class="memory-modal-buttons">
-                            <button class="memory-modal-btn cancel" id="memoryModalDeleteBtn" onclick="deleteCurrentMemory()" style="display:none;">删除</button>
-                            <button class="memory-modal-btn cancel" onclick="document.getElementById('memoryModal').classList.remove('show')">取消</button>
-                            <button class="memory-modal-btn confirm" onclick="saveMemory()">保存</button>
-                        </div>
+                        <div class="notepad-content" id="memoryDetailContent">内容</div>
                     </div>
                 </div>
             </section>
