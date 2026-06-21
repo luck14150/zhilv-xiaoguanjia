@@ -3334,6 +3334,21 @@ function renderMemoryList() {
     const emptyEl = document.getElementById('memoryEmpty');
     if (!listEl) return;
 
+    // 先计算统计数字（搜索前的总数）
+    const total = memoryData.length;
+    const folderCount = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category)).length;
+    const uncategorizedCount = total - folderCount;
+
+    // 更新三个筛选按钮的统计数字
+    const allNumEl = document.getElementById('filterAllNum');
+    const folderNumEl = document.getElementById('filterFolderNum');
+    const uncNumEl = document.getElementById('filterUncategorizedNum');
+    const totalNumEl = document.getElementById('filterTotalNum');
+    if (allNumEl) allNumEl.textContent = total;
+    if (folderNumEl) folderNumEl.textContent = folderCount;
+    if (uncNumEl) uncNumEl.textContent = uncategorizedCount;
+    if (totalNumEl) totalNumEl.textContent = total;
+
     // 1. 先按筛选类型过滤
     let filtered = memoryData;
     if (currentMemoryCategory === 'folder') {

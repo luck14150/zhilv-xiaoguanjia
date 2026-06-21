@@ -4615,45 +4615,59 @@ body {
     color: rgba(255, 255, 255, 0.4);
 }
 
-/* 筛选标签（药丸式） */
+/* 筛选标签（图标+数字+文字垂直布局） */
 .memory-filter {
     display: flex;
     gap: 10px;
-    justify-content: flex-start;
+    justify-content: center;
     margin: 2px 0 4px;
 }
 
 .memory-filter-btn {
-    padding: 10px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 22px;
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 14px;
-    font-weight: 600;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
 }
 
 .memory-filter-btn:hover {
-    background: rgba(255, 184, 107, 0.12);
+    background: rgba(255, 184, 107, 0.08);
     border-color: rgba(255, 184, 107, 0.3);
-    color: #fff;
+    transform: translateY(-1px);
 }
 
 .memory-filter-btn.active {
-    background: rgba(255, 184, 107, 0.2);
+    background: linear-gradient(135deg, rgba(255, 184, 107, 0.2), rgba(255, 159, 67, 0.12));
     border-color: rgba(255, 184, 107, 0.5);
+}
+
+.memory-filter-icon {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.memory-filter-num {
+    font-size: 20px;
+    font-weight: 700;
     color: #ffb86b;
+    line-height: 1;
 }
 
 .memory-filter-label {
-    font-size: 14px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.75);
     font-weight: 600;
 }
 
-/* 两列卡片网格 */
+/* 两列卡片网格（米纸手写风格） */
 .memory-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -4661,52 +4675,75 @@ body {
 }
 
 .memory-item {
-    background: linear-gradient(135deg, #f2e2b8 0%, #e9d39e 100%);
+    background: linear-gradient(135deg, #f5efe6 0%, #ede3c8 50%, #f0e6d0 100%);
     border-radius: 20px;
-    padding: 16px 14px;
+    padding: 18px 16px;
     cursor: pointer;
     transition: all 0.25s;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-    min-height: 120px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-height: 140px;
     display: flex;
     flex-direction: column;
-    color: #6b4a1f;
+    color: #5c4033;
+    position: relative;
+    overflow: hidden;
+}
+
+.memory-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        repeating-linear-gradient(
+            transparent,
+            transparent 24px,
+            rgba(139, 90, 43, 0.03) 24px,
+            rgba(139, 90, 43, 0.03) 25px
+        );
+    pointer-events: none;
 }
 
 .memory-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 
 .memory-item-title {
-    font-size: 16px;
-    font-weight: 700;
-    color: #8b5a2b;
-    margin: 0 0 10px 0;
-    line-height: 1.3;
+    font-size: 18px;
+    font-weight: 600;
+    color: #7a5d3d;
+    margin: 0 0 12px 0;
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    font-family: '楷体', 'KaiTi', serif;
+    letter-spacing: 1px;
 }
 
 .memory-item-content {
-    font-size: 12px;
-    color: #8b6b3b;
-    margin: 0 0 12px 0;
-    line-height: 1.5;
+    font-size: 13px;
+    color: #6b5344;
+    margin: 0 0 14px 0;
+    line-height: 1.7;
     flex: 1;
     display: -webkit-box;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    font-family: '楷体', 'KaiTi', serif;
 }
 
 .memory-item-date {
-    font-size: 11px;
-    color: #a58555;
-    font-weight: 600;
-    opacity: 0.85;
+    font-size: 12px;
+    color: #9a7b5c;
+    font-weight: 500;
+    opacity: 0.9;
+    font-family: '楷体', 'KaiTi', serif;
 }
 
 /* 悬浮 + 号按钮 */
