@@ -4569,7 +4569,7 @@ body {
     font-weight: 600;
 }
 
-/* ============ 记忆库页�?============ */
+/* ============ 记忆库页面 ============ */
 .memory-container {
     display: flex;
     flex-direction: column;
@@ -4578,36 +4578,38 @@ body {
     position: relative;
 }
 
-.memory-page-title {
-    font-size: 36px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: 2px;
-    margin: 4px 0 4px 4px;
-}
-
-/* 搜索框 */
-.memory-search {
+/* 顶部工具栏：搜索框 + 筛选按钮 同一行 */
+.memory-topbar {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+
+/* 精简搜索框 */
+.memory-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: rgba(255, 255, 255, 0.06);
-    border-radius: 28px;
-    padding: 12px 18px;
+    border-radius: 20px;
+    padding: 8px 14px;
+    min-width: 110px;
 }
 
 .memory-search-icon {
-    font-size: 16px;
-    opacity: 0.6;
+    font-size: 14px;
+    opacity: 0.65;
+    flex-shrink: 0;
 }
 
 .memory-search-input {
     flex: 1;
+    min-width: 0;
     background: transparent;
     border: none;
     outline: none;
     color: #fff;
-    font-size: 15px;
+    font-size: 13px;
     font-family: inherit;
 }
 
@@ -4615,12 +4617,11 @@ body {
     color: rgba(255, 255, 255, 0.4);
 }
 
-/* 筛选标签（图标+数字+文字垂直布局） */
+/* 三个筛选按钮（缩小版，垂直布局） */
 .memory-filter {
     display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin: 2px 0 4px;
+    gap: 8px;
+    flex: 1;
 }
 
 .memory-filter-btn {
@@ -4628,11 +4629,11 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
-    padding: 12px 10px;
+    gap: 3px;
+    padding: 8px 6px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
+    border-radius: 12px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
@@ -4650,19 +4651,19 @@ body {
 }
 
 .memory-filter-icon {
-    font-size: 22px;
+    font-size: 16px;
     line-height: 1;
 }
 
 .memory-filter-num {
-    font-size: 20px;
+    font-size: 14px;
     font-weight: 700;
     color: #ffb86b;
     line-height: 1;
 }
 
 .memory-filter-label {
-    font-size: 13px;
+    font-size: 11px;
     color: rgba(255, 255, 255, 0.75);
     font-weight: 600;
 }

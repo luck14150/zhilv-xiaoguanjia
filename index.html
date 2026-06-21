@@ -421,34 +421,34 @@
             <!-- 记忆库页面 -->
             <section class="page" id="page-memory">
                 <div class="memory-container">
-                    <!-- 页面标题 -->
-                    <div class="memory-page-title">笔记</div>
+                    <!-- 顶部工具栏：搜索框 + 三个筛选按钮（同一行） -->
+                    <div class="memory-topbar">
+                        <!-- 精简搜索框 -->
+                        <div class="memory-search">
+                            <span class="memory-search-icon">🔍</span>
+                            <input type="text" id="memorySearchInput" class="memory-search-input" placeholder="搜索" oninput="filterMemory(currentMemoryCategory)">
+                        </div>
 
-                    <!-- 搜索框 -->
-                    <div class="memory-search">
-                        <span class="memory-search-icon">🔍</span>
-                        <input type="text" id="memorySearchInput" class="memory-search-input" placeholder="搜索笔记" oninput="filterMemory(currentMemoryCategory)">
-                    </div>
-
-                    <!-- 筛选标签：全部 / 文件夹 / 未分类（带数量显示） -->
-                    <div class="memory-filter" id="memoryFilter">
-                        <button class="memory-filter-btn active" data-filter="all" onclick="filterMemory('all', this)">
-                            <span class="memory-filter-icon">📄</span>
-                            <span class="memory-filter-num" id="filterAllNum">0</span>
-                            <span class="memory-filter-label">全部</span>
-                        </button>
-                        <button class="memory-filter-btn" data-filter="folder" onclick="filterMemory('folder', this)">
-                            <span class="memory-filter-icon">📁</span>
-                            <span class="memory-filter-num" id="filterFolderNum">0</span>
-                            <span class="memory-filter-label">文件夹</span>
-                        </button>
-                        <button class="memory-filter-btn" data-filter="uncategorized" onclick="filterMemory('uncategorized', this)">
-                            <span class="memory-filter-icon">📋</span>
-                            <span class="memory-filter-num">
-                                <span id="filterUncategorizedNum">0</span>/<span id="filterTotalNum">0</span>
-                            </span>
-                            <span class="memory-filter-label">未分类</span>
-                        </button>
+                        <!-- 三个缩小的筛选按钮 -->
+                        <div class="memory-filter" id="memoryFilter">
+                            <button class="memory-filter-btn active" data-filter="all" onclick="filterMemory('all', this)">
+                                <span class="memory-filter-icon">📄</span>
+                                <span class="memory-filter-num" id="filterAllNum">0</span>
+                                <span class="memory-filter-label">全部</span>
+                            </button>
+                            <button class="memory-filter-btn" data-filter="folder" onclick="filterMemory('folder', this)">
+                                <span class="memory-filter-icon">📁</span>
+                                <span class="memory-filter-num" id="filterFolderNum">0</span>
+                                <span class="memory-filter-label">文件夹</span>
+                            </button>
+                            <button class="memory-filter-btn" data-filter="uncategorized" onclick="filterMemory('uncategorized', this)">
+                                <span class="memory-filter-icon">📋</span>
+                                <span class="memory-filter-num">
+                                    <span id="filterUncategorizedNum">0</span>/<span id="filterTotalNum">0</span>
+                                </span>
+                                <span class="memory-filter-label">未分类</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- 两列卡片网格（米纸风格） -->
