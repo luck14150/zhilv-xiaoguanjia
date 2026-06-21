@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062120';
+const APP_VERSION = '2026062121';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 安全注册 ============
@@ -1684,27 +1684,68 @@ function setSyncKey(key) {
     downloadFromCloud();
 }
 function exportData() {
-    const data = loadData();
-    data._exportTime = new Date().toISOString();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    // 导出所有数据：主数据 + 记忆数据 + 文件夹列表
+    const mainData = loadData();
+    mainData._exportTime = new Date().toISOString();
+    
+    // 获取记忆数据
+    const memoryRaw = localStorage.getItem('zhilv_memory_data');
+    const memoryList = memoryRaw ? JSON.parse(memoryRaw) : [];
+    
+    // 获取文件夹列表
+    const folderRaw = localStorage.getItem('zhilv_memory_folders');
+    const folderList = folderRaw ? JSON.parse(folderRaw) : [];
+    
+    // 合并所有数据
+    const exportData = {
+        _appVersion: APP_VERSION,
+        _exportTime: new Date().toISOString(),
+        _type: 'zhilv-full-backup',
+        main: mainData,
+        memory: memoryList,
+        folders: folderList
+    };
+    
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'zhilv-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    a.download = 'zhilv-full-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
     a.click();
     URL.revokeObjectURL(url);
-    alert('✅ 数据已导出到下载文件夹');
+    alert('✅ 全部数据已导出（包含闹钟、作息、记忆、文件夹）');
 }
 function importData(file) {
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
-            const data = JSON.parse(e.target.result);
-            if (!data || typeof data !== 'object') throw new Error('格式错误');
-            saveData(data);
-            renderSavedAlarms();
-            alert('✅ 数据导入成功，即将刷新');
-            setTimeout(() => location.reload(), 500);
+            const allData = JSON.parse(e.target.result);
+            if (!allData || typeof allData !== 'object') throw new Error('格式错误');
+            
+            // 区分新旧格式
+            if (allData._type === 'zhilv-full-backup') {
+                // 新格式：包含主数据、记忆、文件夹
+                if (allData.main) {
+                    saveData(allData.main);
+                }
+                if (allData.memory) {
+                    localStorage.setItem('zhilv_memory_data', JSON.stringify(allData.memory));
+                    memoryData = allData.memory;
+                }
+                if (allData.folders) {
+                    localStorage.setItem('zhilv_memory_folders', JSON.stringify(allData.folders));
+                    FOLDER_CATEGORIES = allData.folders.map(f => f.name);
+                }
+                renderSavedAlarms();
+                renderMemoryList();
+                alert('✅ 全部数据导入成功（闹钟、作息、记忆、文件夹），即将刷新');
+            } else {
+                // 旧格式：只有主数据
+                saveData(allData);
+                renderSavedAlarms();
+                alert('✅ 主数据导入成功，即将刷新');
+            }
+            setTimeout(() => location.reload(), 800);
         } catch (err) { alert('❌ 导入失败：' + err.message); }
     };
     reader.readAsText(file);
