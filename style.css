@@ -4615,6 +4615,12 @@ body {
     border-color: rgba(255, 184, 107, 0.5);
 }
 
+/* 信息展示按钮（不可点击） */
+.memory-info-btn {
+    cursor: default;
+    pointer-events: none;
+}
+
 /* 搜索框：图标 + 小标签，垂直排列 */
 .memory-search-icon {
     font-size: 18px;
