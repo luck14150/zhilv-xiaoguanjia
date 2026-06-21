@@ -4599,12 +4599,13 @@ body {
 
 .memory-3d-carousel {
     position: absolute;
-    /* 俯视图关键：rotateX(75deg) 让整个圆环从前视图转为俯视图
-       75deg = 从正上方75度的位置看下去，环的平面几乎垂直于屏幕 */
     top: 50%;
     left: 50%;
     transform-style: preserve-3d;
-    transform: translate(-50%, -50%) rotateX(75deg) rotateY(0deg);
+    /* --memory-scale：整体缩放（书+图一起变）
+       rotateX(75deg)：俯视图角度
+       rotateY(...)：鼠标驱动的水平旋转，由 JS 设置 --memory-rotY */
+    transform: translate(-50%, -50%) scale(var(--memory-scale, 1)) rotateX(75deg) rotateY(var(--memory-rotY, 0deg));
     will-change: transform;
     transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -4627,14 +4628,10 @@ body {
 }
 
 /* 6张图片在圆环上，每张相隔 360/6 = 60°，向外推 320px
-   在俯视图 rotateX(75deg) 下：
-   - rotateY(0°)   = 屏幕正前方（图片在屏幕最下方）
-   - rotateY(60°)  = 右前方
-   - rotateY(120°) = 右后方
-   - rotateY(180°) = 屏幕正后方（图片在屏幕最上方）
-   - rotateY(240°) = 左后方
-   - rotateY(300°) = 左前方（图片在屏幕左下方）
-   书本位于圆环中心，视觉上被图片包围 */
+   关键点：书位于 translateZ(0) 的原点
+   图片分布在 translateZ(320px) 的外圈
+   在俯视图 + 3D 空间中，正面的图片 translateZ 正值 = 浮在书前面
+   背面的图片 translateZ 负值 = 藏在书后面 */
 .memory-3d-item:nth-child(1) { transform: rotateY(0deg)   translateZ(320px); }
 .memory-3d-item:nth-child(2) { transform: rotateY(60deg)  translateZ(320px); }
 .memory-3d-item:nth-child(3) { transform: rotateY(120deg) translateZ(320px); }
@@ -4642,17 +4639,19 @@ body {
 .memory-3d-item:nth-child(5) { transform: rotateY(240deg) translateZ(320px); }
 .memory-3d-item:nth-child(6) { transform: rotateY(300deg) translateZ(320px); }
 
-/* ============ 圆环中心：魔法书（俯视图下书本平摊，书页从中心向两侧翻开） ============ */
+/* ============ 圆环中心：魔法书（counter-rotate 抵消父级旋转，保持正面朝上） ============ */
 .memory-book-wrap {
-    /* 俯视图下，书需要 counter-rotate(-75deg) 让书页正面朝上（平行于圆环平面）
-       书页的 rotateY 翻页动画在俯视图中变成"从中心向外翻开"的效果 */
+    /* 放在 carousel 内部原点 —— 即 top:50% left:50% 经过 translate(-50%,-50%) 后 = 中心
+       共享 carousel 的 scale（整体缩放），但 counter-rotate 来保持正对观察者 */
     position: absolute;
     top: 50%;
     left: 50%;
     width: 320px;
     height: 280px;
-    transform: translate(-50%, -50%);
-    perspective: 1200px;
+    /* 抵消父级：先 translate 到中心，
+       再 rotateY(-父角度) + rotateX(-75deg)，让书始终正对屏幕 */
+    transform: translate(-50%, -50%) rotateY(var(--book-rotY, 0deg)) rotateX(-75deg);
+    transform-style: preserve-3d;
     pointer-events: none;
 }
 
@@ -4709,14 +4708,14 @@ body {
     75%      { transform: translate(10px, -15px) rotate(calc(var(--r, 0deg) + 15deg)) scale(1.05); opacity: 0.9; }
 }
 
-/* 书本主容器（俯视图：rotateX(-75deg) 抵消 carousel 的 75deg，让书页正面朝上） */
+/* 书本主容器（book-wrap 已经 counter-rotate 了父级，书本身只需居中定位） */
 .memory-book {
     position: absolute;
     top: 50%;
     left: 50%;
     width: 320px;
     height: 220px;
-    transform: translate(-50%, -50%) rotateX(-75deg);
+    transform: translate(-50%, -50%);
     transform-style: preserve-3d;
 }
 

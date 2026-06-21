@@ -3316,14 +3316,15 @@ let currentViewingMemoryId = null;
    - 中景 ~ 15-30 像素（中）
    - 近景 ~ 30-50 像素（快）
 */
-/* ============== 3D图片环绕：鼠标驱动整个圆环 rotateX / rotateY ============== */
+/* ============== 3D图片环绕：CSS变量驱动 + 滚轮缩放 + 3D前后遮挡 ============== */
 let carousel3dInitialized = false;
 let carouselRafId = null;
-let carouselTargetRotY = 0;   // 鼠标目标旋转角度（水平）
-let carouselTargetRotX = -8;  // 鼠标目标旋转角度（垂直，默认微俯）
+let carouselTargetRotY = 0;        // 鼠标目标水平旋转角度
 let carouselCurrentRotY = 0;
-let carouselCurrentRotX = -8;
-let carouselAutoSpin = 0.15;  // 空闲时的自动旋转速度（度/帧）
+let carouselAutoSpin = 0.15;      // 空闲自动旋转速度（度/帧）
+let carouselScale = 1;               // 整体缩放（书+图同步）
+let carouselScaleMin = 0.45;
+let carouselScaleMax = 2.2;
 
 function initMemory3dCarousel() {
     if (carousel3dInitialized) return;
@@ -3331,90 +3332,129 @@ function initMemory3dCarousel() {
     if (!container) return;
     carousel3dInitialized = true;
 
-    // 给每个碎片设置独立的初始旋转角度（CSS变量）
+    const carousel = document.getElementById('memory3dCarousel');
+    const bookWrap = document.getElementById('memoryBookWrap');
+    if (!carousel || !bookWrap) return;
+
+    // 初始化 CSS 变量（整体缩放 + 旋转）
+    carousel.style.setProperty('--memory-scale', carouselScale.toString());
+    carousel.style.setProperty('--memory-rotY', '0deg');
+    bookWrap.style.setProperty('--book-rotY', '0deg');
+
+    // 给碎片设置独立旋转角 + 随机大小
     const shards = document.querySelectorAll('.memory-book-shard');
     shards.forEach((shard, i) => {
         const baseAngle = (i * 47 + Math.floor(Math.random() * 60)) % 360;
         shard.style.setProperty('--r', `${baseAngle}deg`);
-        // 给每个碎片设置随机大小（覆盖CSS中已设置的）
         const w = 6 + Math.floor(Math.random() * 16);
         const h = 8 + Math.floor(Math.random() * 18);
         shard.style.width = `${w}px`;
         shard.style.height = `${h}px`;
     });
 
-    // 给每页书做一点内容变化（每页的文字线条位置和颜色略不同）
+    // 给每页书设置随机颜色/顶偏移
     const pages = document.querySelectorAll('.memory-book-page');
     const pageColors = [
-        'rgba(139, 90, 43, 0.18)',   // 棕
-        'rgba(80, 100, 150, 0.16)',  // 蓝棕
-        'rgba(150, 80, 60, 0.17)',   // 红棕
-        'rgba(60, 90, 60, 0.15)',    // 绿棕
+        'rgba(139, 90, 43, 0.18)',
+        'rgba(80, 100, 150, 0.16)',
+        'rgba(150, 80, 60, 0.17)',
+        'rgba(60, 90, 60, 0.15)',
     ];
     pages.forEach((page, i) => {
-        const pseudo = page.querySelector('.page-text');
-        // 通过内联样式影响 ::before 的颜色（用 background-color 覆盖）
         page.style.setProperty('--line-color', pageColors[i % pageColors.length]);
-        // 为每一页添加一点内容差异：随机的"标题条"效果
         const topOffset = 20 + Math.floor(Math.random() * 40);
         page.style.setProperty('--top-offset', `${topOffset}px`);
     });
 
-    // 鼠标移动 => 驱动整个圆环在3D空间旋转
+    // 鼠标移动：只驱动 rotateY，rotateX 固定 75deg（俯视图）
     container.addEventListener('mousemove', (e) => {
         const rect = container.getBoundingClientRect();
-        const nx = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 ~ 0.5
-        const ny = (e.clientY - rect.top) / rect.height - 0.5;
-        // 水平方向：鼠标左右移动 => 圆环绕 Y 轴旋转 ±60°
-        // 垂直方向：鼠标上下移动 => 圆环绕 X 轴旋转 ±25°（叠加默认-8°）
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;
         carouselTargetRotY = nx * 120;
-        carouselTargetRotX = -8 + ny * 50;
         if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
     });
 
-    // 鼠标离开 => 继续缓慢自转
     container.addEventListener('mouseleave', () => {
-        carouselTargetRotY = carouselCurrentRotY;  // 保持当前角度，平滑后再自转
-        carouselTargetRotX = -8;
+        carouselTargetRotY = carouselCurrentRotY;
         if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
     });
 
-    // 触屏
-    container.addEventListener('touchmove', (e) => {
-        if (e.touches.length > 0) {
-            const rect = container.getBoundingClientRect();
-            const touch = e.touches[0];
-            const nx = (touch.clientX - rect.left) / rect.width - 0.5;
-            const ny = (touch.clientY - rect.top) / rect.height - 0.5;
-            carouselTargetRotY = nx * 120;
-            carouselTargetRotX = -8 + ny * 50;
-            if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
+    // 滚轮：整体缩放（书+圆环同步）
+    container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const step = 0.12 * carouselScale;
+        if (e.deltaY > 0) {
+            carouselScale = Math.max(carouselScaleMin, carouselScale - step);
+        } else {
+            carouselScale = Math.min(carouselScaleMax, carouselScale + step);
+        }
+        carousel.style.setProperty('--memory-scale', carouselScale.toFixed(3));
+        if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
+    }, { passive: false });
+
+    // 触屏：单指滑动旋转 + 双指缩放
+    let touchSpanStart = 0;
+    container.addEventListener('touchstart', (e) => {
+        if (e.touches.length >= 2) {
+            touchSpanStart = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
         }
     }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (e.touches.length >= 2) {
+            e.preventDefault();
+            const span = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            if (touchSpanStart > 0) {
+                const ratio = span / touchSpanStart;
+                carouselScale = Math.min(carouselScaleMax,
+                    Math.max(carouselScaleMin, carouselScale * ratio));
+                carousel.style.setProperty('--memory-scale', carouselScale.toFixed(3));
+                touchSpanStart = span;
+            }
+        } else if (e.touches.length === 1) {
+            const rect = container.getBoundingClientRect();
+            const nx = (e.touches[0].clientX - rect.left) / rect.width - 0.5;
+            carouselTargetRotY = nx * 120;
+        }
+        if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
+    }, { passive: false });
 
     updateCarousel3d();
 }
 
 function updateCarousel3d() {
-    // 线性插值：0.08 的平滑跟手系数
+    // 线性插值：平滑跟随鼠标目标角度
     carouselCurrentRotY += (carouselTargetRotY - carouselCurrentRotY) * 0.08;
-    carouselCurrentRotX += (carouselTargetRotX - carouselCurrentRotX) * 0.08;
 
-    // 空闲时（鼠标未操作很久后），自动缓慢旋转，让画面始终有活力
-    const diff = Math.abs(carouselTargetRotY - carouselCurrentRotY) +
-                 Math.abs(carouselTargetRotX - carouselCurrentRotX);
+    // 空闲自动旋转
+    const diff = Math.abs(carouselTargetRotY - carouselCurrentRotY);
     if (diff < 0.3) {
         carouselCurrentRotY += carouselAutoSpin;
         carouselTargetRotY = carouselCurrentRotY;
     }
 
     const carousel = document.getElementById('memory3dCarousel');
-    if (carousel) {
-        carousel.style.transform =
-            `translate(-50%, -50%) rotateX(${carouselCurrentRotX.toFixed(2)}deg) rotateY(${carouselCurrentRotY.toFixed(2)}deg)`;
-    }
+    const bookWrap = document.getElementById('memoryBookWrap');
+    if (!carousel || !bookWrap) return;
 
-    // 继续循环（因为有自动旋转，所以一直保持raf，消耗可忽略）
+    // 关键点：
+    // 1. 只更新 CSS 变量 --memory-rotY 和 --book-rotY
+    // 2. carousel.transform = translate() scale() rotateX(75deg) rotateY(rotY)
+    //    书在 carousel 内部，共享 scale 和 3D空间
+    // 3. book-wrap.transform = translate(-50%,-50%) rotateY(-rotY) rotateX(-75deg)
+    //    抵消父级旋转，保持正对观察者
+    // 4. 图片 rotateY(+) translateZ(+320px) = 正面，自然浮在书前面
+    //    图片 rotateY(+) translateZ(-320px) = 背面，藏在书后面
+    //    （浏览器会根据 transform-style: preserve-3d 自动判断3D前后遮挡）
+    carousel.style.setProperty('--memory-rotY', carouselCurrentRotY.toFixed(2) + 'deg');
+    bookWrap.style.setProperty('--book-rotY', (-carouselCurrentRotY).toFixed(2) + 'deg');
+
     carouselRafId = requestAnimationFrame(updateCarousel3d);
 }
 
