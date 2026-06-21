@@ -6732,16 +6732,17 @@ body {
     pointer-events: none;
 }
 
-/* 卡片编号：左上角大数字 */
+/* 卡片编号：右上角小数字标识 */
 .memory-ring-small .memory-item .memory-item-index {
-    font-size: 16px;
-    font-weight: 700;
-    color: #2a2a2a;
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    font-size: 8px;
+    font-weight: 600;
+    color: rgba(0, 0, 0, 0.35);
     line-height: 1;
-    margin-bottom: 2px;
-    font-family: 'Georgia', '楷体', serif;
-    opacity: 0.85;
-    text-align: left;
+    font-family: 'Georgia', serif;
+    opacity: 0.6;
 }
 
 .memory-ring-small .memory-item h4 {

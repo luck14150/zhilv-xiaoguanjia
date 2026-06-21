@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062122';
+const APP_VERSION = '2026062123';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 安全注册 ============
