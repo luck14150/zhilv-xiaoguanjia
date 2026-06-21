@@ -4577,190 +4577,69 @@ body {
     padding: 16px 0 80px 0;
     position: relative;
     min-height: calc(100vh - 60px);
-    /* 远景层（最慢）：深空渐变 */
     background:
-        radial-gradient(ellipse at 30% 20%, rgba(88, 28, 135, 0.35) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, rgba(30, 64, 175, 0.25) 0%, transparent 55%),
-        radial-gradient(ellipse at 50% 50%, rgba(190, 24, 93, 0.12) 0%, transparent 60%),
-        linear-gradient(180deg, #0f0b1e 0%, #1a1530 50%, #0a0818 100%);
+        radial-gradient(ellipse at 50% 50%, rgba(88, 28, 135, 0.25) 0%, transparent 60%),
+        linear-gradient(180deg, #0a0818 0%, #120e28 50%, #0a0818 100%);
     overflow: hidden;
 }
 
-/* ================= 视差层（核心：不同速度 = 不同深度感知） ================= */
-/* 远景层：移动最慢，模拟远处天空/星云 */
-.parallax-far {
-    position: absolute;
-    top: -50px;
-    left: -50px;
-    right: -50px;
-    bottom: -50px;
-    pointer-events: none;
-    will-change: transform;
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.parallax-far::before {
-    content: '';
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    top: 10%;
-    left: 15%;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 65%);
-    border-radius: 50%;
-    filter: blur(40px);
-}
-
-.parallax-far::after {
-    content: '';
-    position: absolute;
-    width: 280px;
-    height: 280px;
-    bottom: 20%;
-    right: 10%;
-    background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 65%);
-    border-radius: 50%;
-    filter: blur(45px);
-}
-
-/* 中景层：移动中等速度，模拟较大物体 */
-.parallax-mid {
-    position: absolute;
-    top: -50px;
-    left: -50px;
-    right: -50px;
-    bottom: -50px;
-    pointer-events: none;
-    will-change: transform;
-    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.parallax-mid::before {
-    content: '';
-    position: absolute;
-    width: 120px;
-    height: 120px;
-    top: 25%;
-    left: 8%;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%);
-    border-radius: 50%;
-    filter: blur(20px);
-}
-
-.parallax-mid::after {
-    content: '';
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    bottom: 30%;
-    right: 15%;
-    background: radial-gradient(circle, rgba(251, 191, 36, 0.25) 0%, transparent 70%);
-    border-radius: 50%;
-    filter: blur(18px);
-}
-
-/* 近景层：移动最快，模拟眼前漂浮粒子 */
-.parallax-near {
+/* ================ 3D图片环绕（核心：6张图在圆环上均匀分布） ================ */
+.memory-3d-wrap {
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    perspective: 1400px;
+    perspective-origin: 50% 50%;
     pointer-events: none;
+    overflow: hidden;
+}
+
+.memory-3d-carousel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 180px;
+    height: 240px;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -50%) rotateX(-8deg) rotateY(0deg);
     will-change: transform;
-    transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.parallax-near .parallax-star {
+.memory-3d-item {
     position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-    will-change: transform, opacity;
+    top: 0;
+    left: 0;
+    width: 180px;
+    height: 240px;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 14px;
+    box-shadow:
+        0 0 40px rgba(139, 92, 246, 0.35),
+        0 0 80px rgba(59, 130, 246, 0.2),
+        inset 0 0 30px rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-/* 6个近景粒子，大小、颜色、位置各不相同 */
-.parallax-near .parallax-star:nth-child(1) {
-    width: 6px; height: 6px;
-    top: 12%; left: 18%;
-    background: radial-gradient(circle, #c084fc 0%, transparent 70%);
-    box-shadow: 0 0 12px rgba(192, 132, 252, 0.8);
-}
-.parallax-near .parallax-star:nth-child(2) {
-    width: 4px; height: 4px;
-    top: 22%; left: 78%;
-    background: radial-gradient(circle, #60a5fa 0%, transparent 70%);
-    box-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
-}
-.parallax-near .parallax-star:nth-child(3) {
-    width: 8px; height: 8px;
-    top: 40%; left: 10%;
-    background: radial-gradient(circle, #f472b6 0%, transparent 70%);
-    box-shadow: 0 0 14px rgba(244, 114, 182, 0.8);
-}
-.parallax-near .parallax-star:nth-child(4) {
-    width: 5px; height: 5px;
-    top: 55%; left: 65%;
-    background: radial-gradient(circle, #fbbf24 0%, transparent 70%);
-    box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
-}
-.parallax-near .parallax-star:nth-child(5) {
-    width: 4px; height: 4px;
-    top: 70%; left: 30%;
-    background: radial-gradient(circle, #86efac 0%, transparent 70%);
-    box-shadow: 0 0 10px rgba(134, 239, 172, 0.8);
-}
-.parallax-near .parallax-star:nth-child(6) {
-    width: 7px; height: 7px;
-    top: 78%; left: 82%;
-    background: radial-gradient(circle, #fca5a5 0%, transparent 70%);
-    box-shadow: 0 0 14px rgba(252, 165, 165, 0.8);
-}
-.parallax-near .parallax-star:nth-child(7) {
-    width: 3px; height: 3px;
-    top: 30%; left: 45%;
-    background: radial-gradient(circle, #ffffff 0%, transparent 70%);
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
-}
-.parallax-near .parallax-star:nth-child(8) {
-    width: 5px; height: 5px;
-    top: 85%; left: 5%;
-    background: radial-gradient(circle, #67e8f9 0%, transparent 70%);
-    box-shadow: 0 0 11px rgba(103, 232, 249, 0.8);
-}
+/* 6张图片在圆环上，每张相隔 360/6 = 60°，向外推 300px */
+.memory-3d-item:nth-child(1) { transform: rotateY(0deg)   translateZ(320px); }
+.memory-3d-item:nth-child(2) { transform: rotateY(60deg)  translateZ(320px); }
+.memory-3d-item:nth-child(3) { transform: rotateY(120deg) translateZ(320px); }
+.memory-3d-item:nth-child(4) { transform: rotateY(180deg) translateZ(320px); }
+.memory-3d-item:nth-child(5) { transform: rotateY(240deg) translateZ(320px); }
+.memory-3d-item:nth-child(6) { transform: rotateY(300deg) translateZ(320px); }
 
-/* 远景星点：最慢移动，非常细的点 */
-.parallax-far .parallax-star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 50%;
-    box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
-}
-
-.parallax-far .parallax-star:nth-child(1) { top: 8%; left: 5%; }
-.parallax-far .parallax-star:nth-child(2) { top: 15%; left: 25%; width: 1.5px; height: 1.5px; }
-.parallax-far .parallax-star:nth-child(3) { top: 5%; left: 55%; }
-.parallax-far .parallax-star:nth-child(4) { top: 18%; left: 90%; width: 1.5px; height: 1.5px; }
-.parallax-far .parallax-star:nth-child(5) { top: 92%; left: 20%; }
-.parallax-far .parallax-star:nth-child(6) { top: 88%; left: 50%; width: 1.5px; height: 1.5px; }
-.parallax-far .parallax-star:nth-child(7) { top: 95%; left: 85%; }
-.parallax-far .parallax-star:nth-child(8) { top: 50%; left: 95%; width: 2.5px; height: 2.5px; box-shadow: 0 0 6px rgba(255, 255, 255, 0.6); }
-
-/* 内容层z-index确保在视差背景之上 */
+/* 内容层在3D背景之上 */
 .memory-topbar,
 .memory-grid,
 .memory-fab,
 .memory-empty {
     position: relative;
     z-index: 10;
-}
-
-/* 卡片3D倾斜（跟随鼠标轻微倾斜） */
-.memory-item {
-    will-change: transform;
-    transform-style: preserve-3d;
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* 顶部工具栏：四个等大按钮同一行 */

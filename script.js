@@ -1071,11 +1071,11 @@ function switchPage(pageId) {
         item.classList.toggle('active', item.dataset.page === pageId);
     });
 
-    // 切换到记忆页面时自动渲染 + 启动视差
+    // 切换到记忆页面时自动渲染 + 启动3D图片环绕
     if (pageId === 'memory') {
         setTimeout(() => {
             renderMemoryList();
-            initMemoryParallax();
+            initMemory3dCarousel();
         }, 50);
     }
 
@@ -3316,87 +3316,77 @@ let currentViewingMemoryId = null;
    - 中景 ~ 15-30 像素（中）
    - 近景 ~ 30-50 像素（快）
 */
-let parallaxInitialized = false;
-let mouseX = 0, mouseY = 0;       // 当前鼠标位置（归一化 -0.5 到 0.5）
-let currentX = 0, currentY = 0;   // 平滑过渡后的位置
-let rafId = null;
+/* ============== 3D图片环绕：鼠标驱动整个圆环 rotateX / rotateY ============== */
+let carousel3dInitialized = false;
+let carouselRafId = null;
+let carouselTargetRotY = 0;   // 鼠标目标旋转角度（水平）
+let carouselTargetRotX = -8;  // 鼠标目标旋转角度（垂直，默认微俯）
+let carouselCurrentRotY = 0;
+let carouselCurrentRotX = -8;
+let carouselAutoSpin = 0.15;  // 空闲时的自动旋转速度（度/帧）
 
-function initMemoryParallax() {
-    if (parallaxInitialized) return;
+function initMemory3dCarousel() {
+    if (carousel3dInitialized) return;
     const container = document.getElementById('page-memory');
     if (!container) return;
-    parallaxInitialized = true;
+    carousel3dInitialized = true;
 
-    // 监听鼠标移动，实时更新视角
+    // 鼠标移动 => 驱动整个圆环在3D空间旋转
     container.addEventListener('mousemove', (e) => {
         const rect = container.getBoundingClientRect();
-        mouseX = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 ~ 0.5
-        mouseY = (e.clientY - rect.top) / rect.height - 0.5;
-        if (!rafId) rafId = requestAnimationFrame(applyParallax);
+        const nx = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 ~ 0.5
+        const ny = (e.clientY - rect.top) / rect.height - 0.5;
+        // 水平方向：鼠标左右移动 => 圆环绕 Y 轴旋转 ±60°
+        // 垂直方向：鼠标上下移动 => 圆环绕 X 轴旋转 ±25°（叠加默认-8°）
+        carouselTargetRotY = nx * 120;
+        carouselTargetRotX = -8 + ny * 50;
+        if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
     });
 
-    // 鼠标离开时慢慢复位
+    // 鼠标离开 => 继续缓慢自转
     container.addEventListener('mouseleave', () => {
-        mouseX = 0;
-        mouseY = 0;
-        if (!rafId) rafId = requestAnimationFrame(applyParallax);
+        carouselTargetRotY = carouselCurrentRotY;  // 保持当前角度，平滑后再自转
+        carouselTargetRotX = -8;
+        if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
     });
 
-    // 触屏设备支持
+    // 触屏
     container.addEventListener('touchmove', (e) => {
         if (e.touches.length > 0) {
             const rect = container.getBoundingClientRect();
             const touch = e.touches[0];
-            mouseX = (touch.clientX - rect.left) / rect.width - 0.5;
-            mouseY = (touch.clientY - rect.top) / rect.height - 0.5;
-            if (!rafId) rafId = requestAnimationFrame(applyParallax);
+            const nx = (touch.clientX - rect.left) / rect.width - 0.5;
+            const ny = (touch.clientY - rect.top) / rect.height - 0.5;
+            carouselTargetRotY = nx * 120;
+            carouselTargetRotX = -8 + ny * 50;
+            if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
         }
     }, { passive: true });
 
-    container.addEventListener('touchend', () => {
-        mouseX = 0; mouseY = 0;
-        if (!rafId) rafId = requestAnimationFrame(applyParallax);
-    });
-
-    // 启动动画循环
-    applyParallax();
+    updateCarousel3d();
 }
 
-function applyParallax() {
-    // 线性插值（Linear Interpolation）——让移动有"跟手"的跟随感
-    // 系数 0.08：越小越平滑、延迟越大，像眼球聚焦一样
-    currentX += (mouseX - currentX) * 0.08;
-    currentY += (mouseY - currentY) * 0.08;
+function updateCarousel3d() {
+    // 线性插值：0.08 的平滑跟手系数
+    carouselCurrentRotY += (carouselTargetRotY - carouselCurrentRotY) * 0.08;
+    carouselCurrentRotX += (carouselTargetRotX - carouselCurrentRotX) * 0.08;
 
-    const farLayer = document.querySelector('#page-memory .parallax-far');
-    const midLayer = document.querySelector('#page-memory .parallax-mid');
-    const nearLayer = document.querySelector('#page-memory .parallax-near');
-
-    // 核心：不同速度 = 不同深度
-    if (farLayer) {
-        farLayer.style.transform = `translate3d(${currentX * 8}px, ${currentY * 8}px, 0)`;
-    }
-    if (midLayer) {
-        midLayer.style.transform = `translate3d(${currentX * 22}px, ${currentY * 22}px, 0)`;
-    }
-    if (nearLayer) {
-        nearLayer.style.transform = `translate3d(${currentX * 45}px, ${currentY * 45}px, 0)`;
+    // 空闲时（鼠标未操作很久后），自动缓慢旋转，让画面始终有活力
+    const diff = Math.abs(carouselTargetRotY - carouselCurrentRotY) +
+                 Math.abs(carouselTargetRotX - carouselCurrentRotX);
+    if (diff < 0.3) {
+        carouselCurrentRotY += carouselAutoSpin;
+        carouselTargetRotY = carouselCurrentRotY;
     }
 
-    // 卡片轻微跟随（增加层次感）
-    const cards = document.querySelectorAll('#page-memory .memory-item');
-    cards.forEach((card, i) => {
-        const offset = (i % 2 === 0) ? 1 : -1;  // 左右列轻微反向
-        card.style.transform = `translate3d(${currentX * 6 * offset}px, ${currentY * 4}px, 0)`;
-    });
-
-    // 如果还没完全归位，继续动画
-    const diff = Math.abs(mouseX - currentX) + Math.abs(mouseY - currentY);
-    if (diff > 0.001) {
-        rafId = requestAnimationFrame(applyParallax);
-    } else {
-        rafId = null;
+    const carousel = document.getElementById('memory3dCarousel');
+    if (carousel) {
+        carousel.style.transform =
+            `translate(-50%, -50%) rotateX(${carouselCurrentRotX.toFixed(2)}deg) rotateY(${carouselCurrentRotY.toFixed(2)}deg)`;
     }
+
+    // 继续循环（因为有自动旋转，所以一直保持raf，消耗可忽略）
+    carouselRafId = requestAnimationFrame(updateCarousel3d);
 }
 
 function loadMemoryData() {
