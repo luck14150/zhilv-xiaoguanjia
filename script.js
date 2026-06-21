@@ -3480,21 +3480,19 @@ function filterMemory(category, element) {
 function showAddMemoryModal() {
     editingMemoryId = null;
     selectedCategory = '学习笔记';
-    const modal = document.getElementById('memoryModal');
-    const title = document.getElementById('memoryModalTitle');
-    const titleInput = document.getElementById('memoryTitleInput');
-    const contentInput = document.getElementById('memoryContentInput');
-    const delBtn = document.getElementById('memoryModalDeleteBtn');
-
-    if (title) title.textContent = '添加新记忆';
+    
+    // 清空编辑表单
+    const titleInput = document.getElementById('memoryEditTitle');
+    const contentInput = document.getElementById('memoryEditContent');
+    
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
-    if (delBtn) delBtn.style.display = 'none';
-
+    
     // 更新分类选择状态
     updateCategorySelect();
-
-    if (modal) modal.classList.add('show');
+    
+    // 切换到独立编辑页面
+    switchPage('memory-edit');
 }
 
 function editMemory(id) {
@@ -3503,24 +3501,19 @@ function editMemory(id) {
 
     editingMemoryId = id;
     selectedCategory = memory.category;
-    const modal = document.getElementById('memoryModal');
-    const title = document.getElementById('memoryModalTitle');
-    const titleInput = document.getElementById('memoryTitleInput');
-    const contentInput = document.getElementById('memoryContentInput');
-    const delBtn = document.getElementById('memoryModalDeleteBtn');
-
-    if (title) title.textContent = '编辑记忆';
+    
+    // 填充编辑表单
+    const titleInput = document.getElementById('memoryEditTitle');
+    const contentInput = document.getElementById('memoryEditContent');
+    
     if (titleInput) titleInput.value = memory.title;
     if (contentInput) contentInput.value = memory.content;
-    if (delBtn) {
-        delBtn.style.display = 'inline-block';
-        delBtn.style.color = '#ff6b6b';
-        delBtn.style.borderColor = 'rgba(255, 107, 107, 0.3)';
-    }
-
+    
+    // 更新分类选择状态
     updateCategorySelect();
-
-    if (modal) modal.classList.add('show');
+    
+    // 切换到独立编辑页面
+    switchPage('memory-edit');
 }
 
 // 从编辑弹窗内调用删除
@@ -3542,7 +3535,7 @@ function selectMemoryCategory(element, category) {
 }
 
 function updateCategorySelect() {
-    const selects = document.querySelectorAll('#memoryCategorySelect .category-select');
+    const selects = document.querySelectorAll('#memoryCategorySelect .category-select, #memoryEditCategorySelect .category-select');
     selects.forEach(el => {
         const cat = el.textContent.trim().replace(/^[^\s]+\s/, '');
         if (cat === selectedCategory) {
@@ -3551,6 +3544,25 @@ function updateCategorySelect() {
             el.classList.remove('active');
         }
     });
+    
+    // 更新编辑页面的日期显示
+    const dateEl = document.getElementById('memoryEditDate');
+    if (dateEl) {
+        if (editingMemoryId) {
+            const memory = memoryData.find(m => m.id === editingMemoryId);
+            if (memory) {
+                dateEl.textContent = formatDateMemory(memory.createdAt);
+            }
+        } else {
+            dateEl.textContent = '新建';
+        }
+    }
+    
+    // 显示/隐藏删除按钮
+    const delBtn = document.getElementById('memoryEditDeleteBtn');
+    if (delBtn) {
+        delBtn.style.display = editingMemoryId ? 'flex' : 'none';
+    }
 }
 
 function saveMemory() {
@@ -3594,6 +3606,69 @@ function saveMemory() {
 
     const modal = document.getElementById('memoryModal');
     if (modal) modal.classList.remove('show');
+}
+
+// 关闭记忆编辑页面
+function closeMemoryEdit() {
+    switchPage('memory');
+}
+
+// 从编辑页面保存记忆
+function saveMemoryFromEdit() {
+    const titleInput = document.getElementById('memoryEditTitle');
+    const contentInput = document.getElementById('memoryEditContent');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const content = contentInput ? contentInput.value.trim() : '';
+
+    if (!title) {
+        alert('请输入标题');
+        return;
+    }
+    if (!content) {
+        alert('请输入内容');
+        return;
+    }
+
+    if (editingMemoryId) {
+        // 编辑现有记忆
+        const memory = memoryData.find(m => m.id === editingMemoryId);
+        if (memory) {
+            memory.title = title;
+            memory.content = content;
+            memory.category = selectedCategory;
+        }
+    } else {
+        // 添加新记忆
+        const newId = memoryData.length > 0 ? Math.max(...memoryData.map(m => m.id)) + 1 : 1;
+        memoryData.push({
+            id: newId,
+            title: title,
+            content: content,
+            category: selectedCategory,
+            createdAt: Date.now()
+        });
+    }
+
+    saveMemoryData();
+    renderMemoryList();
+    
+    // 返回记忆列表页
+    switchPage('memory');
+}
+
+// 从编辑页面删除记忆
+function deleteFromEditPage() {
+    if (!editingMemoryId) return;
+    const confirmed = confirm('确定要删除这条记忆吗？');
+    if (!confirmed) return;
+    
+    memoryData = memoryData.filter(m => m.id !== editingMemoryId);
+    saveMemoryData();
+    renderMemoryList();
+    
+    // 返回记忆列表页
+    switchPage('memory');
 }
 
 function deleteMemory(id) {
