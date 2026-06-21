@@ -6692,60 +6692,103 @@ body {
     animation-play-state: running;
 }
 
+/* ================ 四象限记忆卡片（多层叠放风格） ================ */
 .memory-ring-small .memory-item {
     position: absolute;
     width: 46%;
-    height: 64%;
+    height: 72%;
     max-width: 96px;
-    max-height: 132px;
-    min-width: 58px;
-    min-height: 80px;
+    max-height: 150px;
+    min-width: 62px;
+    min-height: 90px;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%) rotateY(var(--rotate, 0deg)) translateZ(var(--tz, 42px));
-    background: linear-gradient(180deg, #faf6ee 0%, #f5efe0 100%);
-    border-radius: 5px;
-    padding: 4px;
     cursor: pointer;
-    transition: box-shadow 0.3s;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    color: #2a2a2a;
-    overflow: hidden;
     backface-visibility: visible;
     box-sizing: border-box;
 }
 
-.memory-ring-small .memory-item::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border: 1px solid rgba(139, 90, 43, 0.25);
-    border-radius: 5px;
-    pointer-events: none;
+/* 卡片叠放容器：三张卡片同时显示 */
+.memory-ring-small .memory-item-stack {
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
-/* 卡片右上角的小标记 */
-.memory-ring-small .memory-item .memory-item-tag {
+/* 叠放层（最底层） */
+.memory-ring-small .memory-item-layer {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    font-size: 10px;
-    font-weight: 600;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #faf6ee 0%, #f2e9d5 100%);
+    border-radius: 6px;
+    border: 1px solid rgba(139, 90, 43, 0.2);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+    box-sizing: border-box;
+}
+
+/* 最后面一层：向右上轻微偏移 + 稍微变暗 */
+.memory-ring-small .memory-item-layer.layer-back {
+    transform: translate(4px, -5px);
+    background: linear-gradient(180deg, #e8ddc4 0%, #d9caa6 100%);
+    opacity: 0.8;
+    z-index: 1;
+}
+
+/* 中间一层 */
+.memory-ring-small .memory-item-layer.layer-mid {
+    transform: translate(2px, -3px);
+    background: linear-gradient(180deg, #f0e5c8 0%, #e3d4b0 100%);
+    opacity: 0.92;
+    z-index: 2;
+}
+
+/* 主卡片层（最前面，完全显示） */
+.memory-ring-small .memory-item-layer.layer-main {
+    background: linear-gradient(180deg, #faf6ee 0%, #f5efe0 100%);
+    z-index: 3;
+    padding: 6px 6px 8px 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* 主卡片的顶部时间文字 */
+.memory-ring-small .memory-item-layer.layer-main .memory-item-time {
+    font-size: 9px;
+    color: #6b5a3c;
+    font-family: '楷体', 'KaiTi', serif;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+    margin-bottom: 3px;
+    text-align: center;
+}
+
+/* 右上角序号标记 */
+.memory-ring-small .memory-item-layer.layer-main .memory-item-tag {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    font-size: 11px;
+    font-weight: 700;
     color: #5a4a2a;
     line-height: 1;
-    padding: 1px 3px;
+    padding: 1px 4px;
 }
 
-/* 卡片底部的日期 */
-.memory-ring-small .memory-item .memory-item-date {
-    font-size: 9px;
-    color: #555;
-    text-align: center;
-    font-family: '楷体', 'KaiTi', serif;
-    padding-bottom: 2px;
+/* 主卡片中间空白主体（模拟文档） */
+.memory-ring-small .memory-item-layer.layer-main .memory-item-body {
+    flex: 1;
+    width: 100%;
+    margin-top: 4px;
+    background-image:
+        linear-gradient(to bottom, rgba(139, 90, 43, 0.12) 1px, transparent 1px);
+    background-size: 100% 8px;
+    background-position: 0 0;
+    opacity: 0.5;
+    border-radius: 2px;
 }
 
 /* 中央控制圆圈（黄色外圈 + 蓝色内圆） — 点击切换粉光/白色，控制四圆环 */

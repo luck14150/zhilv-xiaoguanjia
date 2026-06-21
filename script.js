@@ -3720,8 +3720,15 @@ function renderMemoryList() {
             div.style.setProperty('--rotate', `${angle}deg`);
             div.style.setProperty('--tz', `${radius}px`);
             div.innerHTML =
-                `<div class="memory-item-tag">1</div>
-                 <span class="memory-item-date">${formatDateMemory(item.createdAt)}</span>`;
+                `<div class="memory-item-stack">
+                     <div class="memory-item-layer layer-back"></div>
+                     <div class="memory-item-layer layer-mid"></div>
+                     <div class="memory-item-layer layer-main">
+                         <div class="memory-item-time">${formatDateMemory(item.createdAt)}</div>
+                         <div class="memory-item-tag">${i + 1}</div>
+                         <div class="memory-item-body"></div>
+                     </div>
+                 </div>`;
             ringEl.appendChild(div);
         });
     });
