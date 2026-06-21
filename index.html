@@ -466,7 +466,7 @@
             <!-- 记忆详情页（独立页面） -->
             <section class="page" id="page-memory-detail">
                 <div class="memory-detail-container">
-                    <!-- 顶部工具栏：返回 + 编辑 + 分享 + 删除 -->
+                    <!-- 顶部工具栏：返回 + 编辑/保存 + 分享 + 删除 -->
                     <div class="memory-detail-toolbar">
                         <button class="memory-detail-icon-btn" onclick="closeMemoryDetail()" aria-label="返回">
                             <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -474,10 +474,17 @@
                             </svg>
                         </button>
                         <div class="memory-detail-toolbar-right">
-                            <button class="memory-detail-icon-btn" onclick="editCurrentMemoryDetail()" aria-label="编辑">
+                            <button class="memory-detail-icon-btn" id="memoryEditBtn" onclick="toggleMemoryDetailEdit()" aria-label="编辑">
                                 <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
                                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="memory-detail-icon-btn save-btn" id="memorySaveBtn" onclick="saveMemoryDetailEdit()" aria-label="保存" style="display:none;">
+                                <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 12v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7"/>
+                                    <polyline points="9 20 9 12 15 12"/>
+                                    <line x1="12" y1="2" x2="12" y2="12"/>
                                 </svg>
                             </button>
                             <button class="memory-detail-icon-btn" onclick="shareMemoryDetail()" aria-label="分享">
@@ -499,11 +506,19 @@
 
                     <!-- 米纸风格内容区域 -->
                     <div class="memory-detail-paper">
+                        <!-- 查看模式：标题 -->
                         <h2 class="memory-detail-title" id="memoryDetailTitle">标题</h2>
+                        <!-- 编辑模式：标题输入框 -->
+                        <input type="text" class="memory-detail-title-input" id="memoryDetailTitleInput" style="display:none;">
+                        
                         <div class="memory-detail-meta">
                             <span id="memoryDetailDate">—</span>
                         </div>
+                        
+                        <!-- 查看模式：内容 -->
                         <div class="memory-detail-content" id="memoryDetailContent">内容</div>
+                        <!-- 编辑模式：内容输入框 -->
+                        <textarea class="memory-detail-content-input" id="memoryDetailContentInput" style="display:none;"></textarea>
                     </div>
                 </div>
             </section>

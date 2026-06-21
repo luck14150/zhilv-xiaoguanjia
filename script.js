@@ -3407,14 +3407,29 @@ function viewMemory(id) {
     const titleEl = document.getElementById('memoryDetailTitle');
     const dateEl = document.getElementById('memoryDetailDate');
     const contentEl = document.getElementById('memoryDetailContent');
+    const titleInput = document.getElementById('memoryDetailTitleInput');
+    const contentInput = document.getElementById('memoryDetailContentInput');
+    const editBtn = document.getElementById('memoryEditBtn');
+    const saveBtn = document.getElementById('memorySaveBtn');
 
     if (titleEl) titleEl.textContent = memory.title;
     if (dateEl) dateEl.textContent = formatDateMemory(memory.createdAt);
     if (contentEl) {
         contentEl.textContent = memory.content;
-        // 处理换行
         contentEl.innerHTML = contentEl.innerHTML.replace(/\n/g, '<br>');
     }
+    
+    // 初始化编辑输入框
+    if (titleInput) titleInput.value = memory.title;
+    if (contentInput) contentInput.value = memory.content;
+    
+    // 确保处于查看模式
+    if (titleEl) titleEl.style.display = 'block';
+    if (titleInput) titleInput.style.display = 'none';
+    if (contentEl) contentEl.style.display = 'block';
+    if (contentInput) contentInput.style.display = 'none';
+    if (editBtn) editBtn.style.display = 'flex';
+    if (saveBtn) saveBtn.style.display = 'none';
 
     switchPage('memory-detail');
 }
@@ -3425,11 +3440,93 @@ function closeMemoryDetail() {
     currentViewingMemoryId = null;
 }
 
-// 编辑当前查看的记忆
-function editCurrentMemoryDetail() {
+// 切换详情页编辑模式
+function toggleMemoryDetailEdit() {
+    const titleEl = document.getElementById('memoryDetailTitle');
+    const titleInput = document.getElementById('memoryDetailTitleInput');
+    const contentEl = document.getElementById('memoryDetailContent');
+    const contentInput = document.getElementById('memoryDetailContentInput');
+    const editBtn = document.getElementById('memoryEditBtn');
+    const saveBtn = document.getElementById('memorySaveBtn');
+
+    const isEditing = titleInput && titleInput.style.display !== 'none';
+
+    if (isEditing) {
+        // 切换回查看模式
+        if (titleEl) titleEl.style.display = 'block';
+        if (titleInput) titleInput.style.display = 'none';
+        if (contentEl) contentEl.style.display = 'block';
+        if (contentInput) contentInput.style.display = 'none';
+        if (editBtn) editBtn.style.display = 'flex';
+        if (saveBtn) saveBtn.style.display = 'none';
+    } else {
+        // 切换到编辑模式
+        if (titleEl) titleEl.style.display = 'none';
+        if (titleInput) {
+            titleInput.style.display = 'block';
+            titleInput.focus();
+        }
+        if (contentEl) contentEl.style.display = 'none';
+        if (contentInput) {
+            contentInput.style.display = 'block';
+        }
+        if (editBtn) editBtn.style.display = 'none';
+        if (saveBtn) saveBtn.style.display = 'flex';
+    }
+}
+
+// 保存详情页编辑
+function saveMemoryDetailEdit() {
     if (!currentViewingMemoryId) return;
-    editMemory(currentViewingMemoryId);
-    closeMemoryDetail();
+
+    const titleInput = document.getElementById('memoryDetailTitleInput');
+    const contentInput = document.getElementById('memoryDetailContentInput');
+    
+    if (!titleInput || !contentInput) return;
+
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+
+    if (!title) {
+        alert('请输入标题');
+        titleInput.focus();
+        return;
+    }
+    if (!content) {
+        alert('请输入内容');
+        contentInput.focus();
+        return;
+    }
+
+    // 更新记忆数据
+    const memory = memoryData.find(m => m.id === currentViewingMemoryId);
+    if (memory) {
+        memory.title = title;
+        memory.content = content;
+        memory.updatedAt = Date.now();
+        saveMemoryData();
+        renderMemoryList();
+        
+        // 切换回查看模式并更新显示
+        const titleEl = document.getElementById('memoryDetailTitle');
+        const contentEl = document.getElementById('memoryDetailContent');
+        const editBtn = document.getElementById('memoryEditBtn');
+        const saveBtn = document.getElementById('memorySaveBtn');
+
+        if (titleEl) {
+            titleEl.textContent = title;
+            titleEl.style.display = 'block';
+        }
+        if (titleInput) titleInput.style.display = 'none';
+        if (contentEl) {
+            contentEl.textContent = content;
+            contentEl.innerHTML = contentEl.innerHTML.replace(/\n/g, '<br>');
+            contentEl.style.display = 'block';
+        }
+        if (contentInput) contentInput.style.display = 'none';
+        if (editBtn) editBtn.style.display = 'flex';
+        if (saveBtn) saveBtn.style.display = 'none';
+    }
 }
 
 // 删除当前查看的记忆

@@ -5077,7 +5077,46 @@ body {
     font-family: '楷体', 'KaiTi', serif;
     white-space: pre-wrap;
     position: relative;
-    z-index: 1;
+}
+
+/* 编辑模式输入框样式 */
+.memory-detail-title-input {
+    width: 100%;
+    font-size: 28px;
+    font-weight: 600;
+    color: #7a5d3d;
+    margin: 0 0 16px 0;
+    font-family: '楷体', 'KaiTi', serif;
+    letter-spacing: 2px;
+    background: transparent;
+    border: none;
+    outline: none;
+    border-bottom: 2px solid rgba(139, 90, 43, 0.3);
+    padding-bottom: 4px;
+}
+
+.memory-detail-title-input:focus {
+    border-bottom-color: #ffb86b;
+}
+
+.memory-detail-content-input {
+    width: 100%;
+    font-size: 16px;
+    color: #6b5344;
+    line-height: 2;
+    font-family: '楷体', 'KaiTi', serif;
+    background: transparent;
+    border: 1px solid rgba(139, 90, 43, 0.2);
+    border-radius: 8px;
+    outline: none;
+    resize: none;
+    min-height: 200px;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.memory-detail-content-input:focus {
+    border-color: #ffb86b;
 }
 
 /* 添加记忆页面样式 */
