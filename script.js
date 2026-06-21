@@ -3398,11 +3398,6 @@ function renderMemoryList() {
     }
 }
 
-// 播放视频（模拟）
-function playVideo() {
-    alert('视频播放功能已触发（实际项目中可嵌入视频播放器）');
-}
-
 // 查看记忆详情
 function viewMemory(id) {
     const memory = memoryData.find(m => m.id === id);
@@ -3482,23 +3477,28 @@ function filterMemory(category, element) {
     renderMemoryList();
 }
 
-// 全局变量：添加页面选中的分类
-let addingMemoryCategory = '学习笔记';
+function formatDateMemoryFull(timestamp) {
+    const date = new Date(timestamp);
+    const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+    return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekDays[date.getDay()]}`;
+}
+
+let currentMemoryAddStyle = 'paper';
 
 function showAddMemoryModal() {
-    addingMemoryCategory = '学习笔记';
     const titleInput = document.getElementById('memoryAddTitle');
     const contentInput = document.getElementById('memoryAddContent');
-    const categoryContainer = document.getElementById('memoryAddCategory');
+    const dateEl = document.getElementById('memoryAddDate');
 
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
+    if (dateEl) dateEl.textContent = formatDateMemoryFull(Date.now());
 
-    // 重置分类选择状态
-    const categoryEls = document.querySelectorAll('.memory-add-category .category-select');
-    categoryEls.forEach(el => el.classList.remove('active'));
-    const defaultCat = document.querySelector('.memory-add-category .category-select');
-    if (defaultCat) defaultCat.classList.add('active');
+    currentMemoryAddStyle = 'paper';
+    const paper = document.querySelector('#page-memory-add .memory-detail-paper');
+    if (paper) {
+        paper.classList.remove('mindmap-style', 'personal-style');
+    }
 
     switchPage('memory-add');
 }
@@ -3507,10 +3507,42 @@ function closeMemoryAdd() {
     switchPage('memory');
 }
 
-function selectAddMemoryCategory(el, category) {
-    addingMemoryCategory = category;
-    document.querySelectorAll('.memory-add-category .category-select').forEach(e => e.classList.remove('active'));
-    el.classList.add('active');
+function shareMemoryAdd() {
+    const titleInput = document.getElementById('memoryAddTitle');
+    const contentInput = document.getElementById('memoryAddContent');
+    if (!titleInput || !contentInput) return;
+    const text = `${titleInput.value || '未命名记忆'}\n\n${contentInput.value || ''}`;
+    if (navigator.share) {
+        navigator.share({ title: titleInput.value || '记忆', text: text }).catch(() => {});
+    } else {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('已复制到剪贴板');
+        }).catch(() => {
+            alert('分享功能已触发');
+        });
+    }
+}
+
+function toggleMemoryAddStyle() {
+    const paper = document.querySelector('#page-memory-add .memory-detail-paper');
+    if (!paper) return;
+    if (paper.classList.contains('personal-style')) {
+        paper.classList.remove('personal-style');
+        currentMemoryAddStyle = 'paper';
+    } else {
+        paper.classList.add('personal-style');
+        currentMemoryAddStyle = 'personal';
+    }
+}
+
+function showMemoryMindmap() {
+    const paper = document.querySelector('#page-memory-add .memory-detail-paper');
+    if (!paper) return;
+    if (paper.classList.contains('mindmap-style')) {
+        paper.classList.remove('mindmap-style');
+    } else {
+        paper.classList.add('mindmap-style');
+    }
 }
 
 function saveNewMemory() {
@@ -3535,7 +3567,7 @@ function saveNewMemory() {
         id: Date.now(),
         title: title,
         content: content,
-        category: addingMemoryCategory,
+        category: '其他',
         createdAt: Date.now()
     };
 

@@ -421,79 +421,6 @@
             <!-- 记忆库页面 -->
             <section class="page" id="page-memory">
                 <div class="memory-container">
-                    <!-- 科技风仪表盘背景 -->
-                    <div class="dashboard-bg">
-                        <!-- 网格背景 -->
-                        <div class="grid-bg"></div>
-                        <!-- 同心圆 -->
-                        <div class="concentric-circles">
-                            <div class="circle circle-1"></div>
-                            <div class="circle circle-2"></div>
-                            <div class="circle circle-3"></div>
-                        </div>
-                        <!-- 六边形卡片 -->
-                        <div class="hexagon-grid">
-                            <div class="hexagon-card blue" style="top: 15%; left: 15%;">
-                                <div class="hexagon-icon">📊</div>
-                                <div class="hexagon-title">其他风险</div>
-                                <div class="hexagon-value">79个</div>
-                            </div>
-                            <div class="hexagon-card blue" style="top: 35%; left: 8%;">
-                                <div class="hexagon-icon">🏢</div>
-                                <div class="hexagon-title">老旧网点</div>
-                                <div class="hexagon-value">174个</div>
-                            </div>
-                            <div class="hexagon-card cyan" style="top: 10%; left: 45%;">
-                                <div class="hexagon-icon">⚡</div>
-                                <div class="hexagon-title">网点周边易</div>
-                                <div class="hexagon-value">77个</div>
-                            </div>
-                            <div class="hexagon-card green" style="top: 18%; left: 78%;">
-                                <div class="hexagon-icon">🔥</div>
-                                <div class="hexagon-title">消防风险</div>
-                                <div class="hexagon-value">7个</div>
-                            </div>
-                            <div class="hexagon-card green" style="top: 45%; left: 85%;">
-                                <div class="hexagon-icon">🏬</div>
-                                <div class="hexagon-title">高层建筑</div>
-                                <div class="hexagon-value">25个</div>
-                            </div>
-                        </div>
-                        <!-- 中央信息面板 -->
-                        <div class="center-panel">
-                            <div class="panel-title">网点周边易燃易爆风险：<span class="more-link">更多 >></span></div>
-                            <div class="panel-content">
-                                <div class="risk-item">网点周边易燃易爆风险：<span class="more-link">更多 >></span></div>
-                                <div class="risk-item">靠近加油站，爆炸风险：<span class="risk-value">8个</span></div>
-                                <div class="risk-item">靠近餐厅，燃气风险：<span class="risk-value">3个</span></div>
-                                <div class="risk-item">靠近机房，燃气风险：<span class="risk-value">20个</span></div>
-                            </div>
-                        </div>
-                        <!-- 顶部导航 -->
-                        <div class="dashboard-header">
-                            <div class="header-left">
-                                <span class="username">QaQ夏日思考</span>
-                                <span class="platform">Bilibili</span>
-                            </div>
-                            <div class="header-right">
-                                <span class="nav-item">区域</span>
-                                <span class="nav-item">设施台账</span>
-                                <span class="nav-item">培训</span>
-                                <span class="nav-item">栏目</span>
-                                <span class="nav-item">我的一周</span>
-                                <span class="nav-item">我的一月</span>
-                            </div>
-                        </div>
-                        <!-- 底部文字 -->
-                        <div class="dashboard-footer">
-                            这是我之前项目中
-                        </div>
-                        <!-- 右下角视频按钮 -->
-                        <button class="video-btn" onclick="playVideo()">
-                            <span class="play-icon">▶</span>
-                        </button>
-                    </div>
-
                     <!-- 顶部工具栏：四个等大按钮（搜索框 + 三个筛选） -->
                     <div class="memory-topbar">
                         <!-- 简化搜索框 -->
@@ -571,12 +498,21 @@
             <!-- 添加记忆页面（独立页面，与详情页风格一致） -->
             <section class="page" id="page-memory-add">
                 <div class="memory-detail-container">
-                    <!-- 顶部工具栏：返回 + 保存 -->
+                    <!-- 顶部工具栏：返回 + 分享/个性/思维导图 + 保存 -->
                     <div class="memory-detail-toolbar">
                         <button class="memory-detail-icon-btn" onclick="closeMemoryAdd()" aria-label="返回">
                             <span class="memory-detail-icon">←</span>
                         </button>
                         <div class="memory-detail-toolbar-right">
+                            <button class="memory-detail-icon-btn" onclick="shareMemoryAdd()" aria-label="分享">
+                                <span class="memory-detail-icon">⤴</span>
+                            </button>
+                            <button class="memory-detail-icon-btn" onclick="toggleMemoryAddStyle()" aria-label="个性">
+                                <span class="memory-detail-icon">🎨</span>
+                            </button>
+                            <button class="memory-detail-icon-btn" onclick="showMemoryMindmap()" aria-label="思维导图">
+                                <span class="memory-detail-icon">🧠</span>
+                            </button>
                             <button class="memory-detail-icon-btn save-btn" onclick="saveNewMemory()" aria-label="保存">
                                 <span class="memory-detail-icon">✓</span>
                             </button>
@@ -587,16 +523,9 @@
                     <div class="memory-detail-paper">
                         <input type="text" id="memoryAddTitle" class="memory-add-title" placeholder="给这条记忆起个标题...">
                         <div class="memory-detail-meta">
-                            <span id="memoryAddDate">新记忆</span>
+                            <span id="memoryAddDate">—</span>
                         </div>
                         <textarea id="memoryAddContent" class="memory-add-content" placeholder="记录你的想法、心得、笔记..."></textarea>
-                        <div class="memory-add-category">
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '工作总结')">💼 工作总结</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
-                            <span class="category-select" onclick="selectAddMemoryCategory(this, '其他')">📝 其他</span>
-                        </div>
                     </div>
                 </div>
             </section>
