@@ -4,7 +4,7 @@
  */
 
 /* ============ 版本控制 - 每次更新必须修改版本号 ============ */
-const APP_VERSION = '2026062121';
+const APP_VERSION = '2026062122';
 const STORAGE_VERSION_KEY = 'zhilv_version';
 
 /* ============ Service Worker 安全注册 ============
@@ -2198,7 +2198,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 0. 开场 CG 动画前的强制刷新3次逻辑已在 HTML <head> 内联脚本执行
     //    此处仅做兜底：清掉可能残留的旧计数器，避免不必要的刷新
     try {
-        const OLD_KEYS = ['__cg_cache_v2__', '__cg_cache_v3__', '__cg_cache_v4__', '__cg_cache_clear_count__'];
+        const OLD_KEYS = ['__cg_cache_v2__', '__cg_cache_v3__', '__cg_cache_v4__', '__cg_cache_v5__', '__cg_cache_clear_count__'];
         for (let ki = 0; ki < OLD_KEYS.length; ki++) {
             const k = OLD_KEYS[ki];
             let v = parseInt(localStorage.getItem(k) || '0', 10);
@@ -4010,7 +4010,8 @@ function renderMemoryList() {
             div.style.setProperty('--rotate', `${angle}deg`);
             div.style.setProperty('--tz', `${radius}px`);
             div.innerHTML =
-                `<h4>${escapeHtml(item.title)}</h4>
+                `<span class="memory-item-index">${item.id}</span>
+                 <h4>${escapeHtml(item.title)}</h4>
                  <p>${escapeHtml(item.content)}</p>
                  <span class="memory-item-date">${formatDateMemory(item.createdAt)}</span>`;
             ringEl.appendChild(div);
