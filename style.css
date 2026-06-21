@@ -4710,13 +4710,7 @@ body {
         /* 纸张纹理点 */
         radial-gradient(circle at 20% 30%, rgba(139, 90, 43, 0.04) 1px, transparent 2px),
         radial-gradient(circle at 70% 60%, rgba(139, 90, 43, 0.04) 1px, transparent 2px),
-        radial-gradient(circle at 40% 80%, rgba(139, 90, 43, 0.03) 1px, transparent 2px),
-        /* 手绘花瓣/圆形装饰线条 */
-        radial-gradient(circle at 92% 15%, transparent 12px, rgba(42, 42, 42, 0.12) 13px, transparent 14px),
-        radial-gradient(circle at 92% 15%, transparent 18px, rgba(42, 42, 42, 0.08) 19px, transparent 20px),
-        /* 另一个角落 */
-        radial-gradient(circle at 8% 85%, transparent 12px, rgba(42, 42, 42, 0.12) 13px, transparent 14px),
-        radial-gradient(circle at 8% 85%, transparent 18px, rgba(42, 42, 42, 0.08) 19px, transparent 20px);
+        radial-gradient(circle at 40% 80%, rgba(139, 90, 43, 0.03) 1px, transparent 2px);
     pointer-events: none;
 }
 
