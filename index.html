@@ -421,6 +421,18 @@
             <!-- 记忆库页面 -->
             <section class="page" id="page-memory">
                 <div class="memory-container">
+                    <!-- 3D 背景粒子 -->
+                    <div class="memory-3d-particles">
+                        <div class="memory-3d-particle"></div>
+                        <div class="memory-3d-particle"></div>
+                        <div class="memory-3d-particle"></div>
+                        <div class="memory-3d-particle"></div>
+                        <div class="memory-3d-particle"></div>
+                        <div class="memory-3d-particle"></div>
+                    </div>
+                    <!-- 3D 网格线 -->
+                    <div class="memory-3d-grid"></div>
+
                     <!-- 顶部工具栏：四个等大按钮（搜索框 + 三个筛选） -->
                     <div class="memory-topbar">
                         <!-- 简化搜索框 -->
@@ -453,73 +465,6 @@
                         <div class="memory-empty" id="memoryEmpty" style="display:none;">
                             <div class="memory-empty-icon">📭</div>
                             <p>还没有笔记，点击右下角 + 添加你的第一条笔记</p>
-                        </div>
-                    </div>
-
-                    <!-- 3D 书架与翻开的书 -->
-                    <div class="memory-scene-3d">
-                        <!-- 悬浮书架 -->
-                        <div class="bookshelf">
-                            <div class="shelf-row">
-                                <div class="book" style="--bw:14px;--bh:100px;--bc:#c9a87c;"></div>
-                                <div class="book" style="--bw:18px;--bh:110px;--bc:#8b5a3c;"></div>
-                                <div class="book" style="--bw:12px;--bh:95px;--bc:#e8d5b0;"></div>
-                                <div class="book" style="--bw:20px;--bh:115px;--bc:#6b4423;"></div>
-                                <div class="book" style="--bw:16px;--bh:105px;--bc:#d4b896;"></div>
-                                <div class="book-bookmark" style="--bw:10px;--bh:90px;--bc:#b8956b;--book-rotate:25deg;"></div>
-                                <div class="book" style="--bw:22px;--bh:120px;--bc:#8b6f47;"></div>
-                                <div class="book" style="--bw:14px;--bh:100px;--bc:#a67c52;"></div>
-                                <div class="book" style="--bw:18px;--bh:115px;--bc:#705a3c;"></div>
-                                <div class="book-stack"></div>
-                            </div>
-                            <div class="shelf-board"></div>
-
-                            <div class="shelf-row">
-                                <div class="book" style="--bw:18px;--bh:105px;--bc:#d4b896;"></div>
-                                <div class="book" style="--bw:20px;--bh:115px;--bc:#8b5a3c;"></div>
-                                <div class="book" style="--bw:14px;--bh:95px;--bc:#c9a87c;"></div>
-                                <div class="book-stack-2"></div>
-                                <div class="book" style="--bw:16px;--bh:100px;--bc:#a67c52;"></div>
-                                <div class="book" style="--bw:12px;--bh:90px;--bc:#e8d5b0;"></div>
-                                <div class="book" style="--bw:22px;--bh:120px;--bc:#6b4423;"></div>
-                                <div class="book" style="--bw:18px;--bh:110px;--bc:#8b6f47;"></div>
-                                <div class="book-stack"></div>
-                            </div>
-                            <div class="shelf-board"></div>
-
-                            <div class="shelf-row">
-                                <div class="book" style="--bw:22px;--bh:120px;--bc:#c9a87c;"></div>
-                                <div class="book" style="--bw:14px;--bh:95px;--bc:#8b5a3c;"></div>
-                                <div class="book" style="--bw:18px;--bh:110px;--bc:#d4b896;"></div>
-                                <div class="book-stack-3"></div>
-                                <div class="book" style="--bw:20px;--bh:115px;--bc:#6b4423;"></div>
-                                <div class="book-stack"></div>
-                            </div>
-                            <div class="shelf-board"></div>
-
-                            <div class="shelf-row">
-                                <div class="book" style="--bw:18px;--bh:105px;--bc:#a67c52;"></div>
-                                <div class="book" style="--bw:16px;--bh:100px;--bc:#8b6f47;"></div>
-                                <div class="book-bookmark" style="--bw:10px;--bh:95px;--bc:#d4b896;--book-rotate:-15deg;"></div>
-                                <div class="book-stack-2"></div>
-                                <div class="book" style="--bw:20px;--bh:115px;--bc:#8b5a3c;"></div>
-                                <div class="book" style="--bw:14px;--bh:100px;--bc:#c9a87c;"></div>
-                                <div class="book-stack"></div>
-                            </div>
-                            <div class="shelf-board"></div>
-                        </div>
-
-                        <!-- 翻开的书 -->
-                        <div class="open-book">
-                            <div class="book-spine"></div>
-                            <div class="book-page book-page-left"></div>
-                            <div class="book-page book-page-left-2"></div>
-                            <div class="book-page book-page-left-3"></div>
-                            <div class="book-page book-page-right"></div>
-                            <div class="book-page book-page-right-2"></div>
-                            <div class="book-page book-page-right-3"></div>
-                            <div class="book-cover book-cover-left"></div>
-                            <div class="book-cover book-cover-right"></div>
                         </div>
                     </div>
 
