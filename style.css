@@ -6814,8 +6814,9 @@ body {
     width: 90px;
     height: 90px;
     border-radius: 50%;
-    right: 14px;
-    bottom: 60px;
+    /* 定位到右下角黄色方框（南象限）的大致中心位置：绿色方框右下1/4的中心 */
+    right: calc(25% - 45px);
+    bottom: calc(25% - 45px);
     z-index: 25;
     border: none;
     cursor: pointer;
@@ -6887,7 +6888,7 @@ body {
 }
 
 .memory-quad-control:active {
-    transform: translate(-50%, -50%) scale(0.96);
+    transform: scale(0.96);
 }
 
 /* 当圆环为空时的提示（覆盖在象限内） */
