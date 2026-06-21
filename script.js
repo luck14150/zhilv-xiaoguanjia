@@ -3800,9 +3800,43 @@ function loadMemoryData() {
     } else {
         // 默认示例数据
         memoryData = [
-            { id: 1, title: '编程学习要点', content: '记录前端开发核心知识点，包括HTML、CSS、JavaScript 等基础内容。', category: '学习笔记', createdAt: Date.now() - 86400000 },
-            { id: 2, title: '周末爬山心得', content: '今天去爬山，大自然让人心旷神怡，运动后状态更好。要坚持每周一次户外活动。', category: '生活感悟', createdAt: Date.now() - 172800000 },
-            { id: 3, title: '本周重点任务', content: '完成项目A的需求评审，准备项目B的方案设计，同时跟进测试进度。', category: '工作总结', createdAt: Date.now() - 259200000 }
+            { id: 1, title: '编程学习要点', content: '记录前端开发核心知识点，包括HTML、CSS、JavaScript 等基础内容。', category: '学习笔记', createdAt: Date.now() - 25200000 },
+            { id: 2, title: '周末爬山心得', content: '今天去爬山，大自然让人心旷神怡，运动后状态更好。要坚持每周一次户外活动。', category: '生活感悟', createdAt: Date.now() - 50400000 },
+            { id: 3, title: '本周重点任务', content: '完成项目A的需求评审，准备项目B的方案设计，同时跟进测试进度。', category: '工作总结', createdAt: Date.now() - 75600000 },
+            { id: 4, title: '读书笔记：活法', content: '人生的意义在于磨练灵魂，在努力工作中找到生命的价值。', category: '学习笔记', createdAt: Date.now() - 100800000 },
+            { id: 5, title: '健身计划', content: '每周跑步3次，每次30分钟，加上核心肌群训练，保持健康状态。', category: '生活感悟', createdAt: Date.now() - 126000000 },
+            { id: 6, title: '会议记录：产品规划会', content: 'Q3重点功能包括用户中心升级、消息推送优化、数据看板增强。', category: '工作总结', createdAt: Date.now() - 151200000 },
+            { id: 7, title: '学习英语单词', content: '每天背30个单词，坚持一个月后复习效果明显提升。', category: '学习笔记', createdAt: Date.now() - 176400000 },
+            { id: 8, title: '周末美食探店', content: '新开的日料店寿司很好吃，环境也很棒，下次带朋友一起来。', category: '生活感悟', createdAt: Date.now() - 201600000 },
+            { id: 9, title: '代码review要点', content: '注意命名规范、注释完整、逻辑清晰，同时关注性能和安全问题。', category: '工作总结', createdAt: Date.now() - 226800000 },
+            { id: 10, title: '设计模式学习：单例', content: '单例模式保证一个类只有一个实例，常用于配置管理、日志记录等场景。', category: '学习笔记', createdAt: Date.now() - 252000000 },
+            { id: 11, title: '今日心情：平静', content: '午后的阳光让人感到安静，工作效率也比平时高了不少。', category: '生活感悟', createdAt: Date.now() - 277200000 },
+            { id: 12, title: '项目进度汇报', content: '本周完成用户模块开发，下周开始消息模块，预计两周内完成。', category: '工作总结', createdAt: Date.now() - 302400000 },
+            { id: 13, title: '算法学习：二叉树', content: '二叉树遍历的前序、中序、后序方式，递归和迭代两种实现。', category: '学习笔记', createdAt: Date.now() - 327600000 },
+            { id: 14, title: '灵感：产品新功能', content: '用户需要一个快速记录想法的功能，可以考虑加一个悬浮按钮。', category: '生活感悟', createdAt: Date.now() - 352800000 },
+            { id: 15, title: '周会：团队协作', content: '本周讨论跨部门协作流程，优化沟通方式，减少不必要的会议。', category: '工作总结', createdAt: Date.now() - 378000000 },
+            { id: 16, title: '学习笔记：React Hooks', content: 'useState用于状态管理，useEffect处理副作用，useContext跨层传递数据。', category: '学习笔记', createdAt: Date.now() - 403200000 },
+            { id: 17, title: '电影观后感', content: '周末看了一部治愈系电影，很感动。生活就是要慢慢品味。', category: '生活感悟', createdAt: Date.now() - 428400000 },
+            { id: 18, title: '产品需求梳理', content: '整理用户反馈的核心问题，排优先级后分配到下个迭代周期。', category: '工作总结', createdAt: Date.now() - 453600000 },
+            { id: 19, title: '前端学习：性能优化', content: '图片懒加载、代码分割、缓存策略，三种方式共同提升页面加载速度。', category: '学习笔记', createdAt: Date.now() - 478800000 },
+            { id: 20, title: '周末散步随想', content: '傍晚的公园很安静，思考了近期的生活和工作方向，感觉更清晰了。', category: '生活感悟', createdAt: Date.now() - 504000000 },
+            { id: 21, title: '新功能上线检查', content: '检查发布后的用户反馈、监控数据、错误日志，确保系统稳定运行。', category: '工作总结', createdAt: Date.now() - 529200000 },
+            { id: 22, title: '学习：CSS Grid布局', content: 'Grid是二维布局系统，可同时控制行和列，适合复杂页面结构。', category: '学习笔记', createdAt: Date.now() - 554400000 },
+            { id: 23, title: '今日趣事', content: '午休时同事讲了一个很有意思的故事，笑得停不下来，下午心情一直很好。', category: '生活感悟', createdAt: Date.now() - 579600000 },
+            { id: 24, title: '每日站会', content: '汇报昨日进度和今日计划，遇到的阻塞点需要和其他同事沟通。', category: '工作总结', createdAt: Date.now() - 604800000 },
+            { id: 25, title: '学习JavaScript异步编程', content: 'Promise、async/await让异步代码更易读，配合事件循环机制理解更深。', category: '学习笔记', createdAt: Date.now() - 630000000 },
+            { id: 26, title: '个人记账', content: '本月支出比上月多了一些，需要控制一下餐饮和购物的消费。', category: '生活感悟', createdAt: Date.now() - 655200000 },
+            { id: 27, title: '需求评审：用户反馈', content: '收集用户对新版本的意见，整理成产品需求文档，和团队讨论可行性。', category: '工作总结', createdAt: Date.now() - 680400000 },
+            { id: 28, title: '学习笔记：Vue3', content: '组合式API让代码组织更灵活，ref、reactive、computed是核心三剑客。', category: '学习笔记', createdAt: Date.now() - 705600000 },
+            { id: 29, title: '周末咖啡馆', content: '去了一家新开的咖啡馆，环境不错，拿铁很好喝。享受了一个悠闲的下午。', category: '生活感悟', createdAt: Date.now() - 730800000 },
+            { id: 30, title: '技术选型讨论', content: '讨论新项目的技术栈，权衡开发效率、团队熟悉度和长期维护成本。', category: '工作总结', createdAt: Date.now() - 756000000 },
+            { id: 31, title: '学习：Git分支策略', content: 'Git Flow和Trunk Based Development各有优势，团队规模决定选择哪种。', category: '学习笔记', createdAt: Date.now() - 781200000 },
+            { id: 32, title: '运动日记', content: '今天跑步5公里，配速7分钟，感觉不错。继续坚持每周三次有氧运动。', category: '生活感悟', createdAt: Date.now() - 806400000 },
+            { id: 33, title: '项目里程碑', content: '项目达到一个重要里程碑，感谢团队的努力付出，下一阶段继续加油。', category: '工作总结', createdAt: Date.now() - 831600000 },
+            { id: 34, title: '读书笔记：原则', content: '瑞·达利欧的《原则》让人思考如何系统化决策，把经验转化为可执行的原则。', category: '学习笔记', createdAt: Date.now() - 856800000 },
+            { id: 35, title: '旅行计划', content: '计划下个月去海边度假，已经开始期待了。需要提前订好酒店和机票。', category: '生活感悟', createdAt: Date.now() - 882000000 },
+            { id: 36, title: '复盘本月', content: '这个月完成了三个功能模块，学到了很多。下个月目标是提升代码质量。', category: '工作总结', createdAt: Date.now() - 907200000 },
+            { id: 37, title: '学习：TypeScript', content: 'TypeScript的类型系统提供了更强的代码保护，接口、泛型让代码更健壮。', category: '学习笔记', createdAt: Date.now() - 932400000 }
         ];
         saveMemoryData();
     }
@@ -3931,8 +3965,7 @@ function renderMemoryList() {
             div.style.setProperty('--rotate', `${angle}deg`);
             div.style.setProperty('--tz', `${radius}px`);
             div.innerHTML =
-                `<h4>${escapeHtml(item.title)}</h4>
-                 <p>${escapeHtml(item.content)}</p>
+                `<div class="memory-item-tag">1</div>
                  <span class="memory-item-date">${formatDateMemory(item.createdAt)}</span>`;
             ringEl.appendChild(div);
         });
