@@ -2132,12 +2132,19 @@ function initAlarmSubnav() {
 
 /* ============ 唯一的启动入口 ============ */
 document.addEventListener('DOMContentLoaded', function () {
-    // 0. 开场 CG 动画前的强制刷新3次逻辑已移至 HTML <head> 内联脚本（不受 SW 缓存影响）
-    //    此处仅做兜底：如果 sessionStorage 仍残留计数器，检查并清理
+    // 0. 开场 CG 动画前的强制刷新3次逻辑已在 HTML <head> 内联脚本执行
+    //    此处仅做兜底：清掉可能残留的旧计数器，避免不必要的刷新
     try {
-        const k = '__cg_cache_clear_count__';
-        const v = parseInt(sessionStorage.getItem(k) || '0', 10);
-        if (v >= 3) sessionStorage.removeItem(k);
+        const OLD_KEYS = ['__cg_cache_v2__', '__cg_cache_clear_count__'];
+        for (let ki = 0; ki < OLD_KEYS.length; ki++) {
+            const k = OLD_KEYS[ki];
+            let v = parseInt(localStorage.getItem(k) || '0', 10);
+            if (v >= 3) localStorage.removeItem(k);
+            if (typeof sessionStorage !== 'undefined') {
+                v = parseInt(sessionStorage.getItem(k) || '0', 10);
+                if (v >= 3) sessionStorage.removeItem(k);
+            }
+        }
     } catch (e) {}
 
     // 1. UI 初始化

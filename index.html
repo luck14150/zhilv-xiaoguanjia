@@ -14,64 +14,62 @@
     <script>
     (function () {
         try {
-            var KEY = '__cg_cache_clear_count__';
-            var cnt = parseInt(sessionStorage.getItem(KEY) || '0', 10);
+            var KEY = '__cg_cache_v2__';
+            var cnt = parseInt(localStorage.getItem(KEY) || '0', 10);
             if (cnt < 3) {
-                // 0. 清应用存储（保留计数器在 sessionStorage，不被清掉）
-                try { localStorage.clear(); } catch (e) {}
+                // 1. 先写计数器（在 localStorage 中，跨刷新/关闭标签页保留）
+                localStorage.setItem(KEY, String(cnt + 1));
+
+                // 2. 清除 localStorage 中除计数器外的所有应用数据
+                var otherKeys = [];
+                for (var i = 0; i < localStorage.length; i++) {
+                    var k = localStorage.key(i);
+                    if (k && k !== KEY) otherKeys.push(k);
+                }
+                for (var j = 0; j < otherKeys.length; j++) {
+                    try { localStorage.removeItem(otherKeys[j]); } catch (e) {}
+                }
+
+                // 3. 清除 sessionStorage
+                try { sessionStorage.clear(); } catch (e) {}
+
+                // 4. 异步：注销所有 Service Worker（不等待其完成）
                 try {
-                    // 只清空 sessionStorage 中除计数器外的其他 key
-                    var keysToRemove = [];
-                    for (var i = 0; i < sessionStorage.length; i++) {
-                        var k = sessionStorage.key(i);
-                        if (k && k !== KEY) keysToRemove.push(k);
+                    if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
+                        navigator.serviceWorker.getRegistrations().then(function (regs) {
+                            for (var i = 0; i < regs.length; i++) {
+                                try { regs[i].unregister(); } catch (e) {}
+                            }
+                        });
                     }
-                    keysToRemove.forEach(function (k) { sessionStorage.removeItem(k); });
+                    if ('caches' in window) {
+                        caches.keys().then(function (names) {
+                            for (var i = 0; i < names.length; i++) {
+                                try { caches.delete(names[i]); } catch (e) {}
+                            }
+                        });
+                    }
                 } catch (e) {}
 
-                // 1. 先注销所有 Service Worker（强制拉取最新资源）
-                var unregPromise = Promise.resolve();
-                if ('serviceWorker' in navigator && navigator.serviceWorker.getRegistrations) {
-                    unregPromise = navigator.serviceWorker.getRegistrations().then(function (regs) {
-                        return Promise.all(regs.map(function (r) { return r.unregister(); }));
-                    }).catch(function () {});
-                }
-
-                // 2. 清浏览器缓存（Cache Storage）
-                var cachePromise = Promise.resolve();
-                if ('caches' in window) {
-                    cachePromise = caches.keys().then(function (names) {
-                        return Promise.all(names.map(function (n) { return caches.delete(n); }));
-                    }).catch(function () {});
-                }
-
-                // 3. 计数器 +1，等待异步清缓存完成后，硬刷新
-                sessionStorage.setItem(KEY, String(cnt + 1));
-                Promise.all([unregPromise, cachePromise]).then(function () {
-                    setTimeout(function () {
-                        // 使用 reload(true) 强制绕过缓存
-                        try { location.reload(true); } catch (e) {
-                            // 兼容：现代浏览器 fallback
-                            window.location.href = window.location.href.split('#')[0].split('?')[0] + '?_t=' + Date.now();
-                        }
-                    }, 150);
-                });
-                // 阻止后续脚本/资源加载
-                document.write('<div style="position:fixed;inset:0;background:#000;color:#fff;display:flex;align-items:center;justify-content:center;font-family:monospace;font-size:14px;z-index:99999;">正在清理缓存... (' + (cnt + 1) + '/3)</div>');
-                throw new Error('__STOP__'); // 抛出异常阻止后续内联脚本/同步资源加载
+                // 5. 同步刷新（带时间戳绕过 HTTP 缓存）
+                var url = window.location.href.split('#')[0];
+                if (url.indexOf('?') === -1) url += '?';
+                else url += '&';
+                url += '_t=' + Date.now() + '&_r=' + (cnt + 1);
+                window.location.replace(url);
+                // 阻止后续代码执行
+                return;
             } else {
-                // 已完成3次刷新，清掉计数器
-                try { sessionStorage.removeItem(KEY); } catch (e) {}
+                // 已完成3次刷新，清掉计数器，正常进入 CG 动画
+                try { localStorage.removeItem(KEY); } catch (e) {}
             }
-        } catch (err) {
-            // 如果是自定义中止信号，静默；否则继续启动
-            if (err && err.message !== '__STOP__') {
-                try { sessionStorage.removeItem('__cg_cache_clear_count__'); } catch (e) {}
-            }
+        } catch (e) {
+            // 任何异常都清掉计数器，避免死循环
+            try { localStorage.removeItem('__cg_cache_v2__'); } catch (e2) {}
         }
     })();
     </script>
-    <link rel="stylesheet" href="style.css?v=2026062110">
+    <link rel="stylesheet" href="style.css?v=2026062111">
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
@@ -1249,6 +1247,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-    <script src="script.js?v=2026062110"></script>
+    <script src="script.js?v=2026062111"></script>
 </body>
 </html>
