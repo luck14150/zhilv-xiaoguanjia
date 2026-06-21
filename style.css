@@ -6808,15 +6808,14 @@ body {
     opacity: 0.6;
 }
 
-/* 中央控制圆圈（黄圈 + 间隔光环 + 蓝色内圆） — 点击切换粉光/白色，控制四圆环 */
+/* 中央控制圆圈（黄圈 + 间隔光环 + 蓝色内圆） — 迁移到右下角黄色方框位置，点击切换粉光/白色，控制四圆环 */
 .memory-quad-control {
     position: absolute;
-    width: 150px;
-    height: 150px;
+    width: 90px;
+    height: 90px;
     border-radius: 50%;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    right: 14px;
+    bottom: 60px;
     z-index: 25;
     border: none;
     cursor: pointer;
@@ -6835,13 +6834,13 @@ body {
                 0 0 0 3px #ffc107 inset;
 }
 
-/* 内部蓝心（通过子元素实现，方便点击时切换为白色） — 尺寸随外圆放大 */
+/* 内部蓝心（通过子元素实现，方便点击时切换为白色） — 尺寸随外圆调整 */
 .memory-quad-control-core {
     position: absolute;
-    top: 22px;
-    left: 22px;
-    right: 22px;
-    bottom: 22px;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
     border-radius: 50%;
     background: radial-gradient(circle at 50% 50%, #64b5f6 0%, #1565c0 100%);
     pointer-events: none;
