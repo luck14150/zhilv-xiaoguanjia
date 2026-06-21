@@ -1071,9 +1071,12 @@ function switchPage(pageId) {
         item.classList.toggle('active', item.dataset.page === pageId);
     });
 
-    // 切换到记忆页面时自动渲染
+    // 切换到记忆页面时自动渲染 + 启动视差
     if (pageId === 'memory') {
-        setTimeout(renderMemoryList, 50);
+        setTimeout(() => {
+            renderMemoryList();
+            initMemoryParallax();
+        }, 50);
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3299,13 +3302,102 @@ function switchMode(mode) {
 
 /* ============ 记忆管理功能 ============ */
 const MEMORY_KEY = 'zhilv_memory_data';
-// 归为"文件夹"的分类（其他分类视为"未分类"）
 const FOLDER_CATEGORIES = ['学习笔记', '生活感悟', '工作总结', '灵感创意'];
 let memoryData = [];
-let currentMemoryCategory = 'all';   // 'all' | 'folder' | 'uncategorized'
+let currentMemoryCategory = 'all';
 let editingMemoryId = null;
 let selectedCategory = '学习笔记';
-let currentViewingMemoryId = null;   // 当前查看的记忆ID
+let currentViewingMemoryId = null;
+
+/* ============= 视差效果核心逻辑（眼睛从不同角度看 = 鼠标移动） =============
+   原理：远景移动慢，近景移动快。就像你坐火车看窗外，远处的山移动慢，路边的树移动快。
+   speedFactor：
+   - 远景 ~ 5-15 像素（慢）
+   - 中景 ~ 15-30 像素（中）
+   - 近景 ~ 30-50 像素（快）
+*/
+let parallaxInitialized = false;
+let mouseX = 0, mouseY = 0;       // 当前鼠标位置（归一化 -0.5 到 0.5）
+let currentX = 0, currentY = 0;   // 平滑过渡后的位置
+let rafId = null;
+
+function initMemoryParallax() {
+    if (parallaxInitialized) return;
+    const container = document.getElementById('page-memory');
+    if (!container) return;
+    parallaxInitialized = true;
+
+    // 监听鼠标移动，实时更新视角
+    container.addEventListener('mousemove', (e) => {
+        const rect = container.getBoundingClientRect();
+        mouseX = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 ~ 0.5
+        mouseY = (e.clientY - rect.top) / rect.height - 0.5;
+        if (!rafId) rafId = requestAnimationFrame(applyParallax);
+    });
+
+    // 鼠标离开时慢慢复位
+    container.addEventListener('mouseleave', () => {
+        mouseX = 0;
+        mouseY = 0;
+        if (!rafId) rafId = requestAnimationFrame(applyParallax);
+    });
+
+    // 触屏设备支持
+    container.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+            const rect = container.getBoundingClientRect();
+            const touch = e.touches[0];
+            mouseX = (touch.clientX - rect.left) / rect.width - 0.5;
+            mouseY = (touch.clientY - rect.top) / rect.height - 0.5;
+            if (!rafId) rafId = requestAnimationFrame(applyParallax);
+        }
+    }, { passive: true });
+
+    container.addEventListener('touchend', () => {
+        mouseX = 0; mouseY = 0;
+        if (!rafId) rafId = requestAnimationFrame(applyParallax);
+    });
+
+    // 启动动画循环
+    applyParallax();
+}
+
+function applyParallax() {
+    // 线性插值（Linear Interpolation）——让移动有"跟手"的跟随感
+    // 系数 0.08：越小越平滑、延迟越大，像眼球聚焦一样
+    currentX += (mouseX - currentX) * 0.08;
+    currentY += (mouseY - currentY) * 0.08;
+
+    const farLayer = document.querySelector('#page-memory .parallax-far');
+    const midLayer = document.querySelector('#page-memory .parallax-mid');
+    const nearLayer = document.querySelector('#page-memory .parallax-near');
+
+    // 核心：不同速度 = 不同深度
+    if (farLayer) {
+        farLayer.style.transform = `translate3d(${currentX * 8}px, ${currentY * 8}px, 0)`;
+    }
+    if (midLayer) {
+        midLayer.style.transform = `translate3d(${currentX * 22}px, ${currentY * 22}px, 0)`;
+    }
+    if (nearLayer) {
+        nearLayer.style.transform = `translate3d(${currentX * 45}px, ${currentY * 45}px, 0)`;
+    }
+
+    // 卡片轻微跟随（增加层次感）
+    const cards = document.querySelectorAll('#page-memory .memory-item');
+    cards.forEach((card, i) => {
+        const offset = (i % 2 === 0) ? 1 : -1;  // 左右列轻微反向
+        card.style.transform = `translate3d(${currentX * 6 * offset}px, ${currentY * 4}px, 0)`;
+    });
+
+    // 如果还没完全归位，继续动画
+    const diff = Math.abs(mouseX - currentX) + Math.abs(mouseY - currentY);
+    if (diff > 0.001) {
+        rafId = requestAnimationFrame(applyParallax);
+    } else {
+        rafId = null;
+    }
+}
 
 function loadMemoryData() {
     const saved = localStorage.getItem(MEMORY_KEY);
@@ -3410,7 +3502,11 @@ function viewMemory(id) {
 
     if (titleEl) titleEl.textContent = memory.title;
     if (dateEl) dateEl.textContent = formatDateMemory(memory.createdAt);
-    if (contentEl) contentEl.textContent = memory.content;
+    if (contentEl) {
+        contentEl.textContent = memory.content;
+        // 处理换行
+        contentEl.innerHTML = contentEl.innerHTML.replace(/\n/g, '<br>');
+    }
 
     switchPage('memory-detail');
 }
@@ -3421,31 +3517,11 @@ function closeMemoryDetail() {
     currentViewingMemoryId = null;
 }
 
-// 编辑当前查看的记忆（切换到添加页面并填充数据）
+// 编辑当前查看的记忆
 function editCurrentMemoryDetail() {
     if (!currentViewingMemoryId) return;
-    const memory = memoryData.find(m => m.id === currentViewingMemoryId);
-    if (!memory) return;
-
-    addingMemoryCategory = memory.category;
-    const titleInput = document.getElementById('memoryAddTitle');
-    const contentInput = document.getElementById('memoryAddContent');
-    const deleteBtn = document.getElementById('notepad-delete-btn');
-
-    if (titleInput) titleInput.value = memory.title;
-    if (contentInput) contentInput.value = memory.content;
-
-    // 更新分类选择状态
-    const categoryEls = document.querySelectorAll('.notepad-cat-tag');
-    categoryEls.forEach(el => {
-        const catText = el.textContent.trim().replace(/^[^\s]+\s/, '');
-        el.classList.remove('active');
-        if (catText === memory.category) {
-            el.classList.add('active');
-        }
-    });
-
-    switchPage('memory-add');
+    editMemory(currentViewingMemoryId);
+    closeMemoryDetail();
 }
 
 // 删除当前查看的记忆
@@ -3498,31 +3574,29 @@ let addingMemoryCategory = '学习笔记';
 
 function showAddMemoryModal() {
     addingMemoryCategory = '学习笔记';
-    currentViewingMemoryId = null;
     const titleInput = document.getElementById('memoryAddTitle');
     const contentInput = document.getElementById('memoryAddContent');
+    const categoryContainer = document.getElementById('memoryAddCategory');
 
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
 
     // 重置分类选择状态
-    const categoryEls = document.querySelectorAll('.notepad-cat-tag');
-    categoryEls.forEach((el, idx) => {
-        el.classList.remove('active');
-        if (idx === 0) el.classList.add('active');
-    });
+    const categoryEls = document.querySelectorAll('.memory-add-category .category-select');
+    categoryEls.forEach(el => el.classList.remove('active'));
+    const defaultCat = document.querySelector('.memory-add-category .category-select');
+    if (defaultCat) defaultCat.classList.add('active');
 
     switchPage('memory-add');
 }
 
 function closeMemoryAdd() {
-    currentViewingMemoryId = null;
     switchPage('memory');
 }
 
 function selectAddMemoryCategory(el, category) {
     addingMemoryCategory = category;
-    document.querySelectorAll('.notepad-cat-tag').forEach(e => e.classList.remove('active'));
+    document.querySelectorAll('.memory-add-category .category-select').forEach(e => e.classList.remove('active'));
     el.classList.add('active');
 }
 
@@ -3544,30 +3618,136 @@ function saveNewMemory() {
         return;
     }
 
-    if (currentViewingMemoryId) {
+    const newMemory = {
+        id: Date.now(),
+        title: title,
+        content: content,
+        category: addingMemoryCategory,
+        createdAt: Date.now()
+    };
+
+    memoryData.unshift(newMemory);
+    saveMemoryData();
+    renderMemoryList();
+    switchPage('memory');
+}
+
+function editMemory(id) {
+    const memory = memoryData.find(m => m.id === id);
+    if (!memory) return;
+
+    editingMemoryId = id;
+    selectedCategory = memory.category;
+    const modal = document.getElementById('memoryModal');
+    const title = document.getElementById('memoryModalTitle');
+    const titleInput = document.getElementById('memoryTitleInput');
+    const contentInput = document.getElementById('memoryContentInput');
+    const delBtn = document.getElementById('memoryModalDeleteBtn');
+
+    if (title) title.textContent = '编辑记忆';
+    if (titleInput) titleInput.value = memory.title;
+    if (contentInput) contentInput.value = memory.content;
+    if (delBtn) {
+        delBtn.style.display = 'inline-block';
+        delBtn.style.color = '#ff6b6b';
+        delBtn.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+    }
+
+    updateCategorySelect();
+
+    if (modal) modal.classList.add('show');
+}
+
+// 从编辑弹窗内调用删除
+function deleteCurrentMemory() {
+    if (!editingMemoryId) return;
+    const confirmed = confirm('确定要删除这条记忆吗？');
+    if (!confirmed) return;
+    memoryData = memoryData.filter(m => m.id !== editingMemoryId);
+    saveMemoryData();
+    renderMemoryList();
+    const modal = document.getElementById('memoryModal');
+    if (modal) modal.classList.remove('show');
+    editingMemoryId = null;
+}
+
+function selectMemoryCategory(element, category) {
+    selectedCategory = category;
+    updateCategorySelect();
+}
+
+function updateCategorySelect() {
+    const selects = document.querySelectorAll('#memoryCategorySelect .category-select');
+    selects.forEach(el => {
+        const cat = el.textContent.trim().replace(/^[^\s]+\s/, '');
+        if (cat === selectedCategory) {
+            el.classList.add('active');
+        } else {
+            el.classList.remove('active');
+        }
+    });
+}
+
+function saveMemory() {
+    const titleInput = document.getElementById('memoryTitleInput');
+    const contentInput = document.getElementById('memoryContentInput');
+
+    const title = titleInput ? titleInput.value.trim() : '';
+    const content = contentInput ? contentInput.value.trim() : '';
+
+    if (!title) {
+        alert('请输入标题');
+        return;
+    }
+    if (!content) {
+        alert('请输入内容');
+        return;
+    }
+
+    if (editingMemoryId) {
         // 编辑现有记忆
-        const memory = memoryData.find(m => m.id === currentViewingMemoryId);
+        const memory = memoryData.find(m => m.id === editingMemoryId);
         if (memory) {
             memory.title = title;
             memory.content = content;
-            memory.category = addingMemoryCategory;
+            memory.category = selectedCategory;
         }
     } else {
         // 添加新记忆
-        const newMemory = {
-            id: Date.now(),
+        const newId = memoryData.length > 0 ? Math.max(...memoryData.map(m => m.id)) + 1 : 1;
+        memoryData.push({
+            id: newId,
             title: title,
             content: content,
-            category: addingMemoryCategory,
+            category: selectedCategory,
             createdAt: Date.now()
-        };
-        memoryData.unshift(newMemory);
+        });
     }
 
     saveMemoryData();
     renderMemoryList();
-    currentViewingMemoryId = null;
-    switchPage('memory');
+
+    const modal = document.getElementById('memoryModal');
+    if (modal) modal.classList.remove('show');
+}
+
+function deleteMemory(id) {
+    const memory = memoryData.find(m => m.id === id);
+    if (!memory) return;
+
+    const confirmed = confirm('确定要删除这条记忆吗？');
+    if (!confirmed) return;
+
+    memoryData = memoryData.filter(m => m.id !== id);
+    saveMemoryData();
+    renderMemoryList();
+}
+
+function closeMemoryModal(event) {
+    if (!event || event.target.classList.contains('memory-modal')) {
+        const modal = document.getElementById('memoryModal');
+        if (modal) modal.classList.remove('show');
+    }
 }
 
 // 初始化记忆数据
