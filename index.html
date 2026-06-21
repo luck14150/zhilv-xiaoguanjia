@@ -423,8 +423,9 @@
                 <div class="memory-container">
                     <!-- 3D图片环绕容器 -->
                     <div class="memory-3d-wrap">
-                        <!-- 圆环：6张环绕图片 + 中心书本（都在同一3D空间内） -->
+                        <!-- 圆环：6张环绕图片（跟随鼠标旋转）+ 中心书本（位于6张图片射线交点） -->
                         <div class="memory-3d-carousel" id="memory3dCarousel">
+                            <!-- 6张图片：每张 rotateY(θ) translateZ(320px)，6条射线交汇于 carousel 原点 -->
                             <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1658044412448165804441259.jpg');"></div>
                             <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1658044416540165804441665.jpg');"></div>
                             <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/170429677313517042967732.jpg');"></div>
@@ -432,11 +433,12 @@
                             <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1658043148532165804314881.jpg');"></div>
                             <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1638860379965163886037984.jpg');"></div>
 
-                            <!-- 圆环中心：魔法书（在同一3D空间，counter-rotate抵消父级旋转） -->
+                            <!-- 圆环中心：魔法书（位于6条射线的交点 = carousel 原点） -->
+                            <!-- counter-rotate: rotateX(-75deg) + rotateY(-动态值) 让书本保持正面朝上不随圆环旋转 -->
                             <div class="memory-book-wrap" id="memoryBookWrap">
-                                <!-- 中心环境光晕 -->
+                                <!-- 中心环境光晕（局部，限定在6张图片中间区域） -->
                                 <div class="memory-book-glow"></div>
-                                <!-- 彩色碎片 -->
+                                <!-- 彩色碎片（围绕书本飞舞） -->
                                 <div class="memory-book-shard shard shard-1"></div>
                                 <div class="memory-book-shard shard shard-2"></div>
                                 <div class="memory-book-shard shard shard-3"></div>
@@ -452,16 +454,19 @@
                                 <!-- 书本主体 -->
                                 <div class="memory-book">
                                     <div class="memory-book-base"></div>
+                                    <!-- 左侧页 -->
                                     <div class="memory-book-page page-l page-l-1"></div>
                                     <div class="memory-book-page page-l page-l-2"></div>
                                     <div class="memory-book-page page-l page-l-3"></div>
                                     <div class="memory-book-page page-l page-l-4"></div>
                                     <div class="memory-book-page page-l page-l-5"></div>
+                                    <!-- 右侧页 -->
                                     <div class="memory-book-page page-r page-r-1"></div>
                                     <div class="memory-book-page page-r page-r-2"></div>
                                     <div class="memory-book-page page-r page-r-3"></div>
                                     <div class="memory-book-page page-r page-r-4"></div>
                                     <div class="memory-book-page page-r page-r-5"></div>
+                                    <!-- 封面/书脊 -->
                                     <div class="memory-book-cover"></div>
                                 </div>
                             </div>
