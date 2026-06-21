@@ -1071,12 +1071,9 @@ function switchPage(pageId) {
         item.classList.toggle('active', item.dataset.page === pageId);
     });
 
-    // 切换到记忆页面时自动渲染 + 启动3D图片环绕
+    // 切换到记忆页面时自动渲染
     if (pageId === 'memory') {
-        setTimeout(() => {
-            renderMemoryList();
-            initMemory3dCarousel();
-        }, 50);
+        setTimeout(renderMemoryList, 50);
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -3302,130 +3299,13 @@ function switchMode(mode) {
 
 /* ============ 记忆管理功能 ============ */
 const MEMORY_KEY = 'zhilv_memory_data';
+// 归为"文件夹"的分类（其他分类视为"未分类"）
 const FOLDER_CATEGORIES = ['学习笔记', '生活感悟', '工作总结', '灵感创意'];
 let memoryData = [];
-let currentMemoryCategory = 'all';
+let currentMemoryCategory = 'all';   // 'all' | 'folder' | 'uncategorized'
 let editingMemoryId = null;
 let selectedCategory = '学习笔记';
-let currentViewingMemoryId = null;
-
-/* ============= 视差效果核心逻辑（眼睛从不同角度看 = 鼠标移动） =============
-   原理：远景移动慢，近景移动快。就像你坐火车看窗外，远处的山移动慢，路边的树移动快。
-   speedFactor：
-   - 远景 ~ 5-15 像素（慢）
-   - 中景 ~ 15-30 像素（中）
-   - 近景 ~ 30-50 像素（快）
-*/
-/* ============== 3D图片环绕：鼠标驱动整个圆环 rotateX / rotateY ============== */
-let carousel3dInitialized = false;
-let carouselRafId = null;
-let carouselTargetRotY = 0;   // 鼠标目标旋转角度（水平）
-let carouselTargetRotX = 75;  // 鼠标目标旋转角度（垂直，默认75°=俯视图）
-let carouselCurrentRotY = 0;
-let carouselCurrentRotX = 75; // 默认75°俯视角
-let carouselAutoSpin = 0.15;  // 空闲时的自动旋转速度（度/帧）
-
-function initMemory3dCarousel() {
-    if (carousel3dInitialized) return;
-    const container = document.getElementById('page-memory');
-    if (!container) return;
-    carousel3dInitialized = true;
-
-    // 给每个碎片设置独立的初始旋转角度（CSS变量）
-    const shards = document.querySelectorAll('.memory-book-shard');
-    shards.forEach((shard, i) => {
-        const baseAngle = (i * 47 + Math.floor(Math.random() * 60)) % 360;
-        shard.style.setProperty('--r', `${baseAngle}deg`);
-        // 给每个碎片设置随机大小（覆盖CSS中已设置的）
-        const w = 6 + Math.floor(Math.random() * 16);
-        const h = 8 + Math.floor(Math.random() * 18);
-        shard.style.width = `${w}px`;
-        shard.style.height = `${h}px`;
-    });
-
-    // 给每页书做一点内容变化（每页的文字线条位置和颜色略不同）
-    const pages = document.querySelectorAll('.memory-book-page');
-    const pageColors = [
-        'rgba(139, 90, 43, 0.18)',   // 棕
-        'rgba(80, 100, 150, 0.16)',  // 蓝棕
-        'rgba(150, 80, 60, 0.17)',   // 红棕
-        'rgba(60, 90, 60, 0.15)',    // 绿棕
-    ];
-    pages.forEach((page, i) => {
-        const pseudo = page.querySelector('.page-text');
-        // 通过内联样式影响 ::before 的颜色（用 background-color 覆盖）
-        page.style.setProperty('--line-color', pageColors[i % pageColors.length]);
-        // 为每一页添加一点内容差异：随机的"标题条"效果
-        const topOffset = 20 + Math.floor(Math.random() * 40);
-        page.style.setProperty('--top-offset', `${topOffset}px`);
-    });
-
-    // 鼠标移动 => 驱动整个圆环在3D空间旋转
-    container.addEventListener('mousemove', (e) => {
-        const rect = container.getBoundingClientRect();
-        const nx = (e.clientX - rect.left) / rect.width - 0.5;   // -0.5 ~ 0.5
-        const ny = (e.clientY - rect.top) / rect.height - 0.5;
-        // 水平方向：鼠标左右移动 => 圆环绕 Y 轴旋转 ±60°
-        // 垂直方向：鼠标上下移动 => 圆环绕 X 轴在 75°±25° 范围变化（俯视）
-        carouselTargetRotY = nx * 120;
-        carouselTargetRotX = 75 + ny * 25;
-        if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
-    });
-
-    // 鼠标离开 => 继续缓慢自转
-    container.addEventListener('mouseleave', () => {
-        carouselTargetRotY = carouselCurrentRotY;
-        carouselTargetRotX = 75;
-        if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
-    });
-
-    // 触屏
-    container.addEventListener('touchmove', (e) => {
-        if (e.touches.length > 0) {
-            const rect = container.getBoundingClientRect();
-            const touch = e.touches[0];
-            const nx = (touch.clientX - rect.left) / rect.width - 0.5;
-            const ny = (touch.clientY - rect.top) / rect.height - 0.5;
-            carouselTargetRotY = nx * 120;
-            carouselTargetRotX = 75 + ny * 25;
-            if (!carouselRafId) carouselRafId = requestAnimationFrame(updateCarousel3d);
-        }
-    }, { passive: true });
-
-    updateCarousel3d();
-}
-
-function updateCarousel3d() {
-    // 线性插值：0.08 的平滑跟手系数
-    carouselCurrentRotY += (carouselTargetRotY - carouselCurrentRotY) * 0.08;
-    carouselCurrentRotX += (carouselTargetRotX - carouselCurrentRotX) * 0.08;
-
-    // 空闲时（鼠标未操作很久后），自动缓慢旋转，让画面始终有活力
-    const diff = Math.abs(carouselTargetRotY - carouselCurrentRotY) +
-                 Math.abs(carouselTargetRotX - carouselCurrentRotX);
-    if (diff < 0.3) {
-        carouselCurrentRotY += carouselAutoSpin;
-        carouselTargetRotY = carouselCurrentRotY;
-    }
-
-    // 1) 圆环：施加鼠标驱动的 rotateX + rotateY
-    const carousel = document.getElementById('memory3dCarousel');
-    if (carousel) {
-        carousel.style.transform =
-            `translate(-50%, -50%) rotateX(${carouselCurrentRotX.toFixed(2)}deg) rotateY(${carouselCurrentRotY.toFixed(2)}deg)`;
-    }
-
-    // 2) 书本：施加反向旋转，抵消圆环的旋转，让书保持正面朝上（位于6条射线交点）
-    const bookWrap = document.getElementById('memoryBookWrap');
-    if (bookWrap) {
-        // 反向顺序：先 rotateY(-rotY) 再 rotateX(-rotX)，抵消 carousel 的 rotateX(rotX) rotateY(rotY)
-        bookWrap.style.transform =
-            `rotateY(${-carouselCurrentRotY.toFixed(2)}deg) rotateX(${-carouselCurrentRotX.toFixed(2)}deg)`;
-    }
-
-    // 继续循环（因为有自动旋转，所以一直保持raf，消耗可忽略）
-    carouselRafId = requestAnimationFrame(updateCarousel3d);
-}
+let currentViewingMemoryId = null;   // 当前查看的记忆ID
 
 function loadMemoryData() {
     const saved = localStorage.getItem(MEMORY_KEY);
@@ -3516,6 +3396,11 @@ function renderMemoryList() {
             listEl.appendChild(div);
         });
     }
+}
+
+// 播放视频（模拟）
+function playVideo() {
+    alert('视频播放功能已触发（实际项目中可嵌入视频播放器）');
 }
 
 // 查看记忆详情

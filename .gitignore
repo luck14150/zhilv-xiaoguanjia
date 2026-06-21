@@ -1,0 +1,14 @@
+node_modules/
+dist/
+out/
+build/
+.DS_Store
+*.log
+npm-debug.log*
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

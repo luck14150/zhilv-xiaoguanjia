@@ -4576,320 +4576,6 @@ body {
     gap: 14px;
     padding: 16px 0 80px 0;
     position: relative;
-    min-height: calc(100vh - 60px);
-    background:
-        radial-gradient(ellipse at 50% 50%, rgba(88, 28, 135, 0.25) 0%, transparent 60%),
-        linear-gradient(180deg, #0a0818 0%, #120e28 50%, #0a0818 100%);
-    overflow: hidden;
-}
-
-/* ================ 3D图片环绕（俯视图：从上往下看，书本在圆环中心） ================ */
-.memory-3d-wrap {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    perspective: 1400px;
-    /* 俯视图关键：透视点放在画面偏上方，这样视角是从上往下 */
-    perspective-origin: 50% 20%;
-    pointer-events: none;
-    overflow: hidden;
-}
-
-.memory-3d-carousel {
-    position: absolute;
-    /* 俯视图关键：rotateX(75deg) 让整个圆环从前视图转为俯视图
-       75deg = 从正上方75度的位置看下去，环的平面几乎垂直于屏幕 */
-    top: 50%;
-    left: 50%;
-    transform-style: preserve-3d;
-    transform: translate(-50%, -50%) rotateX(75deg) rotateY(0deg);
-    will-change: transform;
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.memory-3d-item {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 180px;
-    height: 240px;
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    border-radius: 14px;
-    box-shadow:
-        0 0 40px rgba(139, 92, 246, 0.35),
-        0 0 80px rgba(59, 130, 246, 0.2),
-        inset 0 0 30px rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-/* 6张图片在圆环上，每张相隔 360/6 = 60°，向外推 320px
-   在俯视图 rotateX(75deg) 下：
-   - rotateY(0°)   = 屏幕正前方（图片在屏幕最下方）
-   - rotateY(60°)  = 右前方
-   - rotateY(120°) = 右后方
-   - rotateY(180°) = 屏幕正后方（图片在屏幕最上方）
-   - rotateY(240°) = 左后方
-   - rotateY(300°) = 左前方（图片在屏幕左下方）
-   书本位于圆环中心，视觉上被图片包围 */
-.memory-3d-item:nth-child(1) { transform: rotateY(0deg)   translateZ(320px); }
-.memory-3d-item:nth-child(2) { transform: rotateY(60deg)  translateZ(320px); }
-.memory-3d-item:nth-child(3) { transform: rotateY(120deg) translateZ(320px); }
-.memory-3d-item:nth-child(4) { transform: rotateY(180deg) translateZ(320px); }
-.memory-3d-item:nth-child(5) { transform: rotateY(240deg) translateZ(320px); }
-.memory-3d-item:nth-child(6) { transform: rotateY(300deg) translateZ(320px); }
-
-/* ============ 圆环中心：魔法书（位于6张图片射线交点 = carousel 原点） ============ */
-.memory-book-wrap {
-    /* 关键：位于 carousel 内部原点 = 6 张图片 translateZ 射线交汇的几何中心点
-       JS 动态施加 counter-rotation: rotateY(-carouselY) rotateX(-75deg)
-       抵消 carousel 的旋转，让书保持正面朝上不随圆环旋转 */
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 0;
-    transform-style: preserve-3d;
-    pointer-events: none;
-    will-change: transform;
-}
-
-/* 书本主体：在 book-wrap 内部，以 (0,0,0) 为中心展开 */
-.memory-book {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 320px;
-    height: 220px;
-    /* translate(-160px, -110px) 让书本几何中心对齐 carousel 原点 */
-    transform: translate(-160px, -110px);
-    transform-style: preserve-3d;
-}
-
-/* 中心局部环境光晕（紧贴书本背后，不扩散到圆环外） */
-.memory-book-glow {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 380px;
-    height: 280px;
-    /* 光晕比书本略大，围绕书本中心 */
-    transform: translate(-190px, -140px);
-    background:
-        radial-gradient(ellipse at 50% 50%, rgba(139, 92, 246, 0.5) 0%, rgba(59, 130, 246, 0.25) 40%, transparent 75%),
-        radial-gradient(ellipse at 30% 40%, rgba(244, 114, 182, 0.3) 0%, transparent 55%),
-        radial-gradient(ellipse at 70% 60%, rgba(251, 191, 36, 0.25) 0%, transparent 55%);
-    border-radius: 50%;
-    filter: blur(25px);
-    animation: book-glow-pulse 4s ease-in-out infinite;
-}
-
-@keyframes book-glow-pulse {
-    0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-    50%      { opacity: 1.0; transform: translate(-50%, -50%) scale(1.08); }
-}
-
-/* 彩色碎片（围绕书本飞舞，定位以 book-wrap 原点为中心） */
-.memory-book-shard {
-    position: absolute;
-    top: 0;
-    left: 0;
-    border-radius: 3px;
-    opacity: 0.85;
-    box-shadow: 0 0 12px currentColor;
-    animation: shard-float 6s ease-in-out infinite;
-    /* 基础 transform 由动画控制，这里只设大小 */
-}
-
-/* 12个碎片以书本中心(0,0)为原点的相对位置（像素偏移） */
-.shard-1  { background: #f472b6; color: #f472b6; width: 10px; height: 16px; transform: translate(-90px, -160px) rotate(20deg);  animation-delay: 0.0s; }
-.shard-2  { background: #60a5fa; color: #60a5fa; width: 16px; height: 10px; transform: translate(15px,  -150px) rotate(-15deg); animation-delay: 0.4s; }
-.shard-3  { background: #fbbf24; color: #fbbf24; width: 14px; height: 14px; transform: translate(-160px, -110px) rotate(45deg); animation-delay: 0.8s; }
-.shard-4  { background: #a78bfa; color: #a78bfa; width: 8px;  height: 20px; transform: translate(130px, -95px) rotate(-30deg); animation-delay: 1.2s; }
-.shard-5  { background: #34d399; color: #34d399; width: 18px; height: 8px;  transform: translate(-200px, -20px) rotate(10deg);  animation-delay: 1.6s; }
-.shard-6  { background: #fb7185; color: #fb7185; width: 14px; height: 14px; transform: translate(160px,  -5px) rotate(-45deg); animation-delay: 2.0s; }
-.shard-7  { background: #fcd34d; color: #fcd34d; width: 12px; height: 14px; transform: translate(-170px, 70px) rotate(60deg);  animation-delay: 2.4s; }
-.shard-8  { background: #c084fc; color: #c084fc; width: 14px; height: 12px; transform: translate(140px,  60px) rotate(-20deg); animation-delay: 2.8s; }
-.shard-9  { background: #38bdf8; color: #38bdf8; width: 14px; height: 14px; transform: translate(-120px, 140px) rotate(30deg); animation-delay: 3.2s; }
-.shard-10 { background: #fb923c; color: #fb923c; width: 16px; height: 12px; transform: translate(55px,  160px) rotate(-10deg); animation-delay: 3.6s; }
-.shard-11 { background: #f9a8d4; color: #f9a8d4; width: 8px;  height: 18px; transform: translate(-45px, -170px) rotate(25deg); animation-delay: 4.0s; }
-.shard-12 { background: #fde047; color: #fde047; width: 12px; height: 10px; transform: translate(-30px, 180px) rotate(-50deg); animation-delay: 4.4s; }
-
-@keyframes shard-float {
-    0%, 100% { opacity: 0.7; }
-    25%      { opacity: 1.0; }
-    50%      { opacity: 0.8; }
-    75%      { opacity: 0.9; }
-}
-
-/* 书底/底座（投影） */
-.memory-book-base {
-    position: absolute;
-    bottom: -30px;
-    left: 50%;
-    width: 340px;
-    height: 40px;
-    transform: translateX(-50%);
-    background: linear-gradient(180deg, rgba(15, 12, 40, 0.7) 0%, transparent 100%);
-    border-radius: 50%;
-    filter: blur(12px);
-}
-
-/* 书页基础样式 */
-.memory-book-page {
-    position: absolute;
-    top: 0;
-    width: 160px;
-    height: 220px;
-    background:
-        linear-gradient(90deg,
-            rgba(255, 248, 235, 0.98) 0%,
-            rgba(253, 240, 220, 0.98) 50%,
-            rgba(250, 232, 210, 0.98) 100%);
-    box-shadow:
-        inset 0 0 20px rgba(139, 90, 43, 0.08),
-        0 4px 15px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(139, 90, 43, 0.15);
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-}
-
-/* 书页上的文字线条（用伪元素做） */
-.memory-book-page::before {
-    content: '';
-    position: absolute;
-    top: var(--top-offset, 25px);
-    left: 18px;
-    right: 18px;
-    bottom: 20px;
-    background-image:
-        repeating-linear-gradient(
-            180deg,
-            transparent 0px,
-            transparent 13px,
-            var(--line-color, rgba(139, 90, 43, 0.18)) 13px,
-            var(--line-color, rgba(139, 90, 43, 0.18)) 14px
-        );
-}
-
-/* 模拟每页顶部的"标题"效果：一条略粗的线 */
-.memory-book-page::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    width: 25px;
-    height: 100%;
-    background: linear-gradient(90deg, rgba(139, 90, 43, 0.22), transparent);
-}
-
-/* 左侧页：位于书的左半边，以右边缘为轴翻页 */
-.page-l {
-    left: 0;
-    transform-origin: right center;
-    border-radius: 4px 0 0 4px;
-}
-
-.page-l::after { right: 0; background: linear-gradient(-90deg, rgba(139, 90, 43, 0.2), transparent); }
-
-/* 右侧页：位于书的右半边，以左边缘为轴翻页 */
-.page-r {
-    left: 160px;
-    transform-origin: left center;
-    border-radius: 0 4px 4px 0;
-}
-
-.page-r::after { left: 0; }
-
-/* ===== 翻页核心动画 ===== */
-/* 左页：从后向左展开，再从左翻向右（跨过书脊），循环 */
-@keyframes page-flip-left {
-    0%    { transform: rotateY(-175deg); opacity: 0.6; }
-    8%    { transform: rotateY(-30deg);  opacity: 0.95; }
-    40%   { transform: rotateY(0deg);    opacity: 1.0; }   /* 停在左侧平展位置 */
-    75%   { transform: rotateY(80deg);   opacity: 0.9; }   /* 开始向右翻 */
-    100%  { transform: rotateY(175deg);  opacity: 0.5; }   /* 翻到右侧消失 */
-}
-
-/* 右页：从后向右展开，再从右翻向左 */
-@keyframes page-flip-right {
-    0%    { transform: rotateY(175deg);  opacity: 0.6; }
-    8%    { transform: rotateY(30deg);   opacity: 0.95; }
-    40%   { transform: rotateY(0deg);    opacity: 1.0; }   /* 停在右侧平展位置 */
-    75%   { transform: rotateY(-80deg);  opacity: 0.9; }   /* 开始向左翻 */
-    100%  { transform: rotateY(-175deg); opacity: 0.5; }   /* 翻到左侧消失 */
-}
-
-/* 左页每页不同的延迟，形成"连续翻页"CG */
-.page-l-1 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) 0.0s infinite; }
-.page-l-2 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -1.0s infinite; opacity: 0.92; }
-.page-l-3 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -2.0s infinite; opacity: 0.88; }
-.page-l-4 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -3.0s infinite; opacity: 0.84; }
-.page-l-5 { animation: page-flip-left 5s cubic-bezier(0.5, 0, 0.3, 1) -4.0s infinite; opacity: 0.80; }
-
-/* 右页每页不同的延迟，与左页交替翻页 */
-.page-r-1 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -0.5s infinite; }
-.page-r-2 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -1.5s infinite; opacity: 0.92; }
-.page-r-3 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -2.5s infinite; opacity: 0.88; }
-.page-r-4 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -3.5s infinite; opacity: 0.84; }
-.page-r-5 { animation: page-flip-right 5s cubic-bezier(0.5, 0, 0.3, 1) -4.5s infinite; opacity: 0.80; }
-
-/* 封面/书脊装饰 */
-.memory-book-cover {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 330px;
-    height: 230px;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    z-index: 1;
-}
-
-.memory-book-cover::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    left: 50%;
-    width: 8px;
-    height: 230px;
-    transform: translateX(-50%);
-    background:
-        linear-gradient(180deg,
-            rgba(60, 35, 100, 0.95) 0%,
-            rgba(40, 20, 80, 0.95) 50%,
-            rgba(60, 35, 100, 0.95) 100%);
-    box-shadow:
-        inset 1px 0 2px rgba(255, 215, 100, 0.2),
-        inset -1px 0 2px rgba(0, 0, 0, 0.3);
-    border-radius: 1px;
-}
-
-.memory-book-cover::after {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: 50%;
-    width: 340px;
-    height: 10px;
-    transform: translateX(-50%);
-    background:
-        linear-gradient(180deg,
-            rgba(60, 35, 100, 0.9) 0%,
-            rgba(40, 20, 80, 0.85) 100%);
-    border-radius: 2px 2px 0 0;
-    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.2);
-}
-
-/* 内容层在3D背景之上 */
-.memory-topbar,
-.memory-grid,
-.memory-fab,
-.memory-empty {
-    position: relative;
-    z-index: 10;
 }
 
 /* 顶部工具栏：四个等大按钮同一行 */
@@ -5119,6 +4805,292 @@ body {
     text-align: center;
     padding: 40px 20px;
     color: rgba(255, 255, 255, 0.4);
+}
+
+/* ============ 科技风仪表盘样式 ============ */
+.dashboard-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #0a1628 0%, #0d1f3c 50%, #0a1628 100%);
+    overflow: hidden;
+    z-index: 0;
+}
+
+/* 网格背景 */
+.grid-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(0, 200, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 200, 255, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+}
+
+/* 同心圆 */
+.concentric-circles {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60%;
+    height: 60%;
+}
+
+.concentric-circles .circle {
+    position: absolute;
+    border: 1px solid rgba(0, 200, 255, 0.2);
+    border-radius: 50%;
+}
+
+.concentric-circles .circle-1 {
+    top: 10%;
+    left: 10%;
+    right: 10%;
+    bottom: 10%;
+    animation: pulse 4s ease-in-out infinite;
+}
+
+.concentric-circles .circle-2 {
+    top: 25%;
+    left: 25%;
+    right: 25%;
+    bottom: 25%;
+    animation: pulse 4s ease-in-out infinite 1s;
+}
+
+.concentric-circles .circle-3 {
+    top: 40%;
+    left: 40%;
+    right: 40%;
+    bottom: 40%;
+    animation: pulse 4s ease-in-out infinite 2s;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.02); }
+}
+
+/* 六边形卡片网格 */
+.hexagon-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.hexagon-card {
+    position: absolute;
+    width: 120px;
+    height: 140px;
+    background: linear-gradient(135deg, rgba(0, 100, 150, 0.3), rgba(0, 50, 100, 0.2));
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 0 20px rgba(0, 200, 255, 0.2),
+        inset 0 0 20px rgba(0, 200, 255, 0.1);
+}
+
+.hexagon-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 
+        0 0 30px rgba(0, 200, 255, 0.4),
+        inset 0 0 30px rgba(0, 200, 255, 0.15);
+}
+
+.hexagon-card.blue {
+    border-color: rgba(0, 150, 255, 0.5);
+    box-shadow: 
+        0 0 20px rgba(0, 150, 255, 0.2),
+        inset 0 0 20px rgba(0, 150, 255, 0.1);
+}
+
+.hexagon-card.cyan {
+    border-color: rgba(0, 255, 255, 0.5);
+    box-shadow: 
+        0 0 20px rgba(0, 255, 255, 0.3),
+        inset 0 0 20px rgba(0, 255, 255, 0.15);
+}
+
+.hexagon-card.green {
+    border-color: rgba(0, 255, 150, 0.5);
+    box-shadow: 
+        0 0 20px rgba(0, 255, 150, 0.3),
+        inset 0 0 20px rgba(0, 255, 150, 0.15);
+}
+
+.hexagon-icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 0 10px currentColor);
+}
+
+.hexagon-title {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin-bottom: 4px;
+}
+
+.hexagon-value {
+    font-size: 16px;
+    font-weight: bold;
+    color: #00d4ff;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+/* 中央信息面板 */
+.center-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 320px;
+    background: linear-gradient(135deg, rgba(0, 80, 120, 0.4), rgba(0, 40, 80, 0.3));
+    border: 1px solid rgba(0, 200, 255, 0.4);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 
+        0 0 30px rgba(0, 200, 255, 0.3),
+        inset 0 0 30px rgba(0, 200, 255, 0.1);
+}
+
+.panel-title {
+    font-size: 14px;
+    color: #00d4ff;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.more-link {
+    color: #00d4ff;
+    font-size: 12px;
+    float: right;
+}
+
+.panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.risk-item {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.risk-value {
+    color: #ff6b6b;
+    font-weight: bold;
+    float: right;
+}
+
+/* 顶部导航 */
+.dashboard-header {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: linear-gradient(90deg, rgba(0, 60, 100, 0.5), transparent, rgba(0, 60, 100, 0.5));
+    border-bottom: 1px solid rgba(0, 200, 255, 0.2);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.username {
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.platform {
+    color: #00d4ff;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.header-right {
+    display: flex;
+    gap: 20px;
+}
+
+.nav-item {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 12px;
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.nav-item:hover {
+    color: #00d4ff;
+}
+
+/* 底部文字 */
+.dashboard-footer {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 14px;
+}
+
+/* 右下角视频按钮 */
+.video-btn {
+    position: absolute;
+    right: 20px;
+    bottom: 80px;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.video-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.play-icon {
+    color: #fff;
+    font-size: 20px;
+    margin-left: 3px;
+}
+
+/* 记忆容器需要相对定位 */
+.memory-container {
+    position: relative;
+    z-index: 1;
 }
 
 .memory-empty-icon {

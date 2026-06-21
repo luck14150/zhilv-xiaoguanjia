@@ -421,56 +421,77 @@
             <!-- 记忆库页面 -->
             <section class="page" id="page-memory">
                 <div class="memory-container">
-                    <!-- 3D图片环绕容器 -->
-                    <div class="memory-3d-wrap">
-                        <!-- 圆环：6张环绕图片（跟随鼠标旋转）+ 中心书本（位于6张图片射线交点） -->
-                        <div class="memory-3d-carousel" id="memory3dCarousel">
-                            <!-- 6张图片：每张 rotateY(θ) translateZ(320px)，6条射线交汇于 carousel 原点 -->
-                            <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1658044412448165804441259.jpg');"></div>
-                            <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1658044416540165804441665.jpg');"></div>
-                            <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/170429677313517042967732.jpg');"></div>
-                            <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1638860413795163886041313.jpg');"></div>
-                            <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1658043148532165804314881.jpg');"></div>
-                            <div class="memory-3d-item" style="background-image: url('https://www.toopic.cn/public/uploads/small/1638860379965163886037984.jpg');"></div>
-
-                            <!-- 圆环中心：魔法书（位于6条射线的交点 = carousel 原点） -->
-                            <!-- counter-rotate: rotateX(-75deg) + rotateY(-动态值) 让书本保持正面朝上不随圆环旋转 -->
-                            <div class="memory-book-wrap" id="memoryBookWrap">
-                                <!-- 中心环境光晕（局部，限定在6张图片中间区域） -->
-                                <div class="memory-book-glow"></div>
-                                <!-- 彩色碎片（围绕书本飞舞） -->
-                                <div class="memory-book-shard shard shard-1"></div>
-                                <div class="memory-book-shard shard shard-2"></div>
-                                <div class="memory-book-shard shard shard-3"></div>
-                                <div class="memory-book-shard shard shard-4"></div>
-                                <div class="memory-book-shard shard shard-5"></div>
-                                <div class="memory-book-shard shard shard-6"></div>
-                                <div class="memory-book-shard shard shard-7"></div>
-                                <div class="memory-book-shard shard shard-8"></div>
-                                <div class="memory-book-shard shard shard-9"></div>
-                                <div class="memory-book-shard shard shard-10"></div>
-                                <div class="memory-book-shard shard shard-11"></div>
-                                <div class="memory-book-shard shard shard-12"></div>
-                                <!-- 书本主体 -->
-                                <div class="memory-book">
-                                    <div class="memory-book-base"></div>
-                                    <!-- 左侧页 -->
-                                    <div class="memory-book-page page-l page-l-1"></div>
-                                    <div class="memory-book-page page-l page-l-2"></div>
-                                    <div class="memory-book-page page-l page-l-3"></div>
-                                    <div class="memory-book-page page-l page-l-4"></div>
-                                    <div class="memory-book-page page-l page-l-5"></div>
-                                    <!-- 右侧页 -->
-                                    <div class="memory-book-page page-r page-r-1"></div>
-                                    <div class="memory-book-page page-r page-r-2"></div>
-                                    <div class="memory-book-page page-r page-r-3"></div>
-                                    <div class="memory-book-page page-r page-r-4"></div>
-                                    <div class="memory-book-page page-r page-r-5"></div>
-                                    <!-- 封面/书脊 -->
-                                    <div class="memory-book-cover"></div>
-                                </div>
+                    <!-- 科技风仪表盘背景 -->
+                    <div class="dashboard-bg">
+                        <!-- 网格背景 -->
+                        <div class="grid-bg"></div>
+                        <!-- 同心圆 -->
+                        <div class="concentric-circles">
+                            <div class="circle circle-1"></div>
+                            <div class="circle circle-2"></div>
+                            <div class="circle circle-3"></div>
+                        </div>
+                        <!-- 六边形卡片 -->
+                        <div class="hexagon-grid">
+                            <div class="hexagon-card blue" style="top: 15%; left: 15%;">
+                                <div class="hexagon-icon">📊</div>
+                                <div class="hexagon-title">其他风险</div>
+                                <div class="hexagon-value">79个</div>
+                            </div>
+                            <div class="hexagon-card blue" style="top: 35%; left: 8%;">
+                                <div class="hexagon-icon">🏢</div>
+                                <div class="hexagon-title">老旧网点</div>
+                                <div class="hexagon-value">174个</div>
+                            </div>
+                            <div class="hexagon-card cyan" style="top: 10%; left: 45%;">
+                                <div class="hexagon-icon">⚡</div>
+                                <div class="hexagon-title">网点周边易</div>
+                                <div class="hexagon-value">77个</div>
+                            </div>
+                            <div class="hexagon-card green" style="top: 18%; left: 78%;">
+                                <div class="hexagon-icon">🔥</div>
+                                <div class="hexagon-title">消防风险</div>
+                                <div class="hexagon-value">7个</div>
+                            </div>
+                            <div class="hexagon-card green" style="top: 45%; left: 85%;">
+                                <div class="hexagon-icon">🏬</div>
+                                <div class="hexagon-title">高层建筑</div>
+                                <div class="hexagon-value">25个</div>
                             </div>
                         </div>
+                        <!-- 中央信息面板 -->
+                        <div class="center-panel">
+                            <div class="panel-title">网点周边易燃易爆风险：<span class="more-link">更多 >></span></div>
+                            <div class="panel-content">
+                                <div class="risk-item">网点周边易燃易爆风险：<span class="more-link">更多 >></span></div>
+                                <div class="risk-item">靠近加油站，爆炸风险：<span class="risk-value">8个</span></div>
+                                <div class="risk-item">靠近餐厅，燃气风险：<span class="risk-value">3个</span></div>
+                                <div class="risk-item">靠近机房，燃气风险：<span class="risk-value">20个</span></div>
+                            </div>
+                        </div>
+                        <!-- 顶部导航 -->
+                        <div class="dashboard-header">
+                            <div class="header-left">
+                                <span class="username">QaQ夏日思考</span>
+                                <span class="platform">Bilibili</span>
+                            </div>
+                            <div class="header-right">
+                                <span class="nav-item">区域</span>
+                                <span class="nav-item">设施台账</span>
+                                <span class="nav-item">培训</span>
+                                <span class="nav-item">栏目</span>
+                                <span class="nav-item">我的一周</span>
+                                <span class="nav-item">我的一月</span>
+                            </div>
+                        </div>
+                        <!-- 底部文字 -->
+                        <div class="dashboard-footer">
+                            这是我之前项目中
+                        </div>
+                        <!-- 右下角视频按钮 -->
+                        <button class="video-btn" onclick="playVideo()">
+                            <span class="play-icon">▶</span>
+                        </button>
                     </div>
 
                     <!-- 顶部工具栏：四个等大按钮（搜索框 + 三个筛选） -->
