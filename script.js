@@ -122,15 +122,6 @@ function saveData(data) {
         }
     }
     
-    if (cloudSyncKey && firebaseDb) {
-        try {
-            const toUpload = JSON.parse(JSON.stringify(data));
-            toUpload._syncTime = Date.now();
-            toUpload._version = APP_VERSION;
-            const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
-            firebaseDb.ref(path).set(toUpload).catch(() => {});
-        } catch (e) {}
-    }
 }
 
 /* ============ 自定义铃声库管理 ============ */
@@ -961,7 +952,6 @@ function initAlarmListEventDelegation() {
                 if (alarm) {
                     alarm.enabled = sw.classList.contains('on');
                     saveData(data);
-                    syncAlarmsToServiceWorker();
                 }
                 return;
             }
@@ -989,7 +979,6 @@ function initAlarmListEventDelegation() {
                     const value = (input.value || '').trim();
                     alarm.note = value;
                     saveData(data);
-                    syncAlarmsToServiceWorker();
                     // 视觉提示
                     input.classList.add('note-saved');
                     setTimeout(() => input.classList.remove('note-saved'), 500);
@@ -1024,31 +1013,6 @@ function toggleAlarmEnabled(id) {
     alarm.enabled = !alarm.enabled;
     saveData(data);
     renderSavedAlarms();
-    syncAlarmsToServiceWorker();
-}
-
-/* ============ Service Worker 同步 ============ */
-async function registerServiceWorker() {
-    if (!('serviceWorker' in navigator)) return;
-    try {
-        await navigator.serviceWorker.register('sw.js');
-        syncAlarmsToServiceWorker();
-    } catch (e) { /* ignore */ }
-}
-
-function syncAlarmsToServiceWorker() {
-    if (!('serviceWorker' in navigator)) return;
-    const data = loadData();
-    const list = (data.alarms || []).filter(a => a && a.enabled).map(a => ({
-        time: (a.time || '00:00:00').split(':').slice(0, 2).join(':'),
-        name: a.name || '闹钟',
-        enabled: true
-    }));
-    navigator.serviceWorker.ready.then(reg => {
-        if (reg && reg.active) {
-            try { reg.active.postMessage({ type: 'SYNC_ALARMS', alarms: list }); } catch (e) {}
-        }
-    }).catch(() => {});
 }
 
 /* ============ 页面切换（底部导航） ============ */
@@ -1525,7 +1489,6 @@ function saveAlarm() {
     saveData(data);
     closeAlarmModal();
     renderSavedAlarms();
-    syncAlarmsToServiceWorker();
 }
 
 function deleteAlarm() {
@@ -1536,7 +1499,6 @@ function deleteAlarm() {
     saveData(data);
     closeAlarmModal();
     renderSavedAlarms();
-    syncAlarmsToServiceWorker();
 }
 
 /* ============ Agnes AI 对话 ============ */
@@ -1611,189 +1573,6 @@ function escapeHtml(s) {
     }[ch]));
 }
 
-/* ============ 云同步（Firebase） ============ */
-const DEFAULT_FIREBASE_CONFIG = {
-    apiKey: "AIzaSyD4kF_5154321567897654321",
-    authDomain: "zhilv-demo.firebaseapp.com",
-    databaseURL: "https://zhilv-demo-default-rtdb.firebaseio.com",
-    projectId: "zhilv-demo",
-    storageBucket: "zhilv-demo.appspot.com",
-    messagingSenderId: "417770321",
-    appId: "1:417770321:web:demo1234567890"
-};
-let cloudSyncKey = null;
-let firebaseApp = null;
-let firebaseDb = null;
-
-function getFirebaseConfig() {
-    try {
-        const saved = localStorage.getItem('zhilv_firebase_config');
-        if (saved) return JSON.parse(saved);
-    } catch (e) {}
-    return DEFAULT_FIREBASE_CONFIG;
-}
-function saveFirebaseConfig(cfg) {
-    localStorage.setItem('zhilv_firebase_config', JSON.stringify(cfg));
-}
-function initFirebase() {
-    if (firebaseApp) return firebaseApp;
-    if (typeof firebase === 'undefined') return null;
-    try {
-        const cfg = getFirebaseConfig();
-        if (!cfg || !cfg.databaseURL || (cfg.apiKey || '').includes('demo')) {
-            return null;
-        }
-        firebaseApp = firebase.apps.length > 0 ? firebase.apps[0] : firebase.initializeApp(cfg);
-        firebaseDb = firebaseApp.database();
-        return firebaseApp;
-    } catch (e) { return null; }
-}
-function setSyncStatus(text) {
-    const el = document.getElementById('cloudSyncStatus');
-    if (el) el.textContent = text;
-}
-function getSyncKey() { return localStorage.getItem('zhilv_sync_key') || ''; }
-function setSyncKey(key) {
-    if (!key || !key.trim()) { alert('请输入同步密钥'); return; }
-    localStorage.setItem('zhilv_sync_key', key.trim());
-    cloudSyncKey = key.trim();
-    setSyncStatus('🔑 已设置密钥：' + cloudSyncKey);
-    alert('✅ 同步密钥已设置！\n在其他设备输入相同密钥即可同步数据。');
-    downloadFromCloud();
-}
-function exportData() {
-    const data = loadData();
-    data._exportTime = new Date().toISOString();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'zhilv-backup-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    alert('✅ 数据已导出到下载文件夹');
-}
-function importData(file) {
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (!data || typeof data !== 'object') throw new Error('格式错误');
-            saveData(data);
-            renderSavedAlarms();
-            alert('✅ 数据导入成功，即将刷新');
-            setTimeout(() => location.reload(), 500);
-        } catch (err) { alert('❌ 导入失败：' + err.message); }
-    };
-    reader.readAsText(file);
-}
-function uploadToCloud() {
-    if (!cloudSyncKey) { alert('⚠️ 请先设置同步密钥'); return; }
-    initFirebase();
-    if (!firebaseDb) { alert('❌ Firebase 未连接，请先配置自定义 Firebase'); return; }
-    const data = loadData();
-    data._syncTime = Date.now();
-    setSyncStatus('⬆️ 正在上传到云端...');
-    try {
-        const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
-        firebaseDb.ref(path).set(data)
-            .then(() => {
-                setSyncStatus('✅ 已同步到云端 · ' + new Date().toLocaleTimeString());
-                alert('✅ 数据已上传到云端！');
-            })
-            .catch(err => {
-                setSyncStatus('❌ 上传失败：' + (err.message || err));
-                alert('❌ 上传失败：' + (err.message || err));
-            });
-    } catch (e) { alert('❌ 上传异常：' + e.message); }
-}
-function downloadFromCloud() {
-    if (!cloudSyncKey) { alert('⚠️ 请先设置同步密钥'); return; }
-    initFirebase();
-    if (!firebaseDb) { alert('❌ Firebase 未连接'); return; }
-    setSyncStatus('⬇️ 正在从云端下载...');
-    try {
-        const path = '/zhilv/' + btoa(unescape(encodeURIComponent(cloudSyncKey)));
-        firebaseDb.ref(path).once('value').then(snap => {
-            const data = snap.val();
-            if (!data) {
-                setSyncStatus('⚠️ 云端暂无数据');
-                alert('⚠️ 云端暂无数据（密钥：' + cloudSyncKey + '）');
-                return;
-            }
-            saveData(data);
-            renderSavedAlarms();
-            setSyncStatus('✅ 已从云端同步 · ' + new Date().toLocaleTimeString());
-            alert('✅ 云端数据已同步，即将刷新');
-            setTimeout(() => location.reload(), 500);
-        }).catch(err => {
-            setSyncStatus('❌ 下载失败：' + (err.message || err));
-            alert('❌ 下载失败：' + (err.message || err));
-        });
-    } catch (e) { alert('❌ 下载异常：' + e.message); }
-}
-
-function initCloudSync() {
-    const savedKey = getSyncKey();
-    if (savedKey) {
-        cloudSyncKey = savedKey;
-        setSyncStatus('🔑 已连接密钥：' + cloudSyncKey);
-        initFirebase();
-    }
-}
-function initCloudSyncEventListeners() {
-    const keyInput = document.getElementById('syncKeyInput');
-    if (keyInput) keyInput.value = getSyncKey();
-    document.getElementById('setSyncKeyBtn')?.addEventListener('click', () => {
-        setSyncKey(keyInput?.value?.trim());
-    });
-    keyInput?.addEventListener('keypress', e => {
-        if (e.key === 'Enter') setSyncKey(e.target.value.trim());
-    });
-
-    document.getElementById('exportDataBtn')?.addEventListener('click', exportData);
-    const importFileInput = document.getElementById('importFileInput');
-    document.getElementById('importDataBtn')?.addEventListener('click', () => importFileInput?.click());
-    importFileInput?.addEventListener('change', e => {
-        const f = e.target.files?.[0];
-        if (f) importData(f);
-        e.target.value = '';
-    });
-
-    document.getElementById('uploadCloudBtn')?.addEventListener('click', uploadToCloud);
-    document.getElementById('downloadCloudBtn')?.addEventListener('click', downloadFromCloud);
-
-    const fbInput = document.getElementById('firebaseConfigInput');
-    document.getElementById('saveFirebaseBtn')?.addEventListener('click', () => {
-        if (!fbInput) return;
-        try {
-            const cfg = JSON.parse(fbInput.value.trim());
-            if (!cfg.apiKey || !cfg.databaseURL) throw new Error('缺少 apiKey 或 databaseURL');
-            saveFirebaseConfig(cfg);
-            alert('✅ Firebase 配置已保存，即将刷新');
-            setTimeout(() => location.reload(), 500);
-        } catch (e) { alert('❌ 配置格式错误：' + e.message); }
-    });
-}
-
-/* ============ PWA 安装提示 ============ */
-let deferredPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-    e.preventDefault();
-    deferredPrompt = e;
-    const installBtn = document.getElementById('installBtn');
-    if (installBtn) {
-        installBtn.style.display = 'inline-block';
-        installBtn.addEventListener('click', async () => {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            await deferredPrompt.userChoice;
-            installBtn.style.display = 'none';
-            deferredPrompt = null;
-        });
-    }
-});
-
 /* ============ 导航与 AI 事件 ============ */
 function initGlobalEventListeners() {
     document.querySelectorAll('.nav-btn').forEach(item => {
@@ -1801,26 +1580,6 @@ function initGlobalEventListeners() {
     });
 
     document.getElementById('currentDate')?.addEventListener('click', updateDateDisplay);
-
-    // AI 发送
-    const sendBtn = document.getElementById('sendBtn');
-    const aiInput = document.getElementById('aiInput');
-    sendBtn?.addEventListener('click', () => {
-        const msg = aiInput?.value?.trim();
-        if (msg) { sendToAI(msg); aiInput.value = ''; }
-    });
-    aiInput?.addEventListener('keypress', e => {
-        if (e.key === 'Enter') {
-            const msg = e.target.value.trim();
-            if (msg) { sendToAI(msg); e.target.value = ''; }
-        }
-    });
-    document.querySelectorAll('.quick-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const prompt = btn.dataset.prompt;
-            if (prompt) sendToAI(prompt);
-        });
-    });
 }
 
 /* ============ 计时器模块 ============ */
@@ -2137,11 +1896,10 @@ document.addEventListener('DOMContentLoaded', function () {
     updateDateDisplay();
     updateClockDisplay();
 
-    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 云同步 + 计时器 + 倒计时 + 响铃贪睡 + 子面板）
+    // 2. 事件监听（全局 + 闹钟 + 弹窗 + 计时器 + 倒计时 + 响铃贪睡 + 子面板）
     initGlobalEventListeners();
     initAlarmListEventDelegation();
     initAlarmModalListeners();
-    initCloudSyncEventListeners();
     initAlarmSubnav();
     initTimer();
     initCountdown();
@@ -2153,12 +1911,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // 记忆浏览页标题手动输入
     initMemoryBrowseTitleInput();
 
-    // 3. 数据 / 权限 / SW
+    // 3. 数据 / 权限
     renderSavedAlarms();
     renderTimerHistory();
     requestNotificationPermission();
-    registerServiceWorker();
-    initCloudSync();
     
     // 4. 音频初始化（预热 AudioContext，确保自定义铃声可播放）
     initSharedAudioContext();
@@ -2179,7 +1935,6 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(tickTimer, 100);             // 计时器刷新（100ms）
     setInterval(tickCountdown, 100);         // 倒计时刷新（100ms）
     setInterval(updateWorldClock, 1000);     // 世界时钟刷新
-    setInterval(syncAlarmsToServiceWorker, 5 * 60 * 1000); // 每 5 分钟同步到 SW
 
     // 初始化世界时钟
     updateWorldClock();
@@ -4029,27 +3784,6 @@ function toggleAllRings() {
             ring.style.animationPlayState = 'paused';
         }
     });
-}
-
-/* 点击方向按钮（兼容保留：单个圆环控制，主要供代码中已存在的 onclick 使用） */
-function toggleQuadRotation(dir) {
-    const ring = document.getElementById(`memoryRing${dir.charAt(0).toUpperCase() + dir.slice(1)}`);
-    if (!ring) return;
-    if (!ring.querySelector('.memory-item')) return;
-
-    const isRunning = ring.classList.toggle('running');
-    ring.style.animationPlayState = isRunning ? 'running' : 'paused';
-
-    // 若四个圆环都停止了则同步中央按钮状态
-    const controlBtn = document.getElementById('memoryQuadControl');
-    if (controlBtn) {
-        const dirs = ['North', 'East', 'South', 'West'];
-        const anyRunning = dirs
-            .map(d => document.getElementById('memoryRing' + d))
-            .filter(Boolean)
-            .some(r => r.classList.contains('running'));
-        controlBtn.classList.toggle('active', anyRunning);
-    }
 }
 
 // 当前浏览筛选类型
