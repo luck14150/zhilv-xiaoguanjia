@@ -456,13 +456,47 @@
                         </div>
                     </div>
 
-                    <!-- 右下角悬浮 + 号按钮 -->
-                    <button class="memory-fab" onclick="showAddMemoryModal()" aria-label="添加笔记">
-                        <span class="memory-fab-icon">+</span>
+                    <!-- 右下角悬浮按钮 -->
+                    <button class="memory-fab" onclick="showAddMemoryModal()" aria-label="添加记忆">
+                        <span class="memory-fab-text">+ 记忆</span>
                     </button>
                 </div>
+            </section>
 
-                <!-- 添加/编辑记忆弹窗 -->
+            <!-- 记忆详情页（独立页面） -->
+            <section class="page" id="page-memory-detail">
+                <div class="memory-detail-container">
+                    <!-- 顶部工具栏：返回 + 分享 + 对话 + 更多 -->
+                    <div class="memory-detail-toolbar">
+                        <button class="memory-detail-icon-btn" onclick="closeMemoryDetail()" aria-label="返回">
+                            <span class="memory-detail-icon">←</span>
+                        </button>
+                        <div class="memory-detail-toolbar-right">
+                            <button class="memory-detail-icon-btn" onclick="editCurrentMemoryDetail()" aria-label="编辑">
+                                <span class="memory-detail-icon">✎</span>
+                            </button>
+                            <button class="memory-detail-icon-btn" onclick="shareMemoryDetail()" aria-label="分享">
+                                <span class="memory-detail-icon">⤴</span>
+                            </button>
+                            <button class="memory-detail-icon-btn" onclick="deleteCurrentMemoryDetail()" aria-label="删除">
+                                <span class="memory-detail-icon">🗑</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 米纸风格内容区域 -->
+                    <div class="memory-detail-paper">
+                        <h2 class="memory-detail-title" id="memoryDetailTitle">标题</h2>
+                        <div class="memory-detail-meta">
+                            <span id="memoryDetailDate">—</span>
+                        </div>
+                        <div class="memory-detail-content" id="memoryDetailContent">内容</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 记忆库页面的添加/编辑弹窗 -->
+            <section class="page" id="page-memory-modal-section" style="display:none;">
                 <div class="memory-modal" id="memoryModal" onclick="closeMemoryModal(event)">
                     <div class="memory-modal-content" onclick="event.stopPropagation()">
                         <div class="memory-modal-title" id="memoryModalTitle">添加新记忆</div>

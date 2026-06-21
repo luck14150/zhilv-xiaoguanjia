@@ -3305,6 +3305,7 @@ let memoryData = [];
 let currentMemoryCategory = 'all';   // 'all' | 'folder' | 'uncategorized'
 let editingMemoryId = null;
 let selectedCategory = '学习笔记';
+let currentViewingMemoryId = null;   // 当前查看的记忆ID
 
 function loadMemoryData() {
     const saved = localStorage.getItem(MEMORY_KEY);
@@ -3387,7 +3388,7 @@ function renderMemoryList() {
         filtered.forEach(item => {
             const div = document.createElement('div');
             div.className = 'memory-item';
-            div.setAttribute('onclick', `editMemory(${item.id})`);
+            div.setAttribute('onclick', `viewMemory(${item.id})`);
             div.innerHTML =
                 `<h4 class="memory-item-title">${item.title}</h4>
                 <p class="memory-item-content">${item.content}</p>
@@ -3395,6 +3396,56 @@ function renderMemoryList() {
             listEl.appendChild(div);
         });
     }
+}
+
+// 查看记忆详情
+function viewMemory(id) {
+    const memory = memoryData.find(m => m.id === id);
+    if (!memory) return;
+
+    currentViewingMemoryId = id;
+    const titleEl = document.getElementById('memoryDetailTitle');
+    const dateEl = document.getElementById('memoryDetailDate');
+    const contentEl = document.getElementById('memoryDetailContent');
+
+    if (titleEl) titleEl.textContent = memory.title;
+    if (dateEl) dateEl.textContent = formatDateMemory(memory.createdAt);
+    if (contentEl) {
+        contentEl.textContent = memory.content;
+        // 处理换行
+        contentEl.innerHTML = contentEl.innerHTML.replace(/\n/g, '<br>');
+    }
+
+    switchPage('memory-detail');
+}
+
+// 关闭记忆详情页
+function closeMemoryDetail() {
+    switchPage('memory');
+    currentViewingMemoryId = null;
+}
+
+// 编辑当前查看的记忆
+function editCurrentMemoryDetail() {
+    if (!currentViewingMemoryId) return;
+    editMemory(currentViewingMemoryId);
+    closeMemoryDetail();
+}
+
+// 删除当前查看的记忆
+function deleteCurrentMemoryDetail() {
+    if (!currentViewingMemoryId) return;
+    const confirmed = confirm('确定要删除这条记忆吗？');
+    if (!confirmed) return;
+    memoryData = memoryData.filter(m => m.id !== currentViewingMemoryId);
+    saveMemoryData();
+    renderMemoryList();
+    closeMemoryDetail();
+}
+
+// 分享记忆（模拟）
+function shareMemoryDetail() {
+    alert('分享功能已触发（实际项目中可调用分享API）');
 }
 
 function isToday(timestamp) {
