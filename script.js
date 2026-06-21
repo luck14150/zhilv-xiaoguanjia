@@ -2150,6 +2150,9 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('alarmSnoozeBtn')?.addEventListener('click', snoozeAlarm);
     document.getElementById('alarmStopBtn')?.addEventListener('click', stopAlarm);
 
+    // 记忆浏览页标题手动输入
+    initMemoryBrowseTitleInput();
+
     // 3. 数据 / 权限 / SW
     renderSavedAlarms();
     renderTimerHistory();
@@ -3299,15 +3302,494 @@ function switchMode(mode) {
 
 /* ============ 记忆管理功能 ============ */
 const MEMORY_KEY = 'zhilv_memory_data';
-// 归为"文件夹"的分类（其他分类视为"未分类"）
-const FOLDER_CATEGORIES = ['学习笔记', '生活感悟', '工作总结', '灵感创意'];
+const FOLDER_LIST_KEY = 'zhilv_memory_folders';
+// 文件夹颜色池（新增文件夹时循环使用）
+const FOLDER_COLOR_POOL = ['#7c8cff', '#c97cff', '#ffb86b', '#ff6b6b', '#4ecdc4', '#a8e6cf', '#ff8f7a', '#b59cff'];
+// 归为"文件夹"的分类（其他分类视为"未分类"）——支持用户动态增删改
+let FOLDER_CATEGORIES = [];
 let memoryData = [];
 let currentMemoryCategory = 'all';   // 'all' | 'folder' | 'uncategorized'
 let editingMemoryId = null;
 let selectedCategory = '学习笔记';
 let currentViewingMemoryId = null;   // 当前查看的记忆ID
+// 当前正在编辑名称的文件夹（null 表示没有）
+let editingFolderName = null;
 
+// ===== 文件夹数据加载/保存 =====
+// 默认文件夹配置
+const DEFAULT_FOLDERS = [
+    { name: '学习笔记', color: '#7c8cff' },
+    { name: '生活感悟', color: '#c97cff' },
+    { name: '工作总结', color: '#ffb86b' },
+    { name: '灵感创意', color: '#ff6b6b' }
+];
+
+// 动态获取文件夹列表（名称 + 颜色）
+function getFolderList() {
+    const saved = localStorage.getItem(FOLDER_LIST_KEY);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            return JSON.parse(JSON.stringify(DEFAULT_FOLDERS));
+        }
+    }
+    return JSON.parse(JSON.stringify(DEFAULT_FOLDERS));
+}
+
+// 保存文件夹列表
+function saveFolderList(folders) {
+    localStorage.setItem(FOLDER_LIST_KEY, JSON.stringify(folders));
+    // 同时更新 FOLDER_CATEGORIES（仅名称）
+    FOLDER_CATEGORIES = folders.map(f => f.name);
+}
+
+// 同步 FOLDER_CATEGORIES（从持久化数据读取文件夹名称集合）
+function syncFolderCategories() {
+    const folders = getFolderList();
+    FOLDER_CATEGORIES = folders.map(f => f.name);
+    if (FOLDER_CATEGORIES.length > 0 && !FOLDER_CATEGORIES.includes(selectedCategory)) {
+        selectedCategory = FOLDER_CATEGORIES[0];
+    }
+}
+
+// 打开新建文件夹模态框
+function addNewFolder() {
+    const modal = document.getElementById('memoryFolderModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        // 清空输入框并聚焦
+        const input = document.getElementById('folderModalNameInput');
+        if (input) {
+            input.value = '';
+            input.focus();
+        }
+        // 重置自定义图案选择状态
+        currentSelectedIcon = null;
+        // 重置预览图标为默认状态
+        const previewEmojiEl = document.getElementById('folderModalPreviewEmoji');
+        if (previewEmojiEl) previewEmojiEl.textContent = '📁';
+    }
+}
+
+// 关闭新建文件夹模态框
+function closeFolderModal() {
+    const modal = document.getElementById('memoryFolderModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// 自定义图案选择模态框逻辑
+let currentSelectedIcon = null;  // 当前选中的图标
+
+// 可选的自定义图案列表（emoji + 简易符号）
+const FOLDER_ICON_LIST = [
+    // 符号类
+    '⭐', '🌟', '✨', '💫', '🔮', '🎯', '🏆', '🥇', '🎖️',
+    // 情感类
+    '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💕', '💖',
+    // 面部表情
+    '😊', '🤗', '😎', '🤔', '😴', '🥰', '😍', '🤩', '😇', '🤓',
+    // 手势类
+    '👍', '👎', '👌', '✌️', '🤝', '👏', '🙌', '👋', '🤚', '✋',
+    // 工具类
+    '💡', '📌', '🔍', '🔧', '⚙️', '🛠️', '🔑', '🗝️', '📎', '📋',
+    // 学习工作
+    '📚', '📖', '📝', '📄', '📑', '📒', '📓', '📕', '📗', '📘',
+    // 科技数码
+    '💻', '📱', '🖥️', '💾', '💿', '📺', '📷', '📹', '🎮', '🎧',
+    // 生活用品
+    '🎒', '👜', '👝', '🎁', '💝', '🎀', '🧸', '🪄', '🎈', '🎪',
+    // 食品类
+    '🍎', '🍊', '🍋', '🍇', '🍓', '🍒', '🍑', '🥝', '🍍', '🍌',
+    '🍰', '🍩', '🍪', '🎂', '🧁', '🍫', '🍬', '🍭', '☕', '🍵',
+    // 植物自然
+    '🌸', '🌺', '🌷', '🌹', '🌻', '🌼', '🍀', '🌿', '🍄', '🌵',
+    '🌴', '🌲', '🌳', '🍁', '🍂', '🌾', '🌱', '🌵', '🌺', '🌷',
+    // 动物类
+    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯',
+    '🦁', '🐮', '🐷', '🐸', '🐵', '🐔', '🐧', '🐦', '🐤', '🦋',
+    // 天气自然
+    '☀️', '🌤️', '🌥️', '☁️', '🌦️', '🌧️', '⛈️', '🌩️', '🌪️', '🌈',
+    // 旅行地点
+    '🏠', '🏡', '🏢', '🏫', '🏥', '🏪', '🏬', '🏭', '🌋', '🗻',
+    '✈️', '🚗', '🚕', '🚙', '🚌', '🚚', '🚢', '🚁', '🚀', '🛸',
+    // 运动类
+    '⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸',
+    // 音乐娱乐
+    '🎵', '🎶', '🎤', '🎧', '🎹', '🥁', '🎷', '🎺', '🎬', '🎭',
+    // 几何图形
+    '🔵', '🔴', '🟡', '🟢', '🟣', '🟠', '⚪', '⚫', '🔶', '🔷',
+];
+
+// 根据名称智能匹配 emoji 图标（网上取材的智能匹配逻辑）
+function getSmartEmoji(name) {
+    if (!name) return '📁';
+    const lowerName = name.toLowerCase();
+    
+    // 根据关键词匹配对应图标
+    const emojiMap = [
+        // 学习类
+        { keywords: ['学习', '笔记', '读书', '书', '知识', '课程', '作业', '考试', '复习', '考研', '高考', '学校', '课堂'], emoji: '📚' },
+        { keywords: ['代码', '编程', '开发', '程序', '项目', 'git', 'github', 'api', '前端', '后端', 'python', 'java', 'js', 'vue', 'react'], emoji: '💻' },
+        { keywords: ['英语', '外语', '语言', '单词', '翻译'], emoji: '🌍' },
+        { keywords: ['数学', '公式', '计算', '算法'], emoji: '🧮' },
+        
+        // 工作类
+        { keywords: ['工作', '办公', '会议', '报告', '项目', '任务', '计划', '总结', '周报', '日报'], emoji: '💼' },
+        { keywords: ['设计', '创意', '美工', 'ui', 'ux', '视觉'], emoji: '🎨' },
+        { keywords: ['数据', '分析', '报表', '图表', '统计'], emoji: '📊' },
+        { keywords: ['管理', '团队', '领导', '组织'], emoji: '👥' },
+        
+        // 生活类
+        { keywords: ['生活', '日常', '日记', '随笔', '心情', '感悟', '心得', '想法'], emoji: '💭' },
+        { keywords: ['旅行', '旅游', '出行', '游记', '风景'], emoji: '✈️' },
+        { keywords: ['美食', '菜谱', '烹饪', '吃饭', '餐厅'], emoji: '🍳' },
+        { keywords: ['健康', '运动', '健身', '跑步', '瑜伽', '减肥'], emoji: '💪' },
+        { keywords: ['照片', '相册', '影像', '摄影'], emoji: '📷' },
+        { keywords: ['音乐', '歌曲', '歌单', '音频'], emoji: '🎵' },
+        { keywords: ['电影', '视频', '追剧', '影视'], emoji: '🎬' },
+        
+        // 创意类
+        { keywords: ['灵感', '创意', '脑洞', '点子', '想法', '创意'], emoji: '✨' },
+        { keywords: ['写作', '文章', '博客', '文案', '故事'], emoji: '✍️' },
+        { keywords: ['画画', '绘画', '插画', '手绘'], emoji: '🖌️' },
+        
+        // 财务类
+        { keywords: ['财务', '记账', '预算', '支出', '收入', '理财', '投资'], emoji: '💰' },
+        
+        // 其他
+        { keywords: ['收藏', '喜欢', '归档', '备份'], emoji: '⭐' },
+        { keywords: ['计划', '目标', '愿望', '清单'], emoji: '📋' },
+        { keywords: ['密码', '账号', '安全'], emoji: '🔐' },
+        { keywords: ['待办', 'todo', '任务'], emoji: '✅' },
+    ];
+    
+    // 优先匹配关键词
+    for (const item of emojiMap) {
+        if (item.keywords.some(kw => lowerName.includes(kw))) {
+            return item.emoji;
+        }
+    }
+    
+    // 如果名称包含数字或特殊字符，返回科技感图标
+    if (/[0-9]/.test(name)) return '📱';
+    if (/[\-_@#$%^&*]/.test(name)) return '🔧';
+    
+    // 默认返回文件夹图标
+    return '📁';
+}
+
+// 根据名称智能匹配颜色（与 emoji 风格协调）
+function getSmartColor(name) {
+    if (!name) return '#7c8cff';
+    const lowerName = name.toLowerCase();
+    
+    // 颜色映射（与 emoji 风格对应）
+    const colorMap = [
+        { keywords: ['学习', '笔记', '读书', '知识', '代码', '编程', '开发'], color: '#7c8cff' },   // 科技蓝
+        { keywords: ['工作', '办公', '会议', '管理', '团队'], color: '#ffb86b' },                     // 暖橙
+        { keywords: ['生活', '日常', '心情', '感悟'], color: '#c97cff' },                             // 优雅紫
+        { keywords: ['旅行', '风景', '自然'], color: '#4ecdc4' },                                      // 清新绿
+        { keywords: ['美食', '健康', '运动'], color: '#ff8f7a' },                                      // 活力橙红
+        { keywords: ['创意', '灵感', '写作', '画画'], color: '#a8e6cf' },                              // 薄荷绿
+        { keywords: ['财务', '记账', '理财'], color: '#ffd93d' },                                      // 金色
+        { keywords: ['音乐', '电影', '照片'], color: '#6c5ce7' },                                      // 深紫
+    ];
+    
+    for (const item of colorMap) {
+        if (item.keywords.some(kw => lowerName.includes(kw))) {
+            return item.color;
+        }
+    }
+    
+    // 如果没有匹配，从颜色池中选择（基于名称长度取模）
+    return FOLDER_COLOR_POOL[name.length % FOLDER_COLOR_POOL.length];
+}
+
+// 更新模态框中的图标预览（优先使用用户手动选择的图案，否则智能匹配）
+function updateFolderPreview() {
+    const input = document.getElementById('folderModalNameInput');
+    const iconEl = document.getElementById('folderModalPreviewIcon');
+    if (!input || !iconEl) return;
+    
+    const name = input.value.trim();
+    // 优先使用用户手动选择的图案
+    const emoji = currentSelectedIcon || getSmartEmoji(name);
+    const color = getSmartColor(name);
+    
+    // 更新图标颜色
+    iconEl.style.setProperty('--folder-color', color);
+    
+    // 更新 emoji
+    const emojiEl = document.getElementById('folderModalPreviewEmoji');
+    if (emojiEl) {
+        emojiEl.textContent = emoji;
+    }
+}
+
+// 设置快速标签名称
+function setFolderName(name) {
+    const input = document.getElementById('folderModalNameInput');
+    if (input) {
+        input.value = name;
+        updateFolderPreview();
+        input.focus();
+    }
+}
+
+// ===== 自定义图案选择器 =====
+let pendingSelectedIcon = null;  // 待确认的选中图案
+
+// 打开图案选择模态框
+function openIconPicker() {
+    const modal = document.getElementById('memoryIconPicker');
+    const gridEl = document.getElementById('memoryIconPickerGrid');
+    if (!modal || !gridEl) return;
+    
+    // 初始化待确认值为当前预览值（若无则用默认）
+    const previewEmojiEl = document.getElementById('folderModalPreviewEmoji');
+    pendingSelectedIcon = previewEmojiEl ? previewEmojiEl.textContent : '📁';
+    
+    // 渲染图标网格
+    renderIconPickerGrid();
+    
+    modal.style.display = 'flex';
+}
+
+// 关闭图案选择模态框
+function closeIconPicker() {
+    const modal = document.getElementById('memoryIconPicker');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// 渲染图标网格（每格可点击选中，选中的有绿色边框高亮）
+function renderIconPickerGrid() {
+    const gridEl = document.getElementById('memoryIconPickerGrid');
+    if (!gridEl) return;
+    
+    // 去重后渲染（emoji 列表里可能有重复）
+    const seen = new Set();
+    const uniqueIcons = FOLDER_ICON_LIST.filter(emoji => {
+        if (seen.has(emoji)) return false;
+        seen.add(emoji);
+        return true;
+    });
+    
+    let html = '';
+    uniqueIcons.forEach(emoji => {
+        const isSelected = emoji === pendingSelectedIcon;
+        html += `
+            <div class="memory-icon-picker-item${isSelected ? ' is-selected' : ''}"
+                 onclick="selectPickerIcon('${emoji}')">
+                <span class="memory-icon-picker-emoji">${emoji}</span>
+            </div>
+        `;
+    });
+    gridEl.innerHTML = html;
+}
+
+// 选中某个图案（点击切换选中态，无默认选中逻辑由 pendingSelectedIcon 控制）
+function selectPickerIcon(emoji) {
+    pendingSelectedIcon = emoji;
+    // 重新渲染以更新高亮状态
+    renderIconPickerGrid();
+}
+
+// 确认选择的图案 → 应用到预览区
+function confirmIconPicker() {
+    if (pendingSelectedIcon) {
+        currentSelectedIcon = pendingSelectedIcon;
+        // 同步更新预览
+        const previewEmojiEl = document.getElementById('folderModalPreviewEmoji');
+        if (previewEmojiEl) {
+            previewEmojiEl.textContent = currentSelectedIcon;
+        }
+    }
+    closeIconPicker();
+}
+
+// 确认创建文件夹（使用用户选择的图案）
+function confirmCreateFolder() {
+    const input = document.getElementById('folderModalNameInput');
+    if (!input) return;
+    
+    const trimmedName = input.value.trim();
+    if (!trimmedName) {
+        alert('请输入文件夹名称');
+        input.focus();
+        return;
+    }
+    
+    const folders = getFolderList();
+    if (folders.some(f => f.name === trimmedName)) {
+        alert('该文件夹已存在');
+        input.focus();
+        return;
+    }
+    
+    // 使用用户选择的图案；否则智能匹配
+    const emoji = currentSelectedIcon || getSmartEmoji(trimmedName);
+    const color = getSmartColor(trimmedName);
+    
+    folders.push({ name: trimmedName, color: color, emoji: emoji });
+    saveFolderList(folders);
+    
+    // 重置选中状态，关闭模态框并刷新页面
+    currentSelectedIcon = null;
+    closeFolderModal();
+    renderMemoryBrowseResults();
+    refreshMemoryStats();
+}
+
+// ===== 删除确认模态框逻辑 =====
+let confirmCallback = null;  // 确认后的回调函数
+let confirmData = null;      // 传递给回调的数据
+
+// 打开删除确认模态框（二选一模式：点击选中，无默认选中）
+function openConfirmModal(message, callback, data) {
+    confirmCallback = callback;
+    confirmData = data;
+    
+    const modal = document.getElementById('memoryConfirmModal');
+    const msgEl = document.getElementById('confirmModalMessage');
+    const cancelBtn = document.querySelector('.memory-confirm-modal-btn-cancel');
+    const deleteBtn = document.querySelector('.memory-confirm-modal-btn-delete');
+    
+    if (msgEl) msgEl.textContent = message;
+    // 清除选中状态（无默认选中）
+    if (cancelBtn) cancelBtn.classList.remove('selected');
+    if (deleteBtn) deleteBtn.classList.remove('selected');
+    
+    if (modal) modal.style.display = 'flex';
+}
+
+// 关闭确认模态框
+function closeConfirmModal(isDelete) {
+    const modal = document.getElementById('memoryConfirmModal');
+    const cancelBtn = document.querySelector('.memory-confirm-modal-btn-cancel');
+    const deleteBtn = document.querySelector('.memory-confirm-modal-btn-delete');
+    
+    if (modal) modal.style.display = 'none';
+    // 清除选中状态
+    if (cancelBtn) cancelBtn.classList.remove('selected');
+    if (deleteBtn) deleteBtn.classList.remove('selected');
+    
+    // 执行回调（如果有）
+    if (confirmCallback) {
+        confirmCallback(isDelete, confirmData);
+        confirmCallback = null;
+        confirmData = null;
+    }
+}
+
+// 选择确认选项（点击选中高亮）
+function selectConfirmOption(isDelete) {
+    const cancelBtn = document.querySelector('.memory-confirm-modal-btn-cancel');
+    const deleteBtn = document.querySelector('.memory-confirm-modal-btn-delete');
+    
+    // 清除两边选中状态
+    if (cancelBtn) cancelBtn.classList.remove('selected');
+    if (deleteBtn) deleteBtn.classList.remove('selected');
+    
+    // 高亮当前选中的按钮
+    if (isDelete) {
+        if (deleteBtn) deleteBtn.classList.add('selected');
+    } else {
+        if (cancelBtn) cancelBtn.classList.add('selected');
+    }
+    
+    // 点击后立即执行并关闭（选中即确认）
+    closeConfirmModal(isDelete);
+}
+
+// 删除文件夹（使用自定义确认模态框）
+function deleteFolder(folderName, event) {
+    if (event) event.stopPropagation();
+    const folders = getFolderList();
+    const idx = folders.findIndex(f => f.name === folderName);
+    if (idx < 0) return;
+    const count = memoryData.filter(item => item.category === folderName).length;
+    const message = count > 0
+        ? `删除文件夹"${folderName}"？其中的 ${count} 条记忆将变为"未分类"。`
+        : `确认删除文件夹"${folderName}"？`;
+    
+    // 使用自定义确认模态框
+    openConfirmModal(message, (isDelete) => {
+        if (!isDelete) return;  // 取消
+        
+        // 将该文件夹内的记忆变为未分类
+        memoryData.forEach(item => {
+            if (item.category === folderName) item.category = '';
+        });
+        saveMemoryData();
+        folders.splice(idx, 1);
+        saveFolderList(folders);
+        // 同步刷新浏览页和记忆主页顶部计数
+        renderMemoryBrowseResults();
+        refreshMemoryStats();
+    }, folderName);
+}
+
+// 编辑文件夹名称（双击进入编辑态，回车保存，Esc 取消）
+function startEditFolderName(folderName, event) {
+    if (event) event.stopPropagation();
+    editingFolderName = folderName;
+    renderMemoryBrowseResults();
+    // 现在 renderMemoryBrowseResults 内部已在其内部的 setTimeout 中做聚焦逻辑里自动处理——这里不需要额外再一次确保聚焦
+    setTimeout(() => {
+        const input = document.querySelector('.js-folder-name-input');
+        if (input) {
+            input.focus();
+            input.select();
+        }
+    }, 50);
+}
+
+function saveEditFolderName(newName) {
+    if (!editingFolderName) return;
+    const trimmed = (newName || '').trim();
+    if (!trimmed) {
+        editingFolderName = null;
+        renderMemoryBrowseResults();
+        return;
+    }
+    const folders = getFolderList();
+    const idx = folders.findIndex(f => f.name === editingFolderName);
+    if (idx < 0) {
+        editingFolderName = null;
+        renderMemoryBrowseResults();
+        return;
+    }
+    if (folders.some(f => f.name === trimmed && f.name !== editingFolderName)) {
+        alert('该文件夹名称已存在');
+        return;
+    }
+    const oldName = editingFolderName;
+    folders[idx].name = trimmed;
+    saveFolderList(folders);
+    // 迁移记忆数据
+    memoryData.forEach(item => {
+        if (item.category === oldName) item.category = trimmed;
+    });
+    saveMemoryData();
+    editingFolderName = null;
+    // 刷新浏览页 + 记忆主页顶部计数
+    renderMemoryBrowseResults();
+    refreshMemoryStats();
+}
+
+function cancelEditFolderName() {
+    editingFolderName = null;
+    renderMemoryBrowseResults();
+}
+
+// ===== 记忆数据加载/保存 =====
 function loadMemoryData() {
+    syncFolderCategories();
     const saved = localStorage.getItem(MEMORY_KEY);
     if (saved) {
         try {
@@ -3330,17 +3812,19 @@ function saveMemoryData() {
     localStorage.setItem(MEMORY_KEY, JSON.stringify(memoryData));
 }
 
-function renderMemoryList() {
-    const listEl = document.getElementById('memoryList');
-    const emptyEl = document.getElementById('memoryEmpty');
-    if (!listEl) return;
+// 统一更新记忆主页顶部的分类计数（文件夹个数、记忆条数等）
+// 把文件夹计数与 FOLDER_CATEGORIES / getFolderList() 强关联，确保与实际文件夹列表一致
+function refreshMemoryStats() {
+    // 先同步一次文件夹集合（避免初次加载时 FOLDER_CATEGORIES 仍为空）
+    syncFolderCategories();
+    const folders = getFolderList();
 
-    // 先计算统计数字（搜索前的总数）
     const total = memoryData.length;
-    const folderCount = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category)).length;
-    const uncategorizedCount = total - folderCount;
+    // 「文件夹」按钮显示的是文件夹的个数（与文件夹浏览页一致）
+    const folderCount = folders.length;
+    // 「未分类」显示的是未归入任何文件夹的记忆条数 / 总记忆数
+    const uncategorizedCount = memoryData.filter(item => !item.category || !FOLDER_CATEGORIES.includes(item.category)).length;
 
-    // 更新三个筛选按钮的统计数字
     const allNumEl = document.getElementById('filterAllNum');
     const folderNumEl = document.getElementById('filterFolderNum');
     const uncNumEl = document.getElementById('filterUncategorizedNum');
@@ -3349,6 +3833,18 @@ function renderMemoryList() {
     if (folderNumEl) folderNumEl.textContent = folderCount;
     if (uncNumEl) uncNumEl.textContent = uncategorizedCount;
     if (totalNumEl) totalNumEl.textContent = total;
+}
+
+function renderMemoryList() {
+    // 四个圆环元素（东/南/西/北）
+    const ringEast = document.getElementById('memoryRingEast');
+    const ringNorth = document.getElementById('memoryRingNorth');
+    const ringWest = document.getElementById('memoryRingWest');
+    const ringSouth = document.getElementById('memoryRingSouth');
+    const emptyEl = document.getElementById('memoryEmpty');
+
+    // 刷新顶部计数（同时同步文件夹集合）
+    refreshMemoryStats();
 
     // 1. 先按筛选类型过滤
     let filtered = memoryData;
@@ -3371,84 +3867,212 @@ function renderMemoryList() {
     // 按创建时间排序（最新的在前）
     filtered.sort((a, b) => b.createdAt - a.createdAt);
 
-    listEl.innerHTML = '';
-
-    // 根据卡片数量决定布局方式
-    const useRingLayout = filtered.length >= 3;
-    listEl.className = useRingLayout ? 'memory-grid' : 'memory-grid small';
+    // 清空四个圆环
+    if (ringEast) ringEast.innerHTML = '';
+    if (ringNorth) ringNorth.innerHTML = '';
+    if (ringWest) ringWest.innerHTML = '';
+    if (ringSouth) ringSouth.innerHTML = '';
 
     if (filtered.length === 0) {
         if (emptyEl) {
             emptyEl.style.display = 'block';
             const p = emptyEl.querySelector('p');
-            if (p && searchEl && searchEl.value.trim()) {
-                p.textContent = `没有匹配 "${searchEl.value.trim()}" 的笔记`;
-            } else if (p) {
-                p.textContent = '还没有笔记，点击右下角 + 添加你的第一条笔记';
+            if (p) {
+                if (searchEl && searchEl.value.trim()) {
+                    p.textContent = `没有匹配 "${searchEl.value.trim()}" 的笔记`;
+                } else {
+                    p.textContent = '还没有记忆，点击下方 +记忆 添加你的第一条';
+                }
             }
         }
-    } else {
-        if (emptyEl) emptyEl.style.display = 'none';
-        
-        if (useRingLayout) {
-            // 圆环布局
-            const ringEl = document.createElement('div');
-            ringEl.className = 'memory-ring';
-            
-            // 添加中心提示
-            const centerEl = document.createElement('div');
-            centerEl.className = 'memory-center';
-            centerEl.textContent = '我的记忆';
-            listEl.appendChild(centerEl);
-            
-            // 添加卡片到圆环
-            filtered.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'memory-item';
-                div.setAttribute('onclick', `viewMemory(${item.id})`);
-                div.innerHTML =
-                    `<h4 class="memory-item-title">${item.title}</h4>
-                    <p class="memory-item-content">${item.content}</p>
-                    <div class="memory-item-date">${formatDateMemory(item.createdAt)}</div>`;
-                ringEl.appendChild(div);
-            });
-            
-            listEl.appendChild(ringEl);
-        } else {
-            // 普通网格布局
-            filtered.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'memory-item';
-                div.setAttribute('onclick', `viewMemory(${item.id})`);
-                div.innerHTML =
-                    `<h4 class="memory-item-title">${item.title}</h4>
-                    <p class="memory-item-content">${item.content}</p>
-                    <div class="memory-item-date">${formatDateMemory(item.createdAt)}</div>`;
-                listEl.appendChild(div);
-            });
+        return;
+    } else if (emptyEl) {
+        emptyEl.style.display = 'none';
+    }
+
+    // 将记忆按索引顺序平均分配到四个方向：北/东/南/西
+    // 同时保证每个圆环的卡片数量决定其环上分布角度
+    const dirs = ['north', 'east', 'south', 'west'];
+    const buckets = { north: [], east: [], south: [], west: [] };
+
+    filtered.forEach((item, idx) => {
+        buckets[dirs[idx % 4]].push(item);
+    });
+
+    // 为每个圆环填充卡片
+    dirs.forEach((dir) => {
+        const ringEl = document.getElementById(`memoryRing${dir.charAt(0).toUpperCase() + dir.slice(1)}`);
+        if (!ringEl) return;
+
+        const items = buckets[dir];
+        if (items.length === 0) {
+            // 该象限为空，显示空状态提示
+            const emptyBox = document.createElement('div');
+            emptyBox.className = 'memory-empty-quad';
+            const emojiMap = { north: '🧭', east: '🌅', south: '🌿', west: '🌙' };
+            const labelMap = { north: '北', east: '东', south: '南', west: '西' };
+            emptyBox.innerHTML = `<span class="emoji">${emojiMap[dir]}</span><span>${labelMap[dir]} · 暂无记忆</span>`;
+            ringEl.appendChild(emptyBox);
+            return;
         }
+
+        const count = items.length;
+        // 根据卡片数计算 translateZ：卡片越多越往外，动态计算适配当前圆环大小
+        // 圆周长约 = 2 * PI * radius，每卡片占一份，radius ≈ count * cardWidth / (2 * PI)
+        const ringW = ringEl.clientWidth || 180;
+        const cardW = ringW * 0.42;
+        const radius = Math.max(28, Math.round((cardW / 2) / Math.tan(Math.PI / count)));
+
+        items.forEach((item, i) => {
+            const angle = (360 / count) * i;
+            const div = document.createElement('div');
+            div.className = 'memory-item';
+            div.setAttribute('onclick', `event.stopPropagation && event.stopPropagation(); viewMemory(${item.id})`);
+            div.style.setProperty('--rotate', `${angle}deg`);
+            div.style.setProperty('--tz', `${radius}px`);
+            div.innerHTML =
+                `<h4>${escapeHtml(item.title)}</h4>
+                 <p>${escapeHtml(item.content)}</p>
+                 <span class="memory-item-date">${formatDateMemory(item.createdAt)}</span>`;
+            ringEl.appendChild(div);
+        });
+    });
+}
+
+/* 辅助：转义 HTML（防止记忆内容破坏布局） */
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/* 点击中央控制圆圈：切换粉光/白色状态，同时控制四个圆环一起转动或停止 */
+function toggleAllRings() {
+    const controlBtn = document.getElementById('memoryQuadControl');
+    const rings = [
+        document.getElementById('memoryRingNorth'),
+        document.getElementById('memoryRingEast'),
+        document.getElementById('memoryRingSouth'),
+        document.getElementById('memoryRingWest')
+    ].filter(Boolean);
+
+    if (rings.length === 0 || !controlBtn) return;
+
+    // 判断当前是否已有圆环在转动
+    const anyRunning = rings.some(r => r.classList.contains('running'));
+    const willRun = !anyRunning;
+
+    // 如果所有圆环都没有记忆卡片，简单闪烁一下按钮提示
+    const hasAnyCards = rings.some(r => r.querySelector('.memory-item'));
+    if (!hasAnyCards) {
+        controlBtn.animate(
+            [
+                    { transform: 'translate(-50%, -50%) scale(1)' },
+                    { transform: 'translate(-50%, -50%) scale(0.92)' },
+                    { transform: 'translate(-50%, -50%) scale(1)' }
+            ],
+            { duration: 260 }
+        );
+        return;
+    }
+
+    // 切换粉光激活状态（粉光 = 转动中；关闭 = 变回白色/蓝色停止）
+    controlBtn.classList.toggle('active', willRun);
+
+    // 同时启动/停止四个圆环
+    rings.forEach(ring => {
+        // 对于没有卡片的圆环，不改变其状态（保持静止）
+        if (!ring.querySelector('.memory-item')) return;
+
+        if (willRun) {
+            ring.classList.add('running');
+            ring.style.animationPlayState = 'running';
+        } else {
+            ring.classList.remove('running');
+            ring.style.animationPlayState = 'paused';
+        }
+    });
+}
+
+/* 点击方向按钮（兼容保留：单个圆环控制，主要供代码中已存在的 onclick 使用） */
+function toggleQuadRotation(dir) {
+    const ring = document.getElementById(`memoryRing${dir.charAt(0).toUpperCase() + dir.slice(1)}`);
+    if (!ring) return;
+    if (!ring.querySelector('.memory-item')) return;
+
+    const isRunning = ring.classList.toggle('running');
+    ring.style.animationPlayState = isRunning ? 'running' : 'paused';
+
+    // 若四个圆环都停止了则同步中央按钮状态
+    const controlBtn = document.getElementById('memoryQuadControl');
+    if (controlBtn) {
+        const dirs = ['North', 'East', 'South', 'West'];
+        const anyRunning = dirs
+            .map(d => document.getElementById('memoryRing' + d))
+            .filter(Boolean)
+            .some(r => r.classList.contains('running'));
+        controlBtn.classList.toggle('active', anyRunning);
     }
 }
 
 // 当前浏览筛选类型
 let currentBrowseFilter = 'all';
+let currentFolderName = null;  // 当前选中的文件夹名称（null 表示显示文件夹列表）
+
+// 文件夹配置：名称、图标、颜色
+const FOLDER_CONFIG = [
+    { name: '学习笔记', icon: '📚', color: '#7c8cff' },
+    { name: '生活感悟', icon: '💭', color: '#c97cff' },
+    { name: '工作总结', icon: '💼', color: '#ffb86b' },
+    { name: '灵感创意', icon: '✨', color: '#ff6b6b' }
+];
 
 // 打开记忆浏览页面（搜索/全部/文件夹/未分类）
-function openMemoryBrowse(filterType) {
-    currentBrowseFilter = filterType;
+// 刷新记忆浏览页标题区域：
+// - 文件夹列表页：显示普通白色标题「文件夹」
+// - 某个文件夹内：显示绿色标签 + 删除按钮（点击标签可编辑名称）
+// - 其他筛选：显示对应的白色标题
+function refreshMemoryBrowseTitle() {
     const titleEl = document.getElementById('memoryBrowseTitle');
-    const searchInput = document.getElementById('memoryBrowseSearch');
-    
-    // 设置页面标题
-    if (titleEl) {
+    const renameEl = document.getElementById('memoryBrowseFolderRename');
+    const delBtn = document.getElementById('memoryBrowseFolderDelBtn');
+    if (!titleEl) return;
+
+    // 先统一显示标题、隐藏绿色输入框和删除按钮
+    titleEl.style.display = '';
+    if (renameEl) renameEl.style.display = 'none';
+    if (delBtn) delBtn.style.display = 'none';
+
+    const isInFolder = (currentBrowseFilter === 'folder' && !!currentFolderName);
+
+    if (isInFolder) {
+        titleEl.textContent = currentFolderName;
+        // 改为绿色标签样式（点击可编辑）
+        titleEl.classList.add('memory-browse-title-tag');
+        if (delBtn) delBtn.style.display = '';
+    } else {
         const titles = {
             'search': '搜索记忆',
             'all': '全部记忆',
             'folder': '文件夹',
             'uncategorized': '未分类'
         };
-        titleEl.textContent = titles[filterType] || '全部记忆';
+        titleEl.textContent = titles[currentBrowseFilter] || '全部记忆';
+        titleEl.classList.remove('memory-browse-title-tag');
     }
+}
+
+function openMemoryBrowse(filterType) {
+    currentBrowseFilter = filterType;
+    currentFolderName = null;  // 重置文件夹选择
+    const searchInput = document.getElementById('memoryBrowseSearch');
+
+    // 设置标题显示（普通白色文字）
+    refreshMemoryBrowseTitle();
     
     // 如果是搜索模式，清空搜索框并聚焦
     if (searchInput) {
@@ -3469,10 +4093,155 @@ function openMemoryBrowse(filterType) {
     switchPage('memory-browse');
 }
 
+// 处理浏览页面的返回按钮
+function handleBrowseBack() {
+    // 如果当前在某个文件夹内，返回文件夹列表
+    if (currentFolderName) {
+        currentFolderName = null;
+        refreshMemoryBrowseTitle();
+        renderMemoryBrowseResults();
+        return;
+    }
+    // 否则返回记忆主页
+    switchPage('memory');
+    currentBrowseFilter = 'all';
+}
+
+// 打开某个文件夹，显示其中的记忆
+function openFolder(folderName) {
+    currentFolderName = folderName;
+    refreshMemoryBrowseTitle();
+    renderMemoryBrowseResults();
+}
+
+// 将顶部绿色标签切换为输入框，编辑当前文件夹名称
+function startRenameBrowseFolder() {
+    const titleEl = document.getElementById('memoryBrowseTitle');
+    const renameEl = document.getElementById('memoryBrowseFolderRename');
+    if (!titleEl || !renameEl) return;
+
+    titleEl.style.display = 'none';
+    renameEl.style.display = '';
+    renameEl.value = currentFolderName || '';
+    renameEl.focus();
+    renameEl.select();
+}
+
+function commitRenameBrowseFolder() {
+    const titleEl = document.getElementById('memoryBrowseTitle');
+    const renameEl = document.getElementById('memoryBrowseFolderRename');
+    if (!titleEl || !renameEl) return;
+
+    const trimmed = renameEl.value.trim();
+    // 恢复显示标题（无论成功或取消）
+    titleEl.style.display = '';
+    renameEl.style.display = 'none';
+
+    if (!trimmed || trimmed === currentFolderName) {
+        refreshMemoryBrowseTitle();
+        return;
+    }
+    if (!currentFolderName) return;
+
+    const folders = getFolderList();
+    if (folders.some(f => f.name === trimmed)) {
+        alert('该文件夹名称已存在');
+        refreshMemoryBrowseTitle();
+        return;
+    }
+    const idx = folders.findIndex(f => f.name === currentFolderName);
+    if (idx < 0) {
+        refreshMemoryBrowseTitle();
+        return;
+    }
+    const oldName = currentFolderName;
+    folders[idx].name = trimmed;
+    saveFolderList(folders);
+    // 迁移记忆数据
+    memoryData.forEach(item => {
+        if (item.category === oldName) item.category = trimmed;
+    });
+    saveMemoryData();
+    currentFolderName = trimmed;
+    refreshMemoryBrowseTitle();
+    renderMemoryBrowseResults();
+    refreshMemoryStats();
+}
+
+function cancelRenameBrowseFolder() {
+    const titleEl = document.getElementById('memoryBrowseTitle');
+    const renameEl = document.getElementById('memoryBrowseFolderRename');
+    if (!titleEl || !renameEl) return;
+    titleEl.style.display = '';
+    renameEl.style.display = 'none';
+}
+
+function deleteCurrentBrowseFolder() {
+    if (!currentFolderName) return;
+    const count = memoryData.filter(item => item.category === currentFolderName).length;
+    const message = count > 0
+        ? `删除文件夹"${currentFolderName}"？其中的 ${count} 条记忆将变为"未分类"。`
+        : `确认删除文件夹"${currentFolderName}"？`;
+    
+    // 使用自定义确认模态框
+    openConfirmModal(message, (isDelete) => {
+        if (!isDelete) return;  // 取消
+        
+        // 该文件夹内的记忆变为未分类
+        memoryData.forEach(item => {
+            if (item.category === currentFolderName) item.category = '';
+        });
+        saveMemoryData();
+
+        const folders = getFolderList();
+        const idx = folders.findIndex(f => f.name === currentFolderName);
+        if (idx >= 0) {
+            folders.splice(idx, 1);
+            saveFolderList(folders);
+        }
+
+        currentFolderName = null;
+        refreshMemoryBrowseTitle();
+        renderMemoryBrowseResults();
+        refreshMemoryStats();
+    });
+}
+
+// 顶部绿色标签（显示在文件夹内）：点击可编辑名称
+function initMemoryBrowseTitleInput() {
+    const titleEl = document.getElementById('memoryBrowseTitle');
+    const renameEl = document.getElementById('memoryBrowseFolderRename');
+    if (!titleEl || !renameEl) return;
+
+    // 点击绿色标签 → 进入编辑态（仅当处于某个文件夹内时有效）
+    titleEl.addEventListener('click', (e) => {
+        if (titleEl.classList.contains('memory-browse-title-tag') && currentFolderName) {
+            startRenameBrowseFolder();
+        }
+    });
+
+    // 输入框按键处理
+    renameEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            commitRenameBrowseFolder();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            cancelRenameBrowseFolder();
+        }
+    });
+
+    // 失焦时也提交（避免忘记按回车）
+    renameEl.addEventListener('blur', (e) => {
+        commitRenameBrowseFolder();
+    });
+}
+
 // 关闭记忆浏览页面，返回记忆主页
 function closeMemoryBrowse() {
     switchPage('memory');
     currentBrowseFilter = 'all';
+    currentFolderName = null;
 }
 
 // 渲染2D网格搜索结果
@@ -3483,11 +4252,157 @@ function renderMemoryBrowseResults() {
     
     if (!listEl) return;
     
+    // ===== 特殊处理：文件夹模式且未选择具体文件夹时，渲染文件夹图标网格 =====
+    if (currentBrowseFilter === 'folder' && !currentFolderName) {
+        listEl.innerHTML = '';
+        listEl.classList.add('memory-folder-grid');  // 添加文件夹网格样式类
+
+        // 同时刷新主页顶部计数（保证顶部"文件夹"数字与这里的文件夹个数一致）
+        refreshMemoryStats();
+
+        const folders = getFolderList();
+        // 为名称第一个字符做 emoji 映射；没有 emoji 就用名称首字
+        const nameToEmoji = (n) => {
+            const map = { '学习笔记': '📚', '生活感悟': '💭', '工作总结': '💼', '灵感创意': '✨' };
+            return map[n] || (n && n[0]) || '📁';
+        };
+
+        // 工具：用 DOM 元素替代 setAttribute('onclick')，让事件绑定更可靠
+        folders.forEach(folder => {
+            const count = memoryData.filter(item => item.category === folder.name).length;
+            const div = document.createElement('div');
+            div.className = 'memory-folder-card';
+
+            // 名称/输入框部分的 HTML 模板
+            const isEditing = editingFolderName === folder.name;
+            let nameHtml;
+            if (isEditing) {
+                nameHtml = `
+                    <input class="memory-folder-name-input js-folder-name-input"
+                           value="${folder.name.replace(/"/g, '&quot;')}"
+                           data-folder="${folder.name.replace(/"/g, '&quot;')}">
+                `;
+            } else {
+                nameHtml = `
+                    <div class="memory-folder-card-name js-folder-rename"
+                         data-folder="${folder.name.replace(/"/g, '&quot;')}">
+                        ${folder.name}
+                    </div>
+                `;
+            }
+
+            // 优先使用用户手动选择的 emoji；否则走智能匹配
+            const folderEmoji = folder.emoji || nameToEmoji(folder.name);
+
+            div.innerHTML = `
+                <button class="memory-folder-del-btn js-folder-delete"
+                        data-folder="${folder.name.replace(/"/g, '&quot;')}" aria-label="删除文件夹">×</button>
+                <div class="memory-folder-icon-wrapper js-folder-open"
+                     data-folder="${folder.name.replace(/"/g, '&quot;')}"
+                     style="--folder-color: ${folder.color}">
+                    <div class="memory-folder-icon-shape">
+                        <div class="memory-folder-icon-back"></div>
+                        <div class="memory-folder-icon-front"></div>
+                        <div class="memory-folder-icon-emoji">${folderEmoji}</div>
+                    </div>
+                </div>
+                ${nameHtml}
+                <div class="memory-folder-card-count">${count} 条</div>
+            `;
+            listEl.appendChild(div);
+        });
+
+        // 绑定事件：用 addEventListener 保证点击可靠
+        listEl.querySelectorAll('.js-folder-open').forEach(el => {
+            el.addEventListener('click', (e) => {
+                const name = el.getAttribute('data-folder');
+                openFolder(name);
+            });
+        });
+        // 点击名称/图标卡任何一处都能打开文件夹
+        listEl.querySelectorAll('.memory-folder-card').forEach(card => {
+            // 如果已经是删除按钮或输入框则不重复绑定
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.memory-folder-del-btn')) return;
+                if (e.target.closest('.js-folder-name-input')) return;
+                if (e.target.closest('.js-folder-rename')) return;  // 双击时由 ondblclick 处理
+                const openEl = card.querySelector('.js-folder-open');
+                if (openEl) {
+                    const name = openEl.getAttribute('data-folder');
+                    openFolder(name);
+                }
+            });
+        });
+        listEl.querySelectorAll('.js-folder-rename').forEach(el => {
+            // 单击绿色标签即可进入编辑态（更直观）
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = el.getAttribute('data-folder');
+                startEditFolderName(name, e);
+            });
+        });
+        listEl.querySelectorAll('.js-folder-delete').forEach(el => {
+            el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const name = el.getAttribute('data-folder');
+                deleteFolder(name, e);
+            });
+        });
+        listEl.querySelectorAll('.js-folder-name-input').forEach(input => {
+            input.addEventListener('click', (e) => e.stopPropagation());
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveEditFolderName(input.value);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEditFolderName();
+                }
+            });
+            input.addEventListener('blur', (e) => {
+                saveEditFolderName(input.value);
+            });
+            // 自动聚焦并选中文本
+            setTimeout(() => { input.focus(); input.select(); }, 20);
+        });
+
+        // "+ 新建文件夹" 按钮 — 使用 addEventListener 确保点击可靠
+        const addDiv = document.createElement('div');
+        addDiv.className = 'memory-folder-card memory-folder-add-card';
+        addDiv.addEventListener('click', (e) => {
+            e.stopPropagation();
+            addNewFolder();
+        });
+        addDiv.innerHTML = `
+            <div class="memory-folder-icon-wrapper memory-folder-add-icon">
+                <div class="memory-folder-icon-shape">
+                    <div class="memory-folder-icon-back"></div>
+                    <div class="memory-folder-icon-front memory-folder-icon-front-add"></div>
+                    <div class="memory-folder-icon-emoji">+</div>
+                </div>
+            </div>
+            <div class="memory-folder-card-name memory-folder-add-name">新建文件夹</div>
+            <div class="memory-folder-card-count">&nbsp;</div>
+        `;
+        listEl.appendChild(addDiv);
+
+        if (emptyEl) emptyEl.style.display = 'none';
+        return;
+    }
+    
+    // 移除文件夹网格类（还原普通网格）
+    listEl.classList.remove('memory-folder-grid');
+    
     // 先按筛选类型过滤
     let filtered = memoryData;
     
     if (currentBrowseFilter === 'folder') {
-        filtered = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category));
+        // 已选择具体文件夹，只显示该文件夹内的记忆
+        if (currentFolderName) {
+            filtered = memoryData.filter(item => item.category === currentFolderName);
+        } else {
+            filtered = memoryData.filter(item => item.category && FOLDER_CATEGORIES.includes(item.category));
+        }
     } else if (currentBrowseFilter === 'uncategorized') {
         filtered = memoryData.filter(item => !item.category || !FOLDER_CATEGORIES.includes(item.category));
     }
@@ -3521,8 +4436,29 @@ function renderMemoryBrowseResults() {
             const div = document.createElement('div');
             div.className = 'memory-browse-card';
             div.setAttribute('onclick', `viewMemory(${item.id})`);
+
+            // 生成文件夹标签（只在卡片所属的文件夹时显示）
+            // - 如果在「全部」或「搜索」模式，展示该卡片的文件夹标签
+            // - 如果在文件夹内，不展示标签（因为已经知道自己在哪个文件夹里）
+            let folderTag = '';
+            const shouldShowTag = (currentBrowseFilter === 'all' || currentBrowseFilter === 'search')
+                                  && item.category && item.category.trim() !== '';
+            if (shouldShowTag) {
+                // 获取该文件夹对应的 emoji
+                const folders = getFolderList();
+                const matched = folders.find(f => f.name === item.category);
+                const emoji = (matched && matched.emoji) || getSmartEmoji(item.category);
+                folderTag = `
+                    <div class="memory-browse-card-tag">
+                        <span class="memory-browse-card-tag-emoji">${emoji}</span>
+                        <span class="memory-browse-card-tag-name">${item.category}</span>
+                    </div>
+                `;
+            }
+
             div.innerHTML =
-                `<h4 class="memory-browse-card-title">${item.title}</h4>
+                `${folderTag}
+                <h4 class="memory-browse-card-title">${item.title}</h4>
                 <p class="memory-browse-card-content">${item.content}</p>
                 <div class="memory-browse-card-date">${formatDateMemory(item.createdAt)}</div>`;
             listEl.appendChild(div);
@@ -3574,6 +4510,306 @@ function viewMemory(id) {
 function closeMemoryDetail() {
     switchPage('memory');
     currentViewingMemoryId = null;
+    // 关闭文件夹选择模态框
+    const folderModal = document.getElementById('memoryFolderPickerModal');
+    if (folderModal) folderModal.style.display = 'none';
+}
+
+// 切换文件夹面板显示/隐藏
+// 打开/关闭“选择文件夹”模态框，点击文件夹时动态渲染列表
+function toggleFolderPanel() {
+    const modal = document.getElementById('memoryFolderPickerModal');
+    if (!modal) return;
+    const isHidden = modal.style.display === 'none' || modal.style.display === '';
+    if (isHidden) {
+        renderFolderPickerList();
+        modal.style.display = 'flex';
+    } else {
+        modal.style.display = 'none';
+    }
+}
+
+// 动态渲染“选择文件夹”模态框中的文件夹列表
+// 列表内容与文件夹管理页（第二张图）中的文件夹保持同步
+function renderFolderPickerList() {
+    const listEl = document.getElementById('memoryFolderPickerList');
+    if (!listEl) return;
+    if (!currentViewingMemoryId) return;
+    
+    const memory = memoryData.find(m => m.id === currentViewingMemoryId);
+    const currentCategory = memory ? (memory.category || '') : '';
+    
+    // 1) “未分类”总是显示
+    let html = '';
+    html += buildFolderModalItem('', '未分类', '📋', currentCategory);
+    
+    // 2) 遍历用户创建的文件夹，按关键词取 emoji
+    const folders = getFolderList();
+    folders.forEach(folder => {
+        const emoji = folder.emoji || getSmartEmoji(folder.name);
+        html += buildFolderModalItem(folder.name, folder.name, emoji, currentCategory);
+    });
+    
+    listEl.innerHTML = html;
+}
+
+// 生成模态框中单个文件夹选项的 HTML
+function buildFolderModalItem(name, displayName, emoji, currentCategory) {
+    const isActive = (currentCategory === name || (name === '' && currentCategory === '')) &&
+                     (currentCategory === name);
+    // 修正：准确比较当前分类
+    const match = (name === '' && currentCategory === '') || (name !== '' && name === currentCategory);
+    return `
+        <div class="memory-folder-modal-d-item${match ? ' is-active' : ''}"
+             onclick="moveMemoryToFolder('${name.replace(/'/g, "\\'")}')">
+            <span class="memory-folder-modal-d-icon">${emoji}</span>
+            <span class="memory-folder-modal-d-name">${displayName}</span>
+        </div>
+    `;
+}
+
+// 将记忆移动到指定文件夹
+function moveMemoryToFolder(category) {
+    if (!currentViewingMemoryId) return;
+    
+    const memory = memoryData.find(m => m.id === currentViewingMemoryId);
+    if (memory) {
+        memory.category = category || '';
+        memory.updatedAt = Date.now();
+        saveMemoryData();
+        renderMemoryList();
+        
+        // 关闭文件夹选择模态框
+        const modal = document.getElementById('memoryFolderPickerModal');
+        if (modal) modal.style.display = 'none';
+        
+        // 更新详情页显示的分类信息
+        const metaEl = document.querySelector('#page-memory-detail .memory-detail-meta');
+        if (metaEl && category) {
+            const categorySpan = metaEl.querySelector('.memory-detail-category');
+            if (categorySpan) {
+                categorySpan.textContent = category;
+            } else {
+                const newSpan = document.createElement('span');
+                newSpan.className = 'memory-detail-category';
+                newSpan.textContent = category;
+                metaEl.appendChild(newSpan);
+            }
+        }
+    }
+}
+
+// ===== AI输入功能 =====
+
+// 打开AI输入模态框
+function openMemoryAiInput() {
+    const modal = document.getElementById('memoryAiModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        const input = document.getElementById('memoryAiPromptInput');
+        if (input) input.focus();
+    }, 50);
+}
+
+function closeMemoryAiInput() {
+    const modal = document.getElementById('memoryAiModal');
+    if (modal) {
+        modal.style.display = 'none';
+        const input = document.getElementById('memoryAiPromptInput');
+        if (input) input.value = '';
+        resetMemoryAiBtn();
+    }
+}
+
+function fillAiPrompt(text) {
+    const input = document.getElementById('memoryAiPromptInput');
+    if (input) {
+        input.value = text;
+        input.focus();
+    }
+}
+
+function resetMemoryAiBtn() {
+    const btn = document.getElementById('memoryAiGenBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    }
+    const textEl = document.querySelector('.memory-ai-btn-text');
+    const spinnerEl = document.querySelector('.memory-ai-btn-spinner');
+    if (textEl) textEl.style.display = 'inline';
+    if (spinnerEl) spinnerEl.style.display = 'none';
+}
+
+// AI内容生成核心逻辑
+function generateMemoryContent(userPrompt) {
+    const prompt = (userPrompt || '').toLowerCase().trim();
+    const rawPrompt = userPrompt || '';
+
+    const templates = [
+        {
+            keywords: ['学习', '笔记', '读书', '书', '知识', '课程', '考试', '复习', '英语', '数学', '编程', '代码'],
+            title: '今日学习笔记',
+            contents: [
+                '今天专注学习了一整个下午。关于「坚持」这件事，我有了新的理解：\n\n学习不是短跑，而是一场马拉松。刚开始的时候，速度不重要，持续才是关键。\n\n把大目标拆成每天能完成的小任务，一步一步往前走，终会抵达想去的地方。',
+                '读书的意义不在于记住了多少内容，而在于它在多大程度上塑造了我们的思维。\n\n每一本好书，都是一次与优秀灵魂的对话。那些读过的文字，会在某个不经意的瞬间，成为我们人生的答案。',
+                '代码是诗人的语言。每一行看似冰冷的逻辑背后，都藏着构建者对世界的理解。\n\n今天学到的新知识：保持好奇，保持谦卑，保持对未知的敬畏。'
+            ]
+        },
+        {
+            keywords: ['生活', '日常', '随笔', '心情', '感悟', '心得', '感受', '日记'],
+            title: '生活随笔',
+            contents: [
+                '生活的美好，往往藏在最平凡的瞬间里。\n\n清晨的第一缕阳光、午后的一杯咖啡、傍晚时分的微风……这些看似不起眼的时刻，组成了我们真正的人生。\n\n学会看见，是一种重要的能力。',
+                '今天又多了一点对生活的理解：\n\n不必羡慕别人的精彩，每个人都有自己的节奏。慢一点没关系，只要走的方向是对的。\n\n把每一天都认真过好，就是对生活最好的回应。',
+                '窗外的世界很喧嚣，但内心可以很安静。\n\n记录下此刻的心情，是送给未来自己的一份礼物。这些文字，是我存在过、感受过、生活过的证明。'
+            ]
+        },
+        {
+            keywords: ['工作', '办公', '会议', '报告', '项目', '任务', '计划', '总结', '周报', '日报'],
+            title: '工作小结',
+            contents: [
+                '本周完成事项：\n\n1. 完成核心功能开发\n2. 参与需求评审会议，理清后续方向\n3. 梳理并优化了工作流程\n\n反思：时间分配上还可以更合理。下周要加强对高优先级任务的聚焦。',
+                '今日思考：工作不只是任务的完成，更是持续自我精进的过程。\n\n每一次挑战，都是成长的契机；每一次沟通，都是理解的桥梁。保持专业，保持热情。',
+                '工作复盘：\n\n• 做得好的地方：按时交付了核心任务\n• 需要改进的地方：前期规划可以更细致\n• 下周目标：提升效率，减少返工'
+            ]
+        },
+        {
+            keywords: ['灵感', '创意', '脑洞', '点子', '想法', '设计'],
+            title: '创意灵感',
+            contents: [
+                '灵感不会凭空出现。它是长期积累后的一次爆发。\n\n保持对世界的好奇，保持对生活的敏感。那些看似无关的事物，也许某天会串联成一条独特的思路。\n\n记录下来，是抓住灵感最好的方式。',
+                '一个好的创意，往往来自于跨界。\n\n把A领域的思维用到B领域，往往能产生意想不到的化学反应。保持开放，保持连接。',
+                '今日灵感：\n\n创意不是等待，而是行动。\n\n想到了就写下来，写下来了就去尝试。灵感是流动的，只会在行动中被捕获。'
+            ]
+        },
+        {
+            keywords: ['激励', '加油', '鼓励', '梦想', '目标', '奋斗', '坚持', '正能量', '励志'],
+            title: '写给自己',
+            contents: [
+                '你已经走了很远了，不要停下来。\n\n那些你以为熬不过的日子，回头看时都已经成为过去。你比自己想象中更坚强。\n\n继续往前走，光就在前方。',
+                '每一个优秀的人，都曾经历过一段不被理解的时光。\n\n但正是那段时间，让他们积蓄了力量，最终脱颖而出。\n\n你现在的坚持，是在为未来铺路。',
+                '你不需要成为别人，只需要成为更好的自己。\n\n每一天都比昨天进步一点，就是最好的状态。\n\n相信时间的力量，也相信你自己。'
+            ]
+        },
+        {
+            keywords: ['旅行', '旅游', '出行', '游记', '风景', '打卡'],
+            title: '旅行日记',
+            contents: [
+                '旅行的意义，不在于走了多远，而在于内心走了多远。\n\n每到一个新地方，都是一次与陌生文化的对话，也是一次重新认识自己的过程。\n\n在路上，永远年轻。',
+                '今天看到的风景，想写下来记一辈子。\n\n有些感受，只有亲自抵达才能理解。那些被拍下的照片，是记忆的锚点；而写下的文字，是心灵的地图。',
+                '走过的路，看过的风景，遇过的人……都是旅途中最珍贵的收获。\n\n愿我始终保有出发的勇气，和归来的温柔。'
+            ]
+        },
+        {
+            keywords: ['美食', '菜谱', '烹饪', '吃饭', '餐厅', '早餐', '晚餐'],
+            title: '美食记录',
+            contents: [
+                '好好吃饭，是最朴素也最深沉的幸福。\n\n食物承载着记忆，承载着对生活的热爱。每一餐都值得被认真对待。\n\n今天的这顿饭，值得被记录。',
+                '美食是治愈生活的良药。\n\n忙碌的一天结束后，用一顿精心准备的饭菜犒劳自己，是最温柔的仪式。',
+                '记录下今天吃的每一口，都是对平凡生活的热爱。\n\n食物带来的不只是饱腹感，还有被好好对待的感觉。'
+            ]
+        },
+        {
+            keywords: ['回忆', '记忆', '过去', '童年', '怀念', '往事', '老'],
+            title: '回忆往事',
+            contents: [
+                '有些记忆，不会因为时间而褪色。\n\n那些年一起走过的路、一起笑过的人、一起追逐过的梦想……都被时间酿成了酒，在某个时刻想起，依然温暖。',
+                '回忆是时间留给我们的礼物。\n\n回望过去，不是为了沉溺其中，而是为了更清楚地看见自己是如何一步步走来的。\n\n感恩所有的遇见。',
+                '翻开旧日记，像是与过去的自己对话。\n\n那些曾经以为天大的事，如今看来都云淡风轻。时间教会我的，是成长，也是释怀。'
+            ]
+        }
+    ];
+
+    const defaultTemplates = [
+        {
+            title: '今日所思',
+            contents: [
+                '今天想记录一点什么。\n\n生活中总有一些瞬间值得被记住：可能是一句触动的话，一个温暖的眼神，或是一瞬间的恍然大悟。\n\n把它们写下来，让记忆有迹可循。',
+                '写点东西的意义，或许是为了让未来的自己知道——此刻的我，在想些什么。\n\n这些文字不是日记，而是心灵的快照。',
+                '安静的时刻，思绪万千。\n\n记录下来，是一种仪式，也是一种释放。愿文字成为我与世界对话的方式。'
+            ]
+        }
+    ];
+
+    let matched = null;
+    for (const tpl of templates) {
+        if (tpl.keywords.some(kw => prompt.includes(kw) || rawPrompt.includes(kw))) {
+            matched = tpl;
+            break;
+        }
+    }
+    if (!matched) {
+        matched = defaultTemplates[0];
+    }
+
+    const contents = matched.contents;
+    const content = contents[Math.floor(Math.random() * contents.length)];
+
+    let title = matched.title;
+    if (rawPrompt && rawPrompt.trim().length > 0 && rawPrompt.trim().length <= 10) {
+        title = rawPrompt.trim();
+    }
+
+    return {
+        title: title,
+        content: content
+    };
+}
+
+// 执行AI内容生成，并将结果填入记忆的标题和内容
+function runMemoryAiGeneration() {
+    const input = document.getElementById('memoryAiPromptInput');
+    if (!input) return;
+
+    const prompt = input.value.trim();
+    if (!prompt) {
+        alert('请输入你的指令或想法');
+        input.focus();
+        return;
+    }
+
+    // 显示生成中状态
+    const btn = document.getElementById('memoryAiGenBtn');
+    const textEl = document.querySelector('.memory-ai-btn-text');
+    const spinnerEl = document.querySelector('.memory-ai-btn-spinner');
+    if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+    }
+    if (textEl) textEl.style.display = 'none';
+    if (spinnerEl) spinnerEl.style.display = 'inline';
+
+    setTimeout(() => {
+        const result = generateMemoryContent(prompt);
+
+        // 如果当前正在查看记忆，则自动进入编辑模式并填入内容
+        if (currentViewingMemoryId) {
+            const titleEl = document.getElementById('memoryDetailTitle');
+            const titleInput = document.getElementById('memoryDetailTitleInput');
+            const contentEl = document.getElementById('memoryDetailContent');
+            const contentInput = document.getElementById('memoryDetailContentInput');
+            const editBtn = document.getElementById('memoryEditBtn');
+            const saveBtn = document.getElementById('memorySaveBtn');
+
+            if (titleEl) titleEl.style.display = 'none';
+            if (titleInput) {
+                titleInput.style.display = 'block';
+                titleInput.value = result.title;
+            }
+            if (contentEl) contentEl.style.display = 'none';
+            if (contentInput) {
+                contentInput.style.display = 'block';
+                contentInput.value = result.content;
+            }
+            if (editBtn) editBtn.style.display = 'none';
+            if (saveBtn) saveBtn.style.display = 'flex';
+        }
+
+        // 关闭AI模态框
+        closeMemoryAiInput();
+    }, 800);
 }
 
 // 切换详情页编辑模式

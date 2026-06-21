@@ -448,18 +448,49 @@
                         </div>
                     </div>
 
-                    <!-- 圆环布局展示 -->
-                    <div class="memory-grid" id="memoryList">
+                    <!-- 绿色方框：外框架，包含4个黄色方框 + 中央蓝色控制器 + 红色+记忆按钮 -->
+                    <div class="memory-quad-frame">
+                        <!-- 黄色方框1：东（右上） -->
+                        <div class="memory-quad-box">
+                            <div class="memory-ring-small" id="memoryRingEast" data-dir="east">
+                                <!-- 圆环卡片由JS动态生成 -->
+                            </div>
+                        </div>
+
+                        <!-- 黄色方框2：北（左上） -->
+                        <div class="memory-quad-box">
+                            <div class="memory-ring-small" id="memoryRingNorth" data-dir="north">
+                            </div>
+                        </div>
+
+                        <!-- 中央控制圆圈（黄色外圈 + 蓝色内圆，点击时切换粉光/白色状态，控制四个圆环同时转动/停止） -->
+                        <button class="memory-quad-control" id="memoryQuadControl" onclick="toggleAllRings()" aria-label="控制所有圆环">
+                            <span class="memory-quad-control-core"></span>
+                        </button>
+
+                        <!-- 黄色方框3：西（左下） -->
+                        <div class="memory-quad-box">
+                            <div class="memory-ring-small" id="memoryRingWest" data-dir="west">
+                            </div>
+                        </div>
+
+                        <!-- 黄色方框4：南（右下） -->
+                        <div class="memory-quad-box">
+                            <div class="memory-ring-small" id="memoryRingSouth" data-dir="south">
+                            </div>
+                        </div>
+
+                        <!-- 红色方框：+记忆按钮（绝对定位到绿色方框右下角） -->
+                        <button class="memory-fab" onclick="showAddMemoryModal()" aria-label="添加记忆">
+                            <span class="memory-fab-text">+ 记忆</span>
+                        </button>
+
+                        <!-- 空状态提示 -->
                         <div class="memory-empty" id="memoryEmpty" style="display:none;">
                             <div class="memory-empty-icon">📭</div>
-                            <p>还没有笔记，点击右下角 + 添加你的第一条笔记</p>
+                            <p>还没有笔记</p>
                         </div>
                     </div>
-
-                    <!-- 右下角悬浮按钮 -->
-                    <button class="memory-fab" onclick="showAddMemoryModal()" aria-label="添加记忆">
-                        <span class="memory-fab-text">+ 记忆</span>
-                    </button>
                 </div>
             </section>
 
@@ -468,12 +499,21 @@
                 <div class="memory-browse-container">
                     <!-- 顶部工具栏：返回 + 标题/搜索框 -->
                     <div class="memory-detail-toolbar">
-                        <button class="memory-detail-icon-btn" onclick="closeMemoryBrowse()" aria-label="返回">
+                        <button class="memory-detail-icon-btn" id="memoryBrowseBackBtn" onclick="handleBrowseBack()" aria-label="返回">
                             <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M19 12H5M12 19l-7-7 7-7"/>
                             </svg>
                         </button>
-                        <h3 class="memory-browse-title" id="memoryBrowseTitle">全部记忆</h3>
+                        <!-- 文件夹内时显示为可编辑绿色标签；文件夹列表页则为普通标题 -->
+                        <div id="memoryBrowseTitleWrap" class="memory-browse-title-wrap">
+                            <h3 class="memory-browse-title" id="memoryBrowseTitle">文件夹</h3>
+                            <input type="text" id="memoryBrowseFolderRename" class="memory-browse-folder-rename" style="display:none;">
+                            <button class="memory-browse-folder-del" id="memoryBrowseFolderDelBtn" onclick="deleteCurrentBrowseFolder()" style="display:none;" aria-label="删除当前文件夹">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="width:14px;height:14px;">
+                                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
                         <div class="memory-detail-toolbar-right">
                             <input type="text" id="memoryBrowseSearch" class="memory-browse-input" placeholder="搜索标题或日期..." oninput="renderMemoryBrowseResults()">
                         </div>
@@ -484,6 +524,84 @@
                         <div class="memory-empty" id="memoryBrowseEmpty" style="display:none;">
                             <div class="memory-empty-icon">📭</div>
                             <p>没有找到相关记忆</p>
+                        </div>
+                    </div>
+
+                    <!-- 新建文件夹模态框 -->
+                    <div class="memory-folder-modal" id="memoryFolderModal" style="display:none;">
+                        <div class="memory-folder-modal-mask" onclick="closeFolderModal()"></div>
+                        <div class="memory-folder-modal-content">
+                            <div class="memory-folder-modal-header">
+                                <h3>新建文件夹</h3>
+                                <button class="memory-folder-modal-close" onclick="closeFolderModal()" aria-label="关闭">×</button>
+                            </div>
+                            <div class="memory-folder-modal-body">
+                                <div class="memory-folder-modal-preview">
+                                    <div class="memory-folder-icon-wrapper memory-folder-modal-icon" id="folderModalPreviewIcon">
+                                        <div class="memory-folder-icon-shape">
+                                            <div class="memory-folder-icon-back"></div>
+                                            <div class="memory-folder-icon-front"></div>
+                                            <div class="memory-folder-icon-emoji" id="folderModalPreviewEmoji">📁</div>
+                                        </div>
+                                    </div>
+                                    <div class="memory-folder-modal-preview-label">图标预览</div>
+                                </div>
+                                <div class="memory-folder-modal-input-group">
+                                    <label>文件夹名称</label>
+                                    <input type="text" id="folderModalNameInput" 
+                                           class="memory-folder-modal-input" 
+                                           placeholder="输入文件夹名称..."
+                                           oninput="updateFolderPreview()">
+                                </div>
+                                <div class="memory-folder-modal-tags">
+                                    <span class="memory-folder-modal-tags-label">快速标签：</span>
+                                    <button class="memory-folder-modal-tag" onclick="setFolderName('学习笔记')">📚 学习笔记</button>
+                                    <button class="memory-folder-modal-tag" onclick="setFolderName('生活感悟')">💭 生活感悟</button>
+                                    <button class="memory-folder-modal-tag" onclick="setFolderName('工作总结')">💼 工作总结</button>
+                                    <button class="memory-folder-modal-tag" onclick="setFolderName('灵感创意')">✨ 灵感创意</button>
+                                    <button class="memory-folder-modal-tag memory-folder-modal-tag-custom" onclick="openIconPicker()">
+                                        🎨 自定义图案
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="memory-folder-modal-footer">
+                                <button class="memory-folder-modal-btn memory-folder-modal-btn-cancel" onclick="closeFolderModal()">取消</button>
+                                <button class="memory-folder-modal-btn memory-folder-modal-btn-confirm" onclick="confirmCreateFolder()">创建</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 自定义图案选择模态框 -->
+                    <div class="memory-icon-picker" id="memoryIconPicker" style="display:none;">
+                        <div class="memory-icon-picker-mask" onclick="closeIconPicker()"></div>
+                        <div class="memory-icon-picker-content">
+                            <div class="memory-icon-picker-header">
+                                <h3>选择图案</h3>
+                                <button class="memory-icon-picker-confirm-btn" onclick="confirmIconPicker()" aria-label="确认">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <polyline points="20 6 9 17 4 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="memory-icon-picker-grid" id="memoryIconPickerGrid">
+                                <!-- JS 动态渲染图标网格 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 删除确认模态框（二选一模式：点击选中，无默认选中） -->
+                    <div class="memory-confirm-modal" id="memoryConfirmModal" style="display:none;">
+                        <div class="memory-confirm-modal-mask" onclick="closeConfirmModal(false)"></div>
+                        <div class="memory-confirm-modal-content">
+                            <div class="memory-confirm-modal-icon">⚠️</div>
+                            <div class="memory-confirm-modal-title">确认删除</div>
+                            <div class="memory-confirm-modal-message" id="confirmModalMessage"></div>
+                            <div class="memory-confirm-modal-footer">
+                                <button class="memory-confirm-modal-btn memory-confirm-modal-btn-cancel" 
+                                        onclick="selectConfirmOption(false)">取消</button>
+                                <button class="memory-confirm-modal-btn memory-confirm-modal-btn-delete" 
+                                        onclick="selectConfirmOption(true)">确认</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -513,7 +631,16 @@
                                     <line x1="12" y1="2" x2="12" y2="12"/>
                                 </svg>
                             </button>
-                            <button class="memory-detail-icon-btn" onclick="shareMemoryDetail()" aria-label="分享">
+                            <button class="memory-detail-icon-btn memory-ai-btn" id="memoryAiBtn" onclick="openMemoryAiInput()" aria-label="AI输入">
+                                <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 2a5 5 0 015 5v3a5 5 0 01-10 0V7a5 5 0 015-5z"/>
+                                    <path d="M8 15a4 4 0 001 8h6a4 4 0 001-8"/>
+                                    <line x1="9" y1="9" x2="9.01" y2="9"/>
+                                    <line x1="15" y1="9" x2="15.01" y2="9"/>
+                                    <path d="M9 13h6"/>
+                                </svg>
+                            </button>
+                            <button class="memory-detail-icon-btn" id="memoryShareBtn" onclick="toggleFolderPanel()" aria-label="分享/文件夹">
                                 <svg class="memory-detail-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
                                     <polyline points="16 6 12 2 8 6"/>
@@ -527,6 +654,57 @@
                                     <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
                                 </svg>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- 选择文件夹模态框（详情页分享按钮触发） -->
+                    <div class="memory-folder-modal-dialog" id="memoryFolderPickerModal" style="display:none;">
+                        <div class="memory-folder-picker-mask" onclick="toggleFolderPanel()"></div>
+                        <div class="memory-folder-modal-dialog-content">
+                            <div class="memory-folder-modal-d-header">
+                                <h3>选择文件夹</h3>
+                                <button class="memory-folder-modal-d-close" onclick="toggleFolderPanel()" aria-label="关闭">×</button>
+                            </div>
+                            <div class="memory-folder-modal-d-body" id="memoryFolderPickerList">
+                                <!-- 文件夹列表由 JS 动态渲染 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI输入模态框 -->
+                    <div class="memory-ai-modal" id="memoryAiModal" style="display:none;">
+                        <div class="memory-ai-mask" onclick="closeMemoryAiInput()"></div>
+                        <div class="memory-ai-content">
+                            <div class="memory-ai-header">
+                                <div class="memory-ai-title-row">
+                                    <span class="memory-ai-icon">🤖</span>
+                                    <h3>AI输入</h3>
+                                </div>
+                                <button class="memory-ai-close" onclick="closeMemoryAiInput()" aria-label="关闭">×</button>
+                            </div>
+                            <div class="memory-ai-body">
+                                <div class="memory-ai-hint">
+                                    把想要的内容，通过指令的方式输入，最终由AI输出
+                                </div>
+                                <textarea id="memoryAiPromptInput" 
+                                          class="memory-ai-prompt" 
+                                          placeholder="例如：帮我写一段关于夏天的回忆...&#10;或者：给我一段激励自己的话..."></textarea>
+                                <div class="memory-ai-quick-tags">
+                                    <span class="memory-ai-tag-label">快速指令：</span>
+                                    <button class="memory-ai-tag" onclick="fillAiPrompt('帮我写一段关于学习的励志短文')">📚 学习</button>
+                                    <button class="memory-ai-tag" onclick="fillAiPrompt('帮我记录一段生活感悟')">💭 生活</button>
+                                    <button class="memory-ai-tag" onclick="fillAiPrompt('写一段工作总结')">💼 工作</button>
+                                    <button class="memory-ai-tag" onclick="fillAiPrompt('给我一个创意灵感')">✨ 创意</button>
+                                    <button class="memory-ai-tag" onclick="fillAiPrompt('写一段激励自己的话')">🔥 激励</button>
+                                </div>
+                            </div>
+                            <div class="memory-ai-footer">
+                                <button class="memory-ai-btn-cancel" onclick="closeMemoryAiInput()">取消</button>
+                                <button class="memory-ai-btn-confirm" onclick="runMemoryAiGeneration()" id="memoryAiGenBtn">
+                                    <span class="memory-ai-btn-text">生成内容</span>
+                                    <span class="memory-ai-btn-spinner" style="display:none;">生成中...</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
 

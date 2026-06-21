@@ -4573,30 +4573,30 @@ body {
 .memory-container {
     display: flex;
     flex-direction: column;
-    gap: 14px;
-    padding: 16px 0 80px 0;
+    gap: 6px;
+    padding: 6px 0 16px 0;
     position: relative;
 }
 
 /* 顶部工具栏：四个等大按钮同一行 */
 .memory-topbar {
     display: flex;
-    gap: 10px;
+    gap: 5px;
 }
 
 /* 统一按钮样式（搜索框按钮 & 筛选按钮共用） */
 .memory-search-btn,
 .memory-filter-btn {
     flex: 1;
-    height: 62px;
+    height: 50px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 12px;
+    border-radius: 10px;
     cursor: pointer;
     transition: all 0.2s;
     font-family: inherit;
@@ -4648,9 +4648,12 @@ body {
     font-weight: 600;
     color: #fff;
     margin: 0;
-    flex: 1;
     text-align: center;
     font-family: inherit;
+    max-width: 240px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .memory-browse-input {
@@ -4740,16 +4743,1115 @@ body {
     opacity: 0.85;
 }
 
+/* ===== 卡片上的文件夹标签 ===== */
+.memory-browse-card-tag {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.85) 0%, rgba(201, 124, 255, 0.85) 100%);
+    color: #fff;
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-family: '楷体', 'KaiTi', serif;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(124, 140, 255, 0.3);
+    max-width: calc(100% - 20px);
+    line-height: 1.2;
+}
+
+.memory-browse-card-tag-emoji {
+    font-size: 12px;
+    line-height: 1;
+}
+
+.memory-browse-card-tag-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+/* ===== 文件夹网格视图（一行4个，尽量减少空白）===== */
+.memory-browse-grid.memory-folder-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 12px 12px;
+    margin-top: 0;
+    align-content: start;
+}
+
+.memory-folder-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 14px 8px 10px 8px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    min-height: 0;
+}
+
+.memory-folder-card:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* 删除按钮（右上角） */
+.memory-folder-del-btn {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 107, 107, 0.85);
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    z-index: 20;
+}
+
+.memory-folder-card:hover .memory-folder-del-btn {
+    display: flex;
+}
+
+.memory-folder-del-btn:hover {
+    background: #ff5252;
+    transform: scale(1.1);
+}
+
+/* 3D 文件夹图标容器（紧凑） */
+.memory-folder-icon-wrapper {
+    width: 64px;
+    height: 52px;
+    position: relative;
+    margin-bottom: 8px;
+    perspective: 600px;
+}
+
+.memory-folder-icon-shape {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+/* 文件夹后半部分（后面的片） */
+.memory-folder-icon-back {
+    position: absolute;
+    left: 0;
+    top: 6px;
+    width: 70%;
+    height: 60%;
+    background: var(--folder-color, #7c8cff);
+    border-radius: 5px 5px 3px 3px;
+    opacity: 0.85;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+/* 文件夹前半部分（前面的片，较大） */
+.memory-folder-icon-front {
+    position: absolute;
+    left: 0;
+    top: 18px;
+    width: 100%;
+    height: 65%;
+    background: linear-gradient(135deg,
+        var(--folder-color, #7c8cff) 0%,
+        color-mix(in srgb, var(--folder-color, #7c8cff) 70%, #000) 100%);
+    border-radius: 4px 6px 6px 6px;
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.3),
+        inset 0 2px 3px rgba(255, 255, 255, 0.25),
+        inset 0 -2px 3px rgba(0, 0, 0, 0.15);
+    background-image:
+        repeating-linear-gradient(
+            -45deg,
+            transparent,
+            transparent 5px,
+            rgba(255, 255, 255, 0.1) 5px,
+            rgba(255, 255, 255, 0.1) 10px
+        ),
+        linear-gradient(135deg,
+            var(--folder-color, #7c8cff) 0%,
+            color-mix(in srgb, var(--folder-color, #7c8cff) 70%, #000) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.95);
+}
+
+/* 新建文件夹卡片样式（淡色+虚线） */
+.memory-folder-add-card .memory-folder-icon-front-add {
+    background: rgba(255, 255, 255, 0.08) !important;
+    background-image: none !important;
+    border: 2px dashed rgba(255, 255, 255, 0.4) !important;
+    box-shadow: none !important;
+}
+
+.memory-folder-add-card .memory-folder-icon-back {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* 文件夹内 emoji 图标 */
+.memory-folder-icon-emoji {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+    font-size: 20px;
+    z-index: 10;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
+}
+
+.memory-folder-add-icon .memory-folder-icon-emoji {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 28px;
+    font-weight: 300;
+}
+
+/* 绿色标签：文件夹卡片上的名称（单击即可编辑） */
+.memory-folder-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a5c1a;
+    background: #a8e6cf;
+    border: 2px solid #4ecdc4;
+    border-radius: 6px;
+    padding: 3px 10px;
+    margin-bottom: 2px;
+    line-height: 1.3;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    display: inline-block;
+    user-select: none;
+}
+
+.memory-folder-card-name:hover {
+    background: #8fd9bd;
+    box-shadow: 0 1px 4px rgba(78, 205, 196, 0.25);
+}
+
+/* 绿色标签的输入框——编辑态 */
+.memory-folder-name-input {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a5c1a;
+    background: #a8e6cf;
+    border: 2px solid #4ecdc4;
+    border-radius: 6px;
+    padding: 3px 8px;
+    margin-bottom: 2px;
+    width: 90%;
+    text-align: center;
+    outline: none;
+    font-family: inherit;
+}
+
+.memory-folder-name-input:focus {
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.35);
+}
+
+.memory-folder-card-count {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: '楷体', 'KaiTi', serif;
+    line-height: 1.2;
+}
+
+/* 顶部标题区域：容器保证返回/标题/搜索框同行 */
+.memory-browse-title-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex: 1;
+}
+
+/* 顶部标题——文件夹内的绿色标签（点击可编辑） */
+.memory-browse-title-tag {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a5c1a;
+    background: #a8e6cf;
+    border: 2px solid #4ecdc4;
+    border-radius: 8px;
+    padding: 4px 14px;
+    cursor: pointer;
+    margin: 0;
+    display: inline-block;
+    user-select: none;
+}
+
+.memory-browse-title-tag:hover {
+    background: #8fd9bd;
+    box-shadow: 0 1px 6px rgba(78, 205, 196, 0.3);
+}
+
+/* 顶部绿色标签对应的编辑输入框 */
+.memory-browse-folder-rename {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a5c1a;
+    background: #a8e6cf;
+    border: 2px solid #4ecdc4;
+    border-radius: 8px;
+    padding: 4px 14px;
+    text-align: center;
+    outline: none;
+    font-family: inherit;
+}
+
+.memory-browse-folder-rename:focus {
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.35);
+}
+
+/* 顶部绿色标签旁的删除按钮 */
+.memory-browse-folder-del {
+    background: rgba(255, 107, 107, 0.85);
+    color: #fff;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.memory-browse-folder-del:hover {
+    background: #ff5252;
+    transform: scale(1.08);
+    box-shadow: 0 2px 8px rgba(255, 82, 82, 0.4);
+}
+
+/* ===== 新建文件夹模态框 ===== */
+.memory-folder-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.memory-folder-modal-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.memory-folder-modal-content {
+    position: relative;
+    background: linear-gradient(145deg, #1e1e2e 0%, #16162a 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 400px;
+    overflow: hidden;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.memory-folder-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.memory-folder-modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.memory-folder-modal-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.memory-folder-modal-close:hover {
+    background: rgba(255, 107, 107, 0.85);
+    color: #fff;
+}
+
+.memory-folder-modal-body {
+    padding: 24px;
+}
+
+/* 图标预览区 */
+.memory-folder-modal-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.memory-folder-modal-icon {
+    width: 100px;
+    height: 80px;
+    margin-bottom: 10px;
+}
+
+.memory-folder-modal-preview-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: '楷体', 'KaiTi', serif;
+}
+
+/* 输入框区域 */
+.memory-folder-modal-input-group {
+    margin-bottom: 20px;
+}
+
+.memory-folder-modal-input-group label {
+    display: block;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+}
+
+.memory-folder-modal-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 15px;
+    outline: none;
+    transition: all 0.2s;
+    box-sizing: border-box;
+}
+
+.memory-folder-modal-input:focus {
+    border-color: rgba(124, 140, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(124, 140, 255, 0.15);
+}
+
+.memory-folder-modal-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* 快速标签区域 */
+.memory-folder-modal-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.memory-folder-modal-tags-label {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.memory-folder-modal-tag {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.memory-folder-modal-tag:hover {
+    background: rgba(124, 140, 255, 0.2);
+    border-color: rgba(124, 140, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+/* 底部按钮区 */
+.memory-folder-modal-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.memory-folder-modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+}
+
+.memory-folder-modal-btn-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.memory-folder-modal-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.memory-folder-modal-btn-confirm {
+    background: linear-gradient(135deg, #7c8cff 0%, #c97cff 100%);
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(124, 140, 255, 0.3);
+}
+
+.memory-folder-modal-btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 140, 255, 0.4);
+}
+
+/* ===== 自定义图案按钮 ===== */
+.memory-folder-modal-tag-custom {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.2) 0%, rgba(201, 124, 255, 0.2) 100%);
+    border: 1px solid rgba(124, 140, 255, 0.4);
+    color: #a8b0ff;
+}
+
+.memory-folder-modal-tag-custom:hover {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.35) 0%, rgba(201, 124, 255, 0.35) 100%);
+    border-color: rgba(124, 140, 255, 0.6);
+}
+
+/* ===== 图案选择模态框 ===== */
+.memory-icon-picker {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.memory-icon-picker-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.memory-icon-picker-content {
+    position: relative;
+    background: linear-gradient(145deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 460px;
+    max-height: 75vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+    animation: modalFadeIn 0.25s ease-out;
+}
+
+.memory-icon-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.memory-icon-picker-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.memory-icon-picker-confirm-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4ecdc4 0%, #44bd60 100%);
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 3px 10px rgba(78, 205, 196, 0.3);
+}
+
+.memory-icon-picker-confirm-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.memory-icon-picker-confirm-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 5px 15px rgba(78, 205, 196, 0.45);
+}
+
+.memory-icon-picker-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
+}
+
+.memory-icon-picker-item {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.memory-icon-picker-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.05);
+}
+
+.memory-icon-picker-item.is-selected {
+    background: linear-gradient(135deg, rgba(78, 205, 196, 0.25) 0%, rgba(68, 189, 96, 0.25) 100%);
+    border-color: #4ecdc4;
+    box-shadow: 0 3px 10px rgba(78, 205, 196, 0.3);
+}
+
+.memory-icon-picker-emoji {
+    font-size: 20px;
+    line-height: 1;
+}
+
+/* ===== 选择文件夹模态框（详情页黄色方框按钮触发）===== */
+.memory-folder-modal-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1002;
+}
+
+.memory-folder-modal-dialog .memory-folder-picker-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.memory-folder-modal-dialog-content {
+    position: relative;
+    background: linear-gradient(145deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 20px;
+    width: 85%;
+    max-width: 340px;
+    max-height: 70vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+    animation: modalFadeIn 0.25s ease-out;
+}
+
+.memory-folder-modal-d-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.memory-folder-modal-d-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.memory-folder-modal-d-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.memory-folder-modal-d-close:hover {
+    background: rgba(255, 107, 107, 0.85);
+    color: #fff;
+}
+
+.memory-folder-modal-d-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 8px;
+}
+
+.memory-folder-modal-d-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    margin: 4px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.memory-folder-modal-d-item:hover {
+    background: rgba(124, 140, 255, 0.15);
+    border-color: rgba(124, 140, 255, 0.4);
+    transform: translateX(3px);
+}
+
+.memory-folder-modal-d-item.is-active {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.25) 0%, rgba(201, 124, 255, 0.25) 100%);
+    border-color: rgba(124, 140, 255, 0.6);
+}
+
+.memory-folder-modal-d-icon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.memory-folder-modal-d-name {
+    font-size: 15px;
+    color: #fff;
+    font-weight: 500;
+    flex: 1;
+}
+
+/* ===== 记忆详情页AI输入按钮 ===== */
+.memory-ai-btn {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.15) 0%, rgba(201, 124, 255, 0.15) 100%);
+    color: #c8d4ff;
+    border: 1px solid rgba(124, 140, 255, 0.3);
+}
+
+.memory-ai-btn:hover {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.3) 0%, rgba(201, 124, 255, 0.3) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(124, 140, 255, 0.3);
+    border-color: rgba(124, 140, 255, 0.5);
+}
+
+.memory-ai-btn-text {
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== AI输入模态框 ===== */
+.memory-ai-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1003;
+}
+
+.memory-ai-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.memory-ai-content {
+    position: relative;
+    background: linear-gradient(145deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 440px;
+    overflow: hidden;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(124, 140, 255, 0.15);
+    animation: modalFadeIn 0.3s ease-out;
+}
+
+.memory-ai-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(124, 140, 255, 0.15);
+}
+
+.memory-ai-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.memory-ai-icon {
+    font-size: 24px;
+}
+
+.memory-ai-header h3 {
+    font-size: 17px;
+    font-weight: 600;
+    color: #c8d4ff;
+    margin: 0;
+    background: linear-gradient(135deg, #c8d4ff 0%, #e0c8ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.memory-ai-close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.memory-ai-close:hover {
+    background: rgba(255, 107, 107, 0.85);
+    color: #fff;
+}
+
+.memory-ai-body {
+    padding: 24px;
+}
+
+.memory-ai-hint {
+    font-size: 13px;
+    color: rgba(200, 212, 255, 0.7);
+    text-align: center;
+    margin-bottom: 16px;
+    line-height: 1.6;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.08) 0%, rgba(201, 124, 255, 0.08) 100%);
+    border-radius: 10px;
+    border: 1px dashed rgba(124, 140, 255, 0.25);
+}
+
+.memory-ai-prompt {
+    width: 100%;
+    min-height: 120px;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(124, 140, 255, 0.2);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.6;
+    outline: none;
+    resize: vertical;
+    transition: all 0.2s;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.memory-ai-prompt:focus {
+    border-color: rgba(124, 140, 255, 0.6);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(124, 140, 255, 0.15);
+}
+
+.memory-ai-prompt::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+.memory-ai-quick-tags {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.memory-ai-tag-label {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    flex-shrink: 0;
+}
+
+.memory-ai-tag {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: rgba(200, 212, 255, 0.85);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.memory-ai-tag:hover {
+    background: linear-gradient(135deg, rgba(124, 140, 255, 0.2) 0%, rgba(201, 124, 255, 0.2) 100%);
+    border-color: rgba(124, 140, 255, 0.4);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+.memory-ai-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px 24px 24px;
+}
+
+.memory-ai-btn-cancel {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.memory-ai-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.memory-ai-btn-confirm {
+    flex: 1.5;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #7c8cff 0%, #c97cff 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(124, 140, 255, 0.3);
+}
+
+.memory-ai-btn-confirm:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 140, 255, 0.45);
+}
+
+.memory-ai-btn-text,
+.memory-ai-btn-spinner {
+    font-size: 14px;
+}
+
+/* ===== 删除确认模态框（二选一模式）===== */
+.memory-confirm-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+}
+
+.memory-confirm-modal-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+}
+
+.memory-confirm-modal-content {
+    position: relative;
+    background: linear-gradient(145deg, #2a2a3e 0%, #1e1e2e 100%);
+    border-radius: 20px;
+    width: 85%;
+    max-width: 340px;
+    padding: 32px 24px;
+    text-align: center;
+    box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(255, 255, 255, 0.08);
+    animation: modalFadeIn 0.25s ease-out;
+}
+
+.memory-confirm-modal-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.memory-confirm-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.memory-confirm-modal-message {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.memory-confirm-modal-footer {
+    display: flex;
+    gap: 12px;
+}
+
+.memory-confirm-modal-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* 取消按钮 - 选中时变绿 */
+.memory-confirm-modal-btn-cancel {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.memory-confirm-modal-btn-cancel.selected {
+    background: linear-gradient(135deg, #4ecdc4 0%, #44bd60 100%);
+    color: #fff;
+    border-color: rgba(78, 205, 196, 0.5);
+    box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+}
+
+/* 确认按钮（删除）- 选中时变红 */
+.memory-confirm-modal-btn-delete {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.memory-confirm-modal-btn-delete.selected {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+    color: #fff;
+    border-color: rgba(255, 107, 107, 0.5);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
 /* 筛选按钮数字 + 文字 */
 .memory-filter-num {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: #ffb86b;
     line-height: 1;
 }
 
 .memory-filter-label {
-    font-size: 11px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 600;
+}
+
+/* 搜索图标：缩小 */
+.memory-search-icon {
+    font-size: 14px;
+    opacity: 0.75;
+    line-height: 1;
+}
+
+.memory-search-label {
+    font-size: 10px;
     color: rgba(255, 255, 255, 0.75);
     font-weight: 600;
 }
@@ -4757,8 +5859,9 @@ body {
 /* 三个筛选按钮的容器 */
 .memory-filter {
     display: flex;
-    gap: 10px;
+    gap: 6px;
     flex: 3;
+    margin-bottom: 0;
 }
 
 /* 圆环布局容器 */
@@ -4766,15 +5869,17 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 600px;
+    min-height: 240px;
     perspective: 1000px;
     position: relative;
+    padding: 0;
+    overflow: hidden; /* 圆环不干涉外部空白 */
 }
 
 /* 圆环轨道 */
 .memory-ring {
-    width: 400px;
-    height: 400px;
+    width: 220px;
+    height: 220px;
     position: relative;
     transform-style: preserve-3d;
     animation: rotateRing 20s linear infinite;
@@ -4792,11 +5897,11 @@ body {
 /* 圆环上的卡片 */
 .memory-item {
     position: absolute;
-    width: 120px;
-    height: 150px;
+    width: 95px;
+    height: 120px;
     background: #faf6ee;
     border-radius: 8px;
-    padding: 12px;
+    padding: 10px;
     cursor: pointer;
     transition: all 0.3s;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
@@ -4864,31 +5969,18 @@ body {
     z-index: 1;
 }
 
-/* 中心提示文字 */
+/* 中心提示文字（已禁用） */
 .memory-center {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: rgba(255, 184, 107, 0.2);
-    border: 2px dashed rgba(255, 184, 107, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: '楷体', 'KaiTi', serif;
-    color: #ffb86b;
-    font-size: 14px;
-    text-align: center;
-    pointer-events: none;
+    display: none !important;
 }
 
 /* 圆环上的位置计算 */
-.memory-item:nth-child(1) { transform: rotateY(0deg) translateZ(180px); }
-.memory-item:nth-child(2) { transform: rotateY(60deg) translateZ(180px); }
-.memory-item:nth-child(3) { transform: rotateY(120deg) translateZ(180px); }
-.memory-item:nth-child(4) { transform: rotateY(180deg) translateZ(180px); }
-.memory-item:nth-child(5) { transform: rotateY(240deg) translateZ(180px); }
-.memory-item:nth-child(6) { transform: rotateY(300deg) translateZ(180px); }
+.memory-item:nth-child(1) { transform: rotateY(0deg) translateZ(90px); }
+.memory-item:nth-child(2) { transform: rotateY(60deg) translateZ(90px); }
+.memory-item:nth-child(3) { transform: rotateY(120deg) translateZ(90px); }
+.memory-item:nth-child(4) { transform: rotateY(180deg) translateZ(90px); }
+.memory-item:nth-child(5) { transform: rotateY(240deg) translateZ(90px); }
+.memory-item:nth-child(6) { transform: rotateY(300deg) translateZ(90px); }
 
 /* 当只有少量卡片时的备用布局 */
 .memory-grid.small {
@@ -5294,6 +6386,77 @@ body {
     border-color: #ffb86b;
 }
 
+/* 文件夹面板样式 */
+.memory-folder-panel {
+    background: linear-gradient(135deg, #faf6ee 0%, #f0ebe0 100%);
+    border-radius: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.memory-folder-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.memory-folder-panel-header span {
+    font-size: 16px;
+    font-weight: 600;
+    color: #5c4033;
+}
+
+.memory-folder-close {
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.memory-folder-close:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #5c4033;
+}
+
+.memory-folder-list {
+    padding: 8px;
+}
+
+.memory-folder-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    gap: 12px;
+}
+
+.memory-folder-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.memory-folder-icon {
+    font-size: 20px;
+}
+
+.memory-folder-item span:last-child {
+    font-size: 15px;
+    color: #5c4033;
+}
+
 /* 添加记忆页面样式 */
 .memory-add-title {
     width: 100%;
@@ -5420,4 +6583,343 @@ body {
         radial-gradient(circle at 20% 30%, rgba(33, 150, 243, 0.1) 0%, transparent 30%),
         radial-gradient(circle at 80% 70%, rgba(76, 175, 80, 0.1) 0%, transparent 30%),
         radial-gradient(circle at 50% 50%, rgba(103, 58, 183, 0.05) 0%, transparent 40%);
+}
+
+/* =========================================================
+ * 记忆库 - 四象限布局（绿色外框 + 十字线分隔四象限 + 中央蓝色控制器 + 红色+记忆按钮）
+ * 布局结构：
+ *   .memory-quad-frame  (绿色方框 - 外容器)
+ *     ├─ .memory-quad-box ×4  (四个黄色象限区域 — 各含一个圆环)
+ *     ├─ .memory-quad-control (蓝色圆圈控制器 — 被十字线分成四份)
+ *     └─ .memory-fab         (红色 +记忆 按钮 — 绿色方框右下角)
+ * ========================================================= */
+
+/* 绿色方框：外框架 — 更紧凑，整体尺寸随屏幕适配 */
+.memory-quad-frame {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    aspect-ratio: 1 / 1;
+    margin: 0 auto;
+    border: 2px solid #2e7d32;
+    border-radius: 10px;
+    background: rgba(46, 125, 50, 0.06);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* 用伪元素绘制黄色十字线，将绿色方框分成四象限 — 更细 */
+.memory-quad-frame::before,
+.memory-quad-frame::after {
+    content: '';
+    position: absolute;
+    background: #ffc107;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.memory-quad-frame::before {
+    /* 水平线 */
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    transform: translateY(-50%);
+}
+
+.memory-quad-frame::after {
+    /* 垂直线 */
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+}
+
+/* 四个黄色方框（四象限）：各占容器的 1/4，圆环在其中旋转 — 无额外 padding，让圆环填满 */
+.memory-quad-box {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    perspective: 900px;
+    overflow: hidden;
+    padding: 4px;
+    z-index: 1;
+}
+
+/* 北（左上） */
+.memory-quad-box:nth-child(2) {
+    top: 0;
+    left: 0;
+}
+
+/* 东（右上） */
+.memory-quad-box:nth-child(1) {
+    top: 0;
+    right: 0;
+}
+
+/* 西（左下） */
+.memory-quad-box:nth-child(4) {
+    bottom: 0;
+    left: 0;
+}
+
+/* 南（右下） */
+.memory-quad-box:nth-child(5) {
+    bottom: 0;
+    right: 0;
+}
+
+/* 小型圆环（四象限内的圆环） — 根据象限宽度动态设置，让圆环占满象限 */
+.memory-ring-small {
+    width: 88%;
+    height: 88%;
+    max-width: 200px;
+    max-height: 200px;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: rotateRing 18s linear infinite;
+    animation-play-state: paused;
+    will-change: transform;
+}
+
+.memory-ring-small.running {
+    animation-play-state: running;
+}
+
+.memory-ring-small .memory-item {
+    position: absolute;
+    width: 42%;
+    height: 58%;
+    max-width: 84px;
+    max-height: 116px;
+    min-width: 54px;
+    min-height: 72px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotateY(var(--rotate, 0deg)) translateZ(var(--tz, 42px));
+    background: #faf6ee;
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: box-shadow 0.3s;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    color: #2a2a2a;
+    overflow: hidden;
+    backface-visibility: visible;
+    box-sizing: border-box;
+}
+
+.memory-ring-small .memory-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(139, 90, 43, 0.3);
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+.memory-ring-small .memory-item h4 {
+    font-size: 10px;
+    font-weight: 600;
+    margin: 0 0 2px 0;
+    line-height: 1.15;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: #1a1a1a;
+    font-family: '楷体', 'KaiTi', serif;
+}
+
+.memory-ring-small .memory-item p {
+    font-size: 8px;
+    margin: 0 0 2px 0;
+    line-height: 1.25;
+    flex: 1;
+    color: #555;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-family: '楷体', 'KaiTi', serif;
+}
+
+.memory-ring-small .memory-item .memory-item-date {
+    font-size: 8px;
+    color: #888;
+    text-align: center;
+    font-family: '楷体', 'KaiTi', serif;
+}
+
+/* 中央控制圆圈（黄色外圈 + 蓝色内圆） — 点击切换粉光/白色，控制四圆环 */
+.memory-quad-control {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 25;
+    border: none;
+    cursor: pointer;
+    /* 外圈：黄色圆环；内圈：默认蓝色渐变 */
+    background: radial-gradient(circle at 50% 50%, #42a5f5 0%, #42a5f5 55%, #ffc107 58%, #ffc107 70%, transparent 72%);
+    padding: 0;
+    transition: box-shadow 0.35s ease;
+    box-shadow: 0 4px 14px rgba(33, 150, 243, 0.5),
+                0 0 0 3px #ffc107 inset;
+}
+
+/* 内部蓝心（通过子元素实现，方便点击时切换为白色） */
+.memory-quad-control-core {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, #64b5f6 0%, #1565c0 100%);
+    pointer-events: none;
+    transition: all 0.35s ease;
+    box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.25);
+}
+
+/* 粉光激活状态：中央圆圈发光并变为粉白色脉动 */
+.memory-quad-control.active {
+    /* 多层发光：亮粉光 + 外部扩散 + 外层光晕 */
+    box-shadow: 0 0 8px 4px #ff4fb3,
+                0 0 22px 10px rgba(255, 79, 179, 0.55),
+                0 0 48px 18px rgba(255, 79, 179, 0.35),
+                0 0 0 3px #ff4fb3 inset;
+    animation: quad-pink-pulse 1.8s ease-in-out infinite;
+}
+
+.memory-quad-control.active .memory-quad-control-core {
+    /* 激活时内圈变为亮白/粉白色 */
+    background: radial-gradient(circle at 50% 50%, #ffffff 0%, #ffe5f2 100%);
+    box-shadow: inset 0 0 14px rgba(255, 79, 179, 0.45),
+                0 0 18px 4px rgba(255, 255, 255, 0.55);
+}
+
+/* 粉光脉动动画 */
+@keyframes quad-pink-pulse {
+    0%, 100% {
+        box-shadow: 0 0 8px 4px #ff4fb3,
+                    0 0 22px 10px rgba(255, 79, 179, 0.55),
+                    0 0 48px 18px rgba(255, 79, 179, 0.35),
+                    0 0 0 3px #ff4fb3 inset;
+    }
+    50% {
+        box-shadow: 0 0 14px 6px #ff7cc7,
+                    0 0 32px 14px rgba(255, 124, 199, 0.7),
+                    0 0 60px 24px rgba(255, 124, 199, 0.45),
+                    0 0 0 3px #ff7cc7 inset;
+    }
+}
+
+.memory-quad-control:hover:not(.active) {
+    box-shadow: 0 4px 18px rgba(33, 150, 243, 0.7),
+                0 0 0 3px #ffd54f inset;
+}
+
+.memory-quad-control:active {
+    transform: translate(-50%, -50%) scale(0.96);
+}
+
+/* 当圆环为空时的提示（覆盖在象限内） */
+.memory-quad-box .memory-empty-quad {
+    position: absolute;
+    text-align: center;
+    color: rgba(255, 193, 7, 0.65);
+    font-size: 11px;
+    padding: 6px;
+}
+
+.memory-quad-box .memory-empty-quad .emoji {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+    opacity: 0.85;
+}
+
+/* =========================================================
+ * 记忆库 - 红色方框（+记忆按钮，位于绿色方框右下角）
+ * ========================================================= */
+
+.memory-fab-wrapper {
+    /* 作为容器不再需要，按钮改为绝对定位在绿色方框内 */
+    display: none;
+}
+
+/* 红色 +记忆 按钮 — 改为绝对定位，叠加在绿色方框的右下角，更紧凑 */
+.memory-fab {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #ff5722 0%, #d32f2f 100%);
+    border: 2px solid #fff;
+    color: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(230, 74, 25, 0.55);
+    transition: all 0.2s;
+    z-index: 30;
+    font-family: inherit;
+}
+
+.memory-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 22px rgba(230, 74, 25, 0.65);
+}
+
+.memory-fab:active {
+    transform: scale(0.96);
+}
+
+.memory-fab-text {
+    line-height: 1;
+}
+
+/* 覆盖原来的 fixed 定位 fab-icon（不再需要） */
+.memory-fab-icon {
+    display: none;
+}
+
+/* 空状态提示：整个绿色方框内没有记忆时显示（覆盖在中央控制器位置下方） */
+.memory-quad-frame .memory-empty {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    color: rgba(255, 255, 255, 0.6);
+    z-index: 5;
+    pointer-events: none;
+    padding: 6px 12px;
+}
+
+.memory-quad-frame .memory-empty .memory-empty-icon {
+    font-size: 22px;
+    margin-bottom: 4px;
+    opacity: 0.7;
+}
+
+.memory-quad-frame .memory-empty p {
+    font-size: 11px;
+    margin: 0;
 }
