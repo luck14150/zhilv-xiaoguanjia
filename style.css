@@ -5059,6 +5059,7 @@ body {
     font-family: '楷体', 'KaiTi', serif;
     letter-spacing: 2px;
     position: relative;
+    z-index: 1;
 }
 
 .memory-detail-meta {
@@ -5068,6 +5069,7 @@ body {
     font-family: '楷体', 'KaiTi', serif;
     opacity: 0.8;
     position: relative;
+    z-index: 1;
 }
 
 .memory-detail-content {
@@ -5080,9 +5082,8 @@ body {
     z-index: 1;
 }
 
-/* 添加记忆页面样式 */
+/* 添加记忆页面（与详情页一模一样） */
 .memory-add-title {
-    width: 100%;
     font-size: 28px;
     font-weight: 600;
     color: #7a5d3d;
@@ -5094,6 +5095,9 @@ body {
     background: transparent;
     border: none;
     outline: none;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .memory-add-title::placeholder {
@@ -5102,19 +5106,21 @@ body {
 }
 
 .memory-add-content {
-    width: 100%;
     font-size: 16px;
     color: #6b5344;
     line-height: 2;
     font-family: '楷体', 'KaiTi', serif;
+    white-space: pre-wrap;
     background: transparent;
     border: none;
     outline: none;
     resize: none;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
     min-height: 200px;
     position: relative;
     z-index: 1;
-    margin: 16px 0;
 }
 
 .memory-add-content::placeholder {
@@ -5126,7 +5132,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 20px;
+    margin-top: 30px;
     position: relative;
     z-index: 1;
 }

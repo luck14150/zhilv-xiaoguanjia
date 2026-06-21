@@ -3484,10 +3484,11 @@ function showAddMemoryModal() {
     addingMemoryCategory = '学习笔记';
     const titleInput = document.getElementById('memoryAddTitle');
     const contentInput = document.getElementById('memoryAddContent');
-    const categoryContainer = document.getElementById('memoryAddCategory');
+    const dateEl = document.getElementById('memoryAddDate');
 
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
+    if (dateEl) dateEl.textContent = formatDateMemory(Date.now());
 
     // 重置分类选择状态
     const categoryEls = document.querySelectorAll('.memory-add-category .category-select');
