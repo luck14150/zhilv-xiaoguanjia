@@ -4742,10 +4742,9 @@ body {
     position: fixed;
     right: 24px;
     bottom: 110px;
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffcc5c 0%, #ffb86b 100%);
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #ff7043 0%, #e64a19 100%);
     border: none;
     color: #fff;
     cursor: pointer;
@@ -4754,14 +4753,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8px 20px rgba(255, 184, 107, 0.45);
+    box-shadow: 0 6px 16px rgba(230, 74, 25, 0.45);
     transition: all 0.2s;
     z-index: 10;
 }
 
 .memory-fab:hover {
     transform: scale(1.08);
-    box-shadow: 0 10px 24px rgba(255, 184, 107, 0.55);
+    box-shadow: 0 8px 20px rgba(230, 74, 25, 0.55);
 }
 
 .memory-fab:active {
