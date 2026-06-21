@@ -495,38 +495,35 @@
                 </div>
             </section>
 
-            <!-- 记忆编辑页（独立页面） -->
-            <section class="page" id="page-memory-edit">
-                <div class="memory-edit-container">
-                    <!-- 顶部工具栏：返回 + 删除 + 保存 -->
-                    <div class="memory-edit-toolbar">
-                        <button class="memory-edit-icon-btn" onclick="closeMemoryEdit()" aria-label="返回">
-                            <span class="memory-edit-icon">←</span>
+            <!-- 添加记忆页面（独立页面，与详情页风格一致） -->
+            <section class="page" id="page-memory-add">
+                <div class="memory-detail-container">
+                    <!-- 顶部工具栏：返回 + 保存 -->
+                    <div class="memory-detail-toolbar">
+                        <button class="memory-detail-icon-btn" onclick="closeMemoryAdd()" aria-label="返回">
+                            <span class="memory-detail-icon">←</span>
                         </button>
-                        <div class="memory-edit-toolbar-right">
-                            <button class="memory-edit-icon-btn delete" id="memoryEditDeleteBtn" onclick="deleteFromEditPage()" aria-label="删除" style="display:none;">
-                                <span class="memory-edit-icon">🗑</span>
-                            </button>
-                            <button class="memory-edit-icon-btn save" onclick="saveMemoryFromEdit()" aria-label="保存">
-                                <span class="memory-edit-icon">✓</span>
+                        <div class="memory-detail-toolbar-right">
+                            <button class="memory-detail-icon-btn save-btn" onclick="saveNewMemory()" aria-label="保存">
+                                <span class="memory-detail-icon">✓</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- 米纸风格编辑区域 -->
-                    <div class="memory-edit-paper">
-                        <input type="text" id="memoryEditTitle" class="memory-edit-title-input" placeholder="标题">
-                        <div class="memory-edit-date" id="memoryEditDate">—</div>
-                        <textarea id="memoryEditContent" class="memory-edit-content-textarea" placeholder="记录你的想法、心得、笔记..."></textarea>
-                    </div>
-
-                    <!-- 分类选择 -->
-                    <div class="memory-edit-categories" id="memoryEditCategorySelect">
-                        <span class="category-select" onclick="selectMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
-                        <span class="category-select" onclick="selectMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
-                        <span class="category-select" onclick="selectMemoryCategory(this, '工作总结')">💼 工作总结</span>
-                        <span class="category-select" onclick="selectMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
-                        <span class="category-select" onclick="selectMemoryCategory(this, '其他')">📝 其他</span>
+                    <div class="memory-detail-paper">
+                        <input type="text" id="memoryAddTitle" class="memory-add-title" placeholder="给这条记忆起个标题...">
+                        <div class="memory-detail-meta">
+                            <span id="memoryAddDate">新记忆</span>
+                        </div>
+                        <textarea id="memoryAddContent" class="memory-add-content" placeholder="记录你的想法、心得、笔记..."></textarea>
+                        <div class="memory-add-category">
+                            <span class="category-select" onclick="selectAddMemoryCategory(this, '学习笔记')">📖 学习笔记</span>
+                            <span class="category-select" onclick="selectAddMemoryCategory(this, '生活感悟')">🌿 生活感悟</span>
+                            <span class="category-select" onclick="selectAddMemoryCategory(this, '工作总结')">💼 工作总结</span>
+                            <span class="category-select" onclick="selectAddMemoryCategory(this, '灵感创意')">💡 灵感创意</span>
+                            <span class="category-select" onclick="selectAddMemoryCategory(this, '其他')">📝 其他</span>
+                        </div>
                     </div>
                 </div>
             </section>

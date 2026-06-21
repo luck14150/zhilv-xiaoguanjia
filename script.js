@@ -3477,22 +3477,67 @@ function filterMemory(category, element) {
     renderMemoryList();
 }
 
+// 全局变量：添加页面选中的分类
+let addingMemoryCategory = '学习笔记';
+
 function showAddMemoryModal() {
-    editingMemoryId = null;
-    selectedCategory = '学习笔记';
-    
-    // 清空编辑表单
-    const titleInput = document.getElementById('memoryEditTitle');
-    const contentInput = document.getElementById('memoryEditContent');
-    
+    addingMemoryCategory = '学习笔记';
+    const titleInput = document.getElementById('memoryAddTitle');
+    const contentInput = document.getElementById('memoryAddContent');
+    const categoryContainer = document.getElementById('memoryAddCategory');
+
     if (titleInput) titleInput.value = '';
     if (contentInput) contentInput.value = '';
-    
-    // 更新分类选择状态
-    updateCategorySelect();
-    
-    // 切换到独立编辑页面
-    switchPage('memory-edit');
+
+    // 重置分类选择状态
+    const categoryEls = document.querySelectorAll('.memory-add-category .category-select');
+    categoryEls.forEach(el => el.classList.remove('active'));
+    const defaultCat = document.querySelector('.memory-add-category .category-select');
+    if (defaultCat) defaultCat.classList.add('active');
+
+    switchPage('memory-add');
+}
+
+function closeMemoryAdd() {
+    switchPage('memory');
+}
+
+function selectAddMemoryCategory(el, category) {
+    addingMemoryCategory = category;
+    document.querySelectorAll('.memory-add-category .category-select').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function saveNewMemory() {
+    const titleInput = document.getElementById('memoryAddTitle');
+    const contentInput = document.getElementById('memoryAddContent');
+
+    if (!titleInput || !contentInput) return;
+
+    const title = titleInput.value.trim();
+    const content = contentInput.value.trim();
+
+    if (!title) {
+        alert('请输入标题');
+        return;
+    }
+    if (!content) {
+        alert('请输入内容');
+        return;
+    }
+
+    const newMemory = {
+        id: Date.now(),
+        title: title,
+        content: content,
+        category: addingMemoryCategory,
+        createdAt: Date.now()
+    };
+
+    memoryData.unshift(newMemory);
+    saveMemoryData();
+    renderMemoryList();
+    switchPage('memory');
 }
 
 function editMemory(id) {
@@ -3501,19 +3546,24 @@ function editMemory(id) {
 
     editingMemoryId = id;
     selectedCategory = memory.category;
-    
-    // 填充编辑表单
-    const titleInput = document.getElementById('memoryEditTitle');
-    const contentInput = document.getElementById('memoryEditContent');
-    
+    const modal = document.getElementById('memoryModal');
+    const title = document.getElementById('memoryModalTitle');
+    const titleInput = document.getElementById('memoryTitleInput');
+    const contentInput = document.getElementById('memoryContentInput');
+    const delBtn = document.getElementById('memoryModalDeleteBtn');
+
+    if (title) title.textContent = '编辑记忆';
     if (titleInput) titleInput.value = memory.title;
     if (contentInput) contentInput.value = memory.content;
-    
-    // 更新分类选择状态
+    if (delBtn) {
+        delBtn.style.display = 'inline-block';
+        delBtn.style.color = '#ff6b6b';
+        delBtn.style.borderColor = 'rgba(255, 107, 107, 0.3)';
+    }
+
     updateCategorySelect();
-    
-    // 切换到独立编辑页面
-    switchPage('memory-edit');
+
+    if (modal) modal.classList.add('show');
 }
 
 // 从编辑弹窗内调用删除
@@ -3535,7 +3585,7 @@ function selectMemoryCategory(element, category) {
 }
 
 function updateCategorySelect() {
-    const selects = document.querySelectorAll('#memoryCategorySelect .category-select, #memoryEditCategorySelect .category-select');
+    const selects = document.querySelectorAll('#memoryCategorySelect .category-select');
     selects.forEach(el => {
         const cat = el.textContent.trim().replace(/^[^\s]+\s/, '');
         if (cat === selectedCategory) {
@@ -3544,25 +3594,6 @@ function updateCategorySelect() {
             el.classList.remove('active');
         }
     });
-    
-    // 更新编辑页面的日期显示
-    const dateEl = document.getElementById('memoryEditDate');
-    if (dateEl) {
-        if (editingMemoryId) {
-            const memory = memoryData.find(m => m.id === editingMemoryId);
-            if (memory) {
-                dateEl.textContent = formatDateMemory(memory.createdAt);
-            }
-        } else {
-            dateEl.textContent = '新建';
-        }
-    }
-    
-    // 显示/隐藏删除按钮
-    const delBtn = document.getElementById('memoryEditDeleteBtn');
-    if (delBtn) {
-        delBtn.style.display = editingMemoryId ? 'flex' : 'none';
-    }
 }
 
 function saveMemory() {
@@ -3606,69 +3637,6 @@ function saveMemory() {
 
     const modal = document.getElementById('memoryModal');
     if (modal) modal.classList.remove('show');
-}
-
-// 关闭记忆编辑页面
-function closeMemoryEdit() {
-    switchPage('memory');
-}
-
-// 从编辑页面保存记忆
-function saveMemoryFromEdit() {
-    const titleInput = document.getElementById('memoryEditTitle');
-    const contentInput = document.getElementById('memoryEditContent');
-
-    const title = titleInput ? titleInput.value.trim() : '';
-    const content = contentInput ? contentInput.value.trim() : '';
-
-    if (!title) {
-        alert('请输入标题');
-        return;
-    }
-    if (!content) {
-        alert('请输入内容');
-        return;
-    }
-
-    if (editingMemoryId) {
-        // 编辑现有记忆
-        const memory = memoryData.find(m => m.id === editingMemoryId);
-        if (memory) {
-            memory.title = title;
-            memory.content = content;
-            memory.category = selectedCategory;
-        }
-    } else {
-        // 添加新记忆
-        const newId = memoryData.length > 0 ? Math.max(...memoryData.map(m => m.id)) + 1 : 1;
-        memoryData.push({
-            id: newId,
-            title: title,
-            content: content,
-            category: selectedCategory,
-            createdAt: Date.now()
-        });
-    }
-
-    saveMemoryData();
-    renderMemoryList();
-    
-    // 返回记忆列表页
-    switchPage('memory');
-}
-
-// 从编辑页面删除记忆
-function deleteFromEditPage() {
-    if (!editingMemoryId) return;
-    const confirmed = confirm('确定要删除这条记忆吗？');
-    if (!confirmed) return;
-    
-    memoryData = memoryData.filter(m => m.id !== editingMemoryId);
-    saveMemoryData();
-    renderMemoryList();
-    
-    // 返回记忆列表页
-    switchPage('memory');
 }
 
 function deleteMemory(id) {
